@@ -120,6 +120,7 @@ td a{font-weight:600}
 .su-tag.su-xc{background:var(--gold-soft);border:1px solid var(--gold)}
 .su-boxes{display:flex;gap:12px}
 .su-box{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.su-box.ro{cursor:default}.su-box.ro input{cursor:default;opacity:1}
 .su-box input{width:20px;height:20px;accent-color:var(--accent);margin:0;cursor:pointer}
 .new-chip{background:var(--gold);color:var(--gold-ink);justify-self:start}
 @media (max-width:620px){.su-row{grid-template-columns:minmax(0,1fr) auto}.su-boxes{grid-column:1/-1}}
@@ -1242,7 +1243,7 @@ const SECTIONS = [
   {id:"schedule", g:"team", name:"Schedule", blurb:"Meets for JH and HS"},
   {id:"track101", g:"team", name:"Meet Day 101", blurb:"How a meet runs, event order, and reading the team table"},
   {id:"athletes", g:"team", name:"Athletes", blurb:"Everyone on the team. Tap a name for their page"},
-  {id:"signups", g:"team", name:"Sign-ups", blurb:"Final Forms and Google Form checklist", coach:true},
+  {id:"signups", g:"team", name:"Sign-ups", blurb:"Final Forms and Google Form checklist"},
   {id:"team", g:"team", name:"Coaches & Program", blurb:"Coaching staff, program philosophy, expectations, practice flow"},
   {id:"workouts", g:"train", name:"Workouts", blurb:"Week-by-week plan with drill videos"},
   {id:"paces", g:"train", name:"Paces", blurb:"Training paces for distance and mid-distance runners"},
@@ -1861,8 +1862,6 @@ function suToggle(id, field){
 }
 const views = {
   signups(){
-    if(!canPost) return `${back}<div class="stack"><div><div class="eyebrow">Coaches only</div><h1>Sign-ups</h1></div>
-      <div class="panel"><p style="margin:0">Sign in on the <a href="#coaches">Coach login</a> page to see the sign-up checklist.</p></div></div>`;
     const rows = ATHLETES.map(a=>({a, s:suStatus(a), c:SIGN[a.id]||{}}));
     const inLvG = rows.filter(r => (su.lv==="All"||r.a.level===su.lv) && (su.g==="All"||r.a.g===su.g));
     const stOk = r => su.st==="All" || (su.st==="watch" ? (r.s.k==="new"||r.s.k==="rec") : r.s.k===su.st);
@@ -1872,10 +1871,10 @@ const views = {
       .sort((x,y)=> (y.c.ff?1:0)-(x.c.ff?1:0) || ORDER[x.s.k]-ORDER[y.s.k] || x.a.level.localeCompare(y.a.level)*-1 || x.a.g.localeCompare(y.a.g) || (y.a.grade||0)-(x.a.grade||0) || x.a.name.localeCompare(y.a.name));
     const n = f => inLvG.filter(f).length;
     const ffN = n(r=>r.c.ff), gfN = n(r=>r.c.gf), watchN = n(r=>r.c.ff&&(r.s.k==="new"||r.s.k==="rec"));
-    const box = (r,f,label) => `<label class="su-box"><input type="checkbox" ${r.c[f]?"checked":""} onchange="suToggle('${r.a.id}','${f}')" aria-label="${label} for ${esc(r.a.name)}"><span>${label}</span></label>`;
+    const box = (r,f,label) => `<label class="su-box ${canPost?"":"ro"}"><input type="checkbox" ${r.c[f]?"checked":""} ${canPost?"":"disabled"} onchange="suToggle('${r.a.id}','${f}')" aria-label="${label} for ${esc(r.a.name)}"><span>${label}</span></label>`;
     const setSu = (k,v) => `su.${k}='${v}';render()`;
-    return `${back}<div class="stack"><div><div class="eyebrow">Coaches only · ${inLvG.length} athletes</div><h1>Sign-ups</h1>
-        <p class="lede">Check off who's in Final Forms and who's filled out the Google Form. Kids add Final Forms at different times, so an empty box is a reminder, not a problem.</p></div>
+    return `${back}<div class="stack"><div><div class="eyebrow">${inLvG.length} athletes</div><h1>Sign-ups</h1>
+        <p class="lede">Check off who's in Final Forms and who's filled out the Google Form. Kids add Final Forms at different times, so an empty box is a reminder, not a problem.${canPost?"":` <a href="#coaches">Coach login</a> to check boxes.`}</p></div>
       <div class="su-stats">
         <div class="panel su-stat"><b>${ffN}</b><span>in Final Forms</span></div>
         <div class="panel su-stat"><b>${gfN}</b><span>Google Form done</span></div>
