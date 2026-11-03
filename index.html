@@ -2669,17 +2669,7 @@ const views = {
     return `<a class="backlink" href="#athletes">← Athletes</a>
       <div class="stack"><div><div class="eyebrow">${a.level} · ${a.g==="B"?"Boys":"Girls"} · Grade ${a.grade??"—"}${a.cats.length?" · "+a.cats.map(esc).join(" · "):""}</div><h1>${esc(a.name)}</h1>
         <p class="lede">${a.isNew?"New this season. Events to be decided.":a.events[0]==="XC"?"Cross country runner, no track marks yet":`Events: ${a.events.map(e=>`<span class="chip">${esc(evn(e))}</span>`).join("")}`}</p>
-        <div class="anetrow">
-          ${anetUrl(a)?`<a class="anet" href="${esc(anetUrl(a))}" target="_blank" rel="noopener"><b>Athletic.net</b> Profile ↗</a>`:`<a class="anet" href="${esc(findUrl(a,"athletic.net"))}" target="_blank" rel="noopener"><b>Athletic.net</b> Find profile ↗</a>`}
-          ${msUrl(a)?`<a class="anet" href="${esc(msUrl(a))}" target="_blank" rel="noopener"><b>MileSplit</b> Profile ↗</a>`:`<a class="anet" href="${esc(findUrl(a,"milesplit.com"))}" target="_blank" rel="noopener"><b>MileSplit</b> Find profile ↗</a>`}
-          <a class="anet" href="${anetTeam(a.level)}" target="_blank" rel="noopener"><b>Team page</b> ↗</a>
-          ${canPost&&lk.id!==a.id?`<button type="button" class="btn sm" onclick="lk={id:'${a.id}',msg:{kind:'',text:''}};render()">${anetUrl(a)||msUrl(a)?"Edit links":"Add profile links"}</button>`:""}</div>
-        ${canPost&&lk.id===a.id?`<div class="panel ed lk-ed">
-          <p class="note" style="margin:0">Open their profile on each site, copy the address bar, and paste it here. Leave a box empty to go back to search.</p>
-          <label class="ed-row" for="lk-anet"><span>Athletic.net</span><input id="lk-anet" type="url" placeholder="https://www.athletic.net/athlete/…" value="${esc((LINKS[a.id]||{}).anet||"")}"></label>
-          <label class="ed-row" for="lk-ms"><span>MileSplit</span><input id="lk-ms" type="url" placeholder="https://in.milesplit.com/athletes/…" value="${esc((LINKS[a.id]||{}).ms||"")}"></label>
-          <div class="ed-save"><button type="button" class="btn primary" onclick="lkSave('${a.id}')">Save links</button><button type="button" class="btn" onclick="lk={id:null,msg:{kind:'',text:''}};render()">Cancel</button></div></div>`:""}
-        ${lk.msg.text?`<span class="ed-msg ${lk.msg.kind}" role="status">${esc(lk.msg.text)}</span>`:""}</div>
+        <div class="anetrow"><a class="anet" href="${anetTeam(a.level)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${a.level==="JH"?"Junior High":"High School"} team page ↗</a></div></div>
       <div class="panel"><h2>Best marks &amp; goals</h2>${a.level==="JH"&&evs.some(e=>{const m=markRank(a,e);return m&&m.hs;})?`<p class="hs-note"><span class="hs-tag">★ Top 3 overall</span> = top 3 of all ${a.g==="B"?"boys":"girls"} in the program, high school included.</p>`:""}<div class="prgrid">
         ${evs.map(e=>{ const m = markRank(a,e); return `<div class="pr ${m&&m.hs?"pr-hs":""}"><div class="ev">${esc(evn(e))}</div><div class="mk">${esc(a.prs[e]||"—")}</div>${a.pri&&a.pri[e]?`<div class="when2">${esc(a.pri[e])}</div>`:""}
           ${m?`<div class="rank"><span class="rk ${m.r===1?"r1":m.r<=3?"r3":""}">${ordinalTag(m,a)}</span>${m.hs?`<span class="hs-tag" title="Rank among all ${a.g==="B"?"boys":"girls"}, HS and JH">★ Top 3 overall · #${m.hs.r} of ${m.hs.n}</span>`:""}</div>`:""}
