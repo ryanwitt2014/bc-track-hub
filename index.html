@@ -1940,6 +1940,11 @@ function applySelfSignups(){
   const keyOf = (n,l,g) => (n||"").toLowerCase().replace(/\s*\([^)]*\)\s*/g," ").trim()+"|"+l+"|"+g;
   const signed = {};
   ATHLETES.forEach(a=>{ if(a.isNew && SIGN[a.id] && SIGN[a.id].ff) signed[keyOf(a.fullName||a.name,a.level,a.g)] = SIGN[a.id].ffd || "2026-11-03"; });
+  // New kids (not returners, not on the list yet) who signed up get added to the recruiting list automatically
+  ATHLETES.forEach(a=>{ const k = keyOf(a.fullName||a.name,a.level,a.g);
+    if(signed[k] && !REC.list.some(r=>keyOf(r.fullName||r.name,r.lvl,r.g)===k))
+      REC.list.push({id:"ff-"+a.id, name:a.fullName||a.name, lvl:a.level, g:a.g, grade:a.grade, sport:"Other", status:"open", auto:true}); });
+  REC.list = REC.list.filter(r=>!r.auto || r.status!=="open" || signed[keyOf(r.fullName||r.name,r.lvl,r.g)]);
   REC.contacts = REC.contacts.filter(c=>!c.self || REC.list.some(r=>r.id===c.rid && signed[keyOf(r.fullName||r.name,r.lvl,r.g)]));
   REC.list.forEach(r=>{ const d = signed[keyOf(r.fullName||r.name,r.lvl,r.g)];
     if(d && !REC.contacts.some(c=>c.rid===r.id && c.self)) REC.contacts.push({rid:r.id, by:SELF_BY, self:true, heat:4, d}); });
