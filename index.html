@@ -108,6 +108,12 @@ td a{font-weight:600}
 .ath strong{font-size:17px}
 .ath span{font-size:13px;color:var(--muted)}
 .lk-ed{display:grid;gap:10px;max-width:560px;margin-top:10px}
+.cf-yrs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.cf-yr{flex:1 1 90px;border:1px solid var(--line);border-radius:5px;padding:10px 12px;display:grid;gap:2px}
+.cf-yr span{font:600 12px var(--mono);color:var(--muted)}.cf-yr b{font:800 26px var(--display);line-height:1}.cf-yr small{font-size:12px;color:var(--muted)}
+.cf-yr.top{border-color:var(--gold);background:var(--gold-soft)}
+.cf-card .bar{margin-bottom:6px}
+tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .su-stat{padding:14px 16px;display:grid;gap:2px}.su-stat b{font:800 28px var(--display);line-height:1}.su-stat span{font-size:13px;color:var(--muted)}
 .su-stat.gold{border-color:var(--gold);background:var(--gold-soft)}
@@ -672,6 +678,21 @@ let WARMUPS = {
 };
 
 // School records. key = event code used for athlete marks ("" for relays), so the page can flag a current athlete who beats one.
+// Conference meet team scores. pl = official place; pl:null = listed on the results but not scored in the team standings.
+const CONF = {
+  JH: {meet:"WCJC Conference", rows:[
+    {yr:2026, G:[["West Lafayette",1,116.5],["Rensselaer Central",2,78],["Tecumseh",3,74],["Benton Central",4,71],["Roosevelt (Twin Lakes)",5,16.5],["Central Catholic",6,14],["Lafayette Christian",null,2]],
+              B:[["Tecumseh",1,108.5],["West Lafayette",2,70],["Roosevelt (Twin Lakes)",3,69],["Rensselaer Central",4,64],["Central Catholic",5,55],["Benton Central",6,3.5],["Lafayette Christian",null,15]]},
+    {yr:2025, G:[["Rensselaer Central",1,110],["West Lafayette",2,84],["Benton Central",3,62],["Roosevelt (Twin Lakes)",4,47],["Tecumseh",5,35],["Central Catholic",6,32]],
+              B:[["Tecumseh",1,104],["West Lafayette",2,82],["Roosevelt (Twin Lakes)",3,79],["Rensselaer Central",4,63],["Benton Central",5,36],["Central Catholic",6,6]]}]},
+  HS: {meet:"Hoosier Conference", rows:[
+    {yr:2026, note:"77th annual", G:[["Hamilton Heights",1,159],["West Lafayette",2,134],["Western",3,94.5],["Benton Central",4,76],["Logansport",5,70.5],["Rensselaer Central",6,50],["Twin Lakes",7,18],["Central Catholic",8,15],["Tipton",9,5]],
+              B:[["West Lafayette",1,146],["Hamilton Heights",2,102],["Western",3,84],["Twin Lakes",4,82],["Rensselaer Central",5,66],["Logansport",6,65],["Benton Central",7,31],["Central Catholic",8,24],["Tipton",9,21]]},
+    {yr:2025, G:[["West Lafayette",1,181],["Hamilton Heights",2,138],["Western",3,104.5],["Logansport",4,73],["Twin Lakes",5,43.5],["Benton Central",6,37],["Rensselaer Central",7,21],["Tipton",8,17],["Central Catholic",9,7]],
+              B:[["West Lafayette",1,192],["Rensselaer Central",2,91],["Hamilton Heights",3,86],["Logansport",4,67],["Western",5,64],["Tipton",6,48],["Twin Lakes",7,44],["Central Catholic",8,25],["Benton Central",9,6]]},
+    {yr:2024, G:[["West Lafayette",1,171],["Hamilton Heights",2,157],["Western",3,95],["Northwestern",4,70],["Rensselaer Central",5,43],["Benton Central",6,40],["Twin Lakes",7,23],["Tipton",8,16],["Central Catholic",9,6]],
+              B:[["West Lafayette",1,165],["Rensselaer Central",2,104],["Hamilton Heights",3,96],["Twin Lakes",4,69],["Tipton",5,61],["Northwestern",6,43.5],["Western",7,38.5],["Central Catholic",8,33],["Benton Central",9,13]]}]},
+};
 const RECORDS = {"JH-B": [{"key": "110H","ev": "110m Hurdles (33\")","mk": "19.87","who": "Aiden Zimmerman","yr": 2024},{"key": "100","ev": "100m","mk": "11.80","who": "Garrett Gray","yr": 2009},{"key": "200","ev": "200m","mk": "24.00","who": "Garrett Gray","yr": 2009},{"key": "400","ev": "400m","mk": "53.80","who": "Rhys Johnson","yr": 2009},{"key": "800","ev": "800m","mk": "2:15.20","who": "Mike Charlesworth","yr": 1983},{"key": "1600","ev": "1600m","mk": "5:04.98","who": "Joshua Hoff","yr": 2016},{"key": "HJ","ev": "High Jump","mk": "5' 11\"","who": "Fry / Fisher","yr": "1988 / 2011"},{"key": "LJ","ev": "Long Jump","mk": "18' 7.5\"","who": "Krebs","yr": 1978},{"key": "SP","ev": "Shot Put","mk": "45' 8\"","who": "Davis","yr": 1993},{"key": "DT","ev": "Discus","mk": "147' 10\"","who": "Zach Dimmich","yr": 1994},{"key": "","ev": "4x100m Relay","mk": "49.20","who": "Rooze, Sparenberg, Gray, Johnson","yr": 2009},{"key": "","ev": "4x400m Relay","mk": "3:51.40","who": "Benton Central","yr": 1995}],"JH-G": [{"key": "100H","ev": "100m Hurdles (30\")","mk": "14.50","who": "Kierstin Doyle","yr": 1990},{"key": "100","ev": "100m","mk": "12.90","who": "Ayren Cobb","yr": 2008},{"key": "200","ev": "200m","mk": "27.00","who": "Ayren Cobb","yr": 2008},{"key": "400","ev": "400m","mk": "58.40","who": "Kierstin Doyle","yr": 1990},{"key": "800","ev": "800m","mk": "2:22.96","who": "Lillian Weigle","yr": 2026},{"key": "1600","ev": "1600m","mk": "5:09.00","who": "Lillian Weigle","yr": 2026},{"key": "HJ","ev": "High Jump","mk": "5' 0\"","who": "Lauren Budreau","yr": 1999},{"key": "LJ","ev": "Long Jump","mk": "17' 5.5\"","who": "Kierstin Doyle","yr": 1990},{"key": "SP","ev": "Shot Put","mk": "30' 2\"","who": "McKenzie Oswald","yr": 2025},{"key": "DT","ev": "Discus","mk": "91' 2\"","who": "Sophia Zarate","yr": 2022},{"key": "","ev": "4x100m Relay","mk": "53.00","who": "Foster, DeHaven, Thurston, Doyle","yr": 1990},{"key": "","ev": "4x400m Relay","mk": "4:28.80","who": "Wallpe, Clouse, Sondegroth, Smith","yr": 1990}],"HS-G": [{"key": "100H","ev": "100m Hurdles","mk": "14.57","who": "Tressa Senesac","yr": 2022},{"key": "300H","ev": "300m Hurdles","mk": "42.61","who": "Kiersten Doyle","yr": 1993},{"key": "100","ev": "100m","mk": "12.3","who": "Melissa Budreau","yr": 1984},{"key": "200","ev": "200m","mk": "24.81","who": "Kiersten Doyle","yr": 1993},{"key": "400","ev": "400m","mk": "57.94","who": "Cheri McGrath","yr": 1976},{"key": "800","ev": "800m","mk": "2:13.71","who": "Christy Smith","yr": 1993},{"key": "1600","ev": "1600m","mk": "5:27.33","who": "Loralei Rayman","yr": 2026},{"key": "3200","ev": "3200m","mk": "11:16.60","who": "Cara Hasser","yr": 2016},{"key": "","ev": "4x100m Relay","mk": "50.84","who": "Hardebck, DeHaven, Goodwine, Doyle","yr": 1994},{"key": "","ev": "4x400m Relay","mk": "3:57.94","who": "Hardebck, Wallpe, Smith, Doyle","yr": 1994},{"key": "","ev": "4x800m Relay","mk": "9:53.59","who": "Green, Lemming, McIntosh, Miller","yr": 1999},{"key": "LJ","ev": "Long Jump","mk": "18' 11\"","who": "Kiersten Doyle","yr": 1993},{"key": "HJ","ev": "High Jump","mk": "5' 7\"","who": "Laura Metts","yr": 1995},{"key": "SP","ev": "Shot Put","mk": "41' 4\"","who": "Kym Brooks","yr": 1997},{"key": "PV","ev": "Pole Vault","mk": "9' 6\"","who": "Brooke Flynn","yr": 2010},{"key": "DT","ev": "Discus","mk": "139' 0\"","who": "Kym Brooks","yr": 1997}],"HS-B": [{"key": "110H","ev": "110m Hurdles","mk": "14.34","who": "Austin Budreau","yr": 2002},{"key": "300H","ev": "300m Hurdles","mk": "38.47","who": "Austin Budreau","yr": 2002},{"key": "100","ev": "100m","mk": "11.17","who": "Jamey Mitchell","yr": 2000},{"key": "200","ev": "200m","mk": "22.34","who": "Gary Puetz","yr": 1972},{"key": "400","ev": "400m","mk": "49.46","who": "Garrett Gray","yr": 2013},{"key": "800","ev": "800m","mk": "1:57.54","who": "Dave Kyle","yr": 1983},{"key": "1600","ev": "1600m","mk": "4:19.54","who": "Scott Gall","yr": 1992},{"key": "3200","ev": "3200m","mk": "9:28.68","who": "Logan Wealing","yr": 1999},{"key": "","ev": "4x100m Relay","mk": "44.03","who": "Dalton, A. Budreau, Nunnally, D. Budreau","yr": 2002},{"key": "","ev": "4x400m Relay","mk": "3:27.63","who": "Boardman, Brost, D. Budreau, A. Budreau","yr": 2002},{"key": "","ev": "4x800m Relay","mk": "8:25.60","who": "Owens, Sturgeon, Batts, Strasburger","yr": 2009},{"key": "LJ","ev": "Long Jump","mk": "21' 10\"","who": "Brad Foster","yr": 2006},{"key": "HJ","ev": "High Jump","mk": "6' 5\"","who": "Gary Krebs / Brad Davis","yr": "1982 / 1986"},{"key": "SP","ev": "Shot Put","mk": "58' 8.5\"","who": "Scott Daily","yr": 1972},{"key": "PV","ev": "Pole Vault","mk": "13' 6\"","who": "Matt Hale / Brad Koehler / Joe Fisher","yr": "1998 / 1999 / 2002"},{"key": "DT","ev": "Discus","mk": "168' 8\"","who": "Ben Anderson","yr": 1996}]};
 
 // Coaching staff (from the coaches packet)
@@ -1252,6 +1273,7 @@ const SECTIONS = [
   {id:"mindset", g:"train", name:"Mindset", blurb:"Breathing, meditation, visualization, and how we represent BC"},
   {id:"fuel", g:"train", name:"Nutrition", blurb:"What to eat and drink for practice and meets"},
   {id:"records", g:"results", name:"Records", blurb:"HS, JH and elementary school records"},
+  {id:"conference", g:"results", name:"Conference", blurb:"WCJC and Hoosier Conference team scores by year"},
   {id:"coverage", g:"results", name:"Coverage", blurb:"Two athletes in every event"},
   {id:"data", g:"results", name:"Data Log", blurb:"Workout logs, splits, PRs and goals per athlete"},
   {id:"gear", g:"more", name:"Gear", blurb:"Team store, shoe fitting, spikes, group runs"},
@@ -2275,6 +2297,23 @@ const views = {
         <p class="note">After practice, hit the <a href="#warmups" onclick="wtab='stretch';render();return false">Stretching</a> tab for your event's muscles.</p>`;
     }
     return head + body + `</div>`;
+  },
+  conference(){
+    const C = CONF[level], BC = "Benton Central";
+    const ord = n => n+({1:"st",2:"nd",3:"rd"}[n]||"th");
+    const fin = (y,g) => { const r = y[g].find(x=>x[0]===BC); const scored = y[g].filter(x=>x[1]).length; return r ? {pl:r[1], pts:r[2], of:scored} : null; };
+    const pts = p => String(p).replace(/\.5$/,"½");
+    const trend = g => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div><div class="cf-yrs">${C.rows.slice().reverse().map(y=>{ const f = fin(y,g);
+        return `<div class="cf-yr ${f&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f?ord(f.pl):"—"}</b><small>${f?pts(f.pts)+" pts · of "+f.of:""}</small></div>`; }).join("")}</div></div>`;
+    const table = (y,g) => { const rows = y[g].slice().sort((a,b)=>(a[1]??99)-(b[1]??99)); const bc = rows.find(r=>r[0]===BC); const above = bc && bc[1]>1 ? rows.find(r=>r[1]===bc[1]-1) : null;
+      return `<div class="panel cf-card"><div class="bar"><h3 style="margin:0">${GN[g]}</h3>${bc?`<span class="muted" style="margin:0">BC ${ord(bc[1])}${above?` · ${pts(above[2]-bc[2])} pts out of ${ord(above[1])}`:""}</span>`:""}</div>
+        <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th></tr></thead><tbody>
+        ${rows.map(r=>`<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td></tr>`).join("")}</tbody></table></div></div>`; };
+    const unscored = C.rows.some(y=>["G","B"].some(g=>y[g].some(r=>r[1]===null)));
+    return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
+      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${trend("G")}${trend("B")}</div></div>
+      ${C.rows.map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("")}
+      ${unscored?`<p class="note">— = listed on the results sheet but not scored in the team standings.</p>`:""}</div>`;
   },
   records(){
     const pool = ATHLETES.filter(a=>a.level===level && a.g===gsel);
