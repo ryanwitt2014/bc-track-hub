@@ -107,6 +107,21 @@ td a{font-weight:600}
 .ath:hover{border-color:var(--accent)}
 .ath strong{font-size:17px}
 .ath span{font-size:13px;color:var(--muted)}
+.su-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.su-stat{padding:14px 16px;display:grid;gap:2px}.su-stat b{font:800 28px var(--display);line-height:1}.su-stat span{font-size:13px;color:var(--muted)}
+.su-stat.gold{border-color:var(--gold);background:var(--gold-soft)}
+.su-list{border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.su-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.su-row:first-child{border-top:0}.su-row.su-out{opacity:.62}
+.su-who{min-width:0;display:grid}.su-who a{color:var(--fg);text-decoration:none}.su-who small{color:var(--muted);font-size:12px}
+.su-tag{font-size:12px;font-weight:700;border-radius:3px;padding:2px 8px;white-space:nowrap;background:var(--chip)}
+.su-tag.su-new{background:var(--gold);color:var(--gold-ink)}.su-tag.su-rec{background:var(--accent);color:var(--accent-ink)}
+.su-tag.su-xc{background:var(--gold-soft);border:1px solid var(--gold)}
+.su-boxes{display:flex;gap:12px}
+.su-box{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.su-box input{width:20px;height:20px;accent-color:var(--accent);margin:0;cursor:pointer}
+.new-chip{background:var(--gold);color:var(--gold-ink);justify-self:start}
+@media (max-width:620px){.su-row{grid-template-columns:minmax(0,1fr) auto}.su-boxes{grid-column:1/-1}}
 .filters{display:flex;flex-wrap:wrap;gap:6px}
 .filters button{font:600 14px var(--body);display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--fg);cursor:pointer}
 .filters button span{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--muted)}
@@ -532,7 +547,37 @@ const ATHLETES = [
   {"id": "hs-dietrich-payne", "name": "Dietrich Payne", "level": "HS", "g": "B", "grade": 12, "cats": ["Distance"], "events": ["XC"], "prs": {"XC 5K": "21:11.2"}, "goals": {}, "log": [], "meets": [], "pri": {"XC 5K": "Oct 10, 2026 · Hoosier Conference"}},
   {"id": "hs-case-bramer", "name": "Case Bramer", "level": "HS", "g": "B", "grade": 9, "cats": ["Distance", "Mid Distance", "Sprints"], "events": ["100", "800"], "prs": {"100": "15.86", "800": "3:02.93", "XC 5K": "21:25.9"}, "goals": {}, "log": [], "meets": [], "pri": {"100": "Apr 16, 2026 · Tecumseh Dual", "800": "Apr 16, 2026 · Tecumseh Dual", "XC 5K": "Oct 2, 2026 · Nike XC To…"}},
   {"id": "hs-bryce-floyd", "name": "Bryce Floyd", "level": "HS", "g": "B", "grade": 11, "cats": ["Distance"], "events": ["XC"], "prs": {"XC 5K": "22:28.0"}, "goals": {}, "log": [], "meets": [], "pri": {"XC 5K": "Oct 2, 2026 · Nike XC To…"}},
-  {"id": "hs-grant-slaughter", "name": "Grant Slaughter", "level": "HS", "g": "B", "grade": 9, "cats": ["Distance"], "events": ["XC"], "prs": {"XC 5K": "23:17.7"}, "goals": {}, "log": [], "meets": [], "pri": {"XC 5K": "Oct 10, 2026 · Hoosier Conference"}}
+  {"id": "hs-grant-slaughter", "name": "Grant Slaughter", "level": "HS", "g": "B", "grade": 9, "cats": ["Distance"], "events": ["XC"], "prs": {"XC 5K": "23:17.7"}, "goals": {}, "log": [], "meets": [], "pri": {"XC 5K": "Oct 10, 2026 · Hoosier Conference"}},
+  // New for spring 2027: signed up on Final Forms, not on last year's roster (Nov 3, 2026)
+  {"id": "hs-katie-caliz", "name": "Katie Caliz", "level": "HS", "g": "G", "grade": 11, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-scarlet-duttlinger", "name": "Scarlet Duttlinger", "level": "HS", "g": "G", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-celeste-fuentes", "name": "Celeste Fuentes", "level": "HS", "g": "G", "grade": 11, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-hailey-krug", "name": "Hailey Krug", "level": "HS", "g": "G", "grade": 12, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-carter-dalton", "name": "Carter Dalton", "level": "HS", "g": "B", "grade": 10, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-riley-gibson", "name": "Riley Gibson", "level": "HS", "g": "B", "grade": 11, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-jaylin-gonzalez", "name": "Jaylin Gonzalez", "level": "HS", "g": "B", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-ethan-graden", "name": "Ethan Graden", "level": "HS", "g": "B", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-malachi-hasser", "name": "Malachi Hasser", "level": "HS", "g": "B", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-bruce-trahan", "name": "Bruce Trahan", "level": "HS", "g": "B", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-kobe-wade", "name": "Kobe Wade", "level": "HS", "g": "B", "grade": 9, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-emmitt-wood", "name": "Emmitt Wood", "level": "HS", "g": "B", "grade": 12, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-aiden-budreau", "name": "Aiden Budreau", "level": "JH", "g": "B", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-winston-budreau", "name": "Winston Budreau", "level": "JH", "g": "B", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-crew-deno", "name": "Crew Deno", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-kage-gick", "name": "Kage Gick", "level": "JH", "g": "B", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-kamdyn-gick", "name": "Kamdyn Gick", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-preston-hoffman", "name": "Preston Hoffman", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-liam-hughes", "name": "Liam Hughes", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-hunter-mikeworth", "name": "Hunter Mikeworth", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-clayton-musser", "name": "Clayton Musser", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-aiden-neal", "name": "Aiden Neal", "level": "JH", "g": "B", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-wilson-stewart", "name": "Wilson Stewart", "level": "JH", "g": "B", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-violet-emerich", "name": "Violet Emerich", "level": "JH", "g": "G", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-lena-hall", "name": "Lena Hall", "level": "JH", "g": "G", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-sophia-nunnally", "name": "Sophia Nunnally", "level": "JH", "g": "G", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-fayth-plows", "name": "Fayth Plows", "level": "JH", "g": "G", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-savannah-snow", "name": "Savannah Snow", "level": "JH", "g": "G", "grade": 7, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-mia-zimmerman", "name": "Mia Zimmerman", "level": "JH", "g": "G", "grade": 8, "cats": [], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true}
 ];
 
 // Set to true to show athletes as "First L." to people who aren't signed in as a coach.
@@ -1196,6 +1241,7 @@ const SECTIONS = [
   {id:"schedule", g:"team", name:"Schedule", blurb:"Meets for JH and HS"},
   {id:"track101", g:"team", name:"Meet Day 101", blurb:"How a meet runs, event order, and reading the team table"},
   {id:"athletes", g:"team", name:"Athletes", blurb:"Everyone on the team. Tap a name for their page"},
+  {id:"signups", g:"team", name:"Sign-ups", blurb:"Final Forms and Google Form checklist", coach:true},
   {id:"team", g:"team", name:"Coaches & Program", blurb:"Coaching staff, program philosophy, expectations, practice flow"},
   {id:"workouts", g:"train", name:"Workouts", blurb:"Week-by-week plan with drill videos"},
   {id:"paces", g:"train", name:"Paces", blurb:"Training paces for distance and mid-distance runners"},
@@ -1398,6 +1444,9 @@ async function wuSave(){
 }
 
 /* ---- Recruiting ---- */
+// Sign-up checklist: who is in Final Forms (from the Nov 3, 2026 export) and who filled out the Google Form. Live copy is the "signups" key in Supabase.
+const SIGNUPS_SEED = {"hs-olive-budreau": {"ff": true}, "hs-zoe-butzke": {"ff": true}, "hs-katie-caliz": {"ff": true}, "hs-morgan-chapman": {"ff": true}, "hs-ashira-dean": {"ff": true}, "hs-briseis-dean": {"ff": true}, "hs-laurana-dillon": {"ff": true}, "hs-scarlet-duttlinger": {"ff": true}, "hs-cecelia-fisher": {"ff": true}, "hs-celeste-fuentes": {"ff": true}, "hs-delilah-fuller": {"ff": true}, "hs-kendall-gephart": {"ff": true}, "hs-river-gobel": {"ff": true}, "hs-olivia-hall": {"ff": true}, "hs-ava-hands": {"ff": true}, "hs-harlo-holder": {"ff": true}, "hs-cailey-jones": {"ff": true}, "hs-hailey-krug": {"ff": true}, "hs-sarah-lambeck": {"ff": true}, "hs-brianna-mendoza": {"ff": true}, "hs-maya-morales": {"ff": true}, "hs-emily-mullendore": {"ff": true}, "hs-kenzie-oswald": {"ff": true}, "hs-loralei-rayman": {"ff": true}, "hs-maggie-rayman": {"ff": true}, "hs-paige-renfrow": {"ff": true}, "hs-azlee-reynolds": {"ff": true}, "hs-riley-sowders": {"ff": true}, "hs-ella-stacy": {"ff": true}, "hs-laila-stewart": {"ff": true}, "hs-lillian-weigle": {"ff": true}, "hs-case-bramer": {"ff": true}, "hs-carson-brost": {"ff": true}, "hs-beau-budreau": {"ff": true}, "hs-carter-dalton": {"ff": true}, "hs-dominic-dean": {"ff": true}, "hs-landon-dennis": {"ff": true}, "hs-matthew-drake": {"ff": true}, "hs-gideon-fisher": {"ff": true}, "hs-sam-fleming": {"ff": true}, "hs-riley-gibson": {"ff": true}, "hs-alex-glotzbach": {"ff": true}, "hs-jaylin-gonzalez": {"ff": true}, "hs-ethan-graden": {"ff": true}, "hs-malachi-hasser": {"ff": true}, "hs-chris-ingram": {"ff": true}, "hs-gabe-ingram": {"ff": true}, "hs-bransen-jones": {"ff": true}, "hs-elijah-justice": {"ff": true}, "hs-matthew-mckinnis": {"ff": true}, "hs-jacob-pitstick": {"ff": true}, "hs-bruce-trahan": {"ff": true}, "hs-parker-vanallen": {"ff": true}, "hs-kayden-wade": {"ff": true}, "hs-kobe-wade": {"ff": true}, "hs-emmitt-wood": {"ff": true}, "jh-noah-akins": {"ff": true}, "jh-aiden-budreau": {"ff": true}, "jh-winston-budreau": {"ff": true}, "jh-crew-deno": {"ff": true}, "jh-gabe-devers": {"ff": true}, "jh-kage-gick": {"ff": true}, "jh-kamdyn-gick": {"ff": true}, "jh-preston-hoffman": {"ff": true}, "jh-liam-hughes": {"ff": true}, "jh-eli-jones": {"ff": true}, "jh-jorge-marcial": {"ff": true}, "jh-hunter-mikeworth": {"ff": true}, "jh-clayton-musser": {"ff": true}, "jh-aiden-neal": {"ff": true}, "jh-luke-rayman": {"ff": true}, "jh-wilson-stewart": {"ff": true}, "jh-wesley-weigle": {"ff": true}, "jh-wyatt-weigle": {"ff": true}, "jh-josie-adams": {"ff": true}, "jh-destiny-barrera": {"ff": true}, "jh-tynlee-becker": {"ff": true}, "jh-olivia-crowder": {"ff": true}, "jh-violet-emerich": {"ff": true}, "jh-zuria-felker": {"ff": true}, "jh-zyana-felker": {"ff": true}, "jh-lena-hall": {"ff": true}, "jh-jordan-hands": {"ff": true}, "jh-kaci-howard": {"ff": true}, "jh-corinn-hughes": {"ff": true}, "jh-harlow-lynch": {"ff": true}, "jh-sophia-nunnally": {"ff": true}, "jh-fayth-plows": {"ff": true}, "jh-savannah-snow": {"ff": true}, "jh-adella-walker": {"ff": true}, "jh-mia-zimmerman": {"ff": true}};
+let SIGN = JSON.parse(JSON.stringify(SIGNUPS_SEED));
 let REC = {list: RECRUITS_SEED.map(r=>({...r})), contacts: []};
 let rf = {lv:"All", g:"All", gr:"All", sort:"heat", q:""}, rc = null, rcMsg = {kind:"",text:""}, rcDel = null;
 const SCALE = {1:{l:"Cold",w:-2,k:"cold"},2:{l:"Cool",w:-1,k:"cool"},3:{l:"Maybe",w:1,k:"warming"},4:{l:"Warm",w:2,k:"warm"},5:{l:"Hot",w:3,k:"hot"}};
@@ -1761,7 +1810,75 @@ async function edDelete(start){
   await publishWeeks(WORKOUTS.filter(w=>w.start!==start), "Week deleted.");
   if(ed && ed.editing===start){ const msg=edMsg; edNew(); edMsg=msg; render(); }
 }
+/* ---- Sign-up checklist (Final Forms + Google Form) ---- */
+let su = {lv:"All", g:"All", st:"All", show:"All", q:"", msg:{kind:"",text:""}};
+let suQueue = Promise.resolve();
+const recFor = a => REC.list.find(r => (r.fullName||r.name).toLowerCase()===(a.fullName||a.name).toLowerCase() && r.lvl===a.level && r.g===a.g);
+function suStatus(a){
+  const rec = recFor(a);
+  if (a.isNew && rec) return {k:"rec", l:"Recruit"+(rec.sport&&rec.sport!=="Other"?" · "+rec.sport:"")};
+  if (a.isNew) return {k:"new", l:"New"};
+  if (Object.keys(a.prs).some(k=>!k.startsWith("XC"))) return {k:"ret", l:"Returner"};
+  return {k:"xc", l:"XC → first track"};
+}
+function suToggle(id, field){
+  if (!canPost) return;
+  const before = JSON.parse(JSON.stringify(SIGN));
+  const cur = SIGN[id] = Object.assign({}, SIGN[id]);
+  cur[field] = !cur[field];
+  if (!cur.ff && !cur.gf) delete SIGN[id];
+  su.msg = {kind:"",text:"Saving…"}; render();
+  const snapshot = JSON.parse(JSON.stringify(SIGN));
+  suQueue = suQueue.then(async()=>{
+    try { await saveKey("signups", snapshot); su.msg = {kind:"ok", text:"Saved."}; }
+    catch(e){ SIGN = before; su.msg = {kind:"err", text:saveErr(e)}; }
+    render();
+  });
+}
 const views = {
+  signups(){
+    if(!canPost) return `${back}<div class="stack"><div><div class="eyebrow">Coaches only</div><h1>Sign-ups</h1></div>
+      <div class="panel"><p style="margin:0">Sign in on the <a href="#coaches">Coach login</a> page to see the sign-up checklist.</p></div></div>`;
+    const rows = ATHLETES.map(a=>({a, s:suStatus(a), c:SIGN[a.id]||{}}));
+    const inLvG = rows.filter(r => (su.lv==="All"||r.a.level===su.lv) && (su.g==="All"||r.a.g===su.g));
+    const stOk = r => su.st==="All" || (su.st==="watch" ? (r.s.k==="new"||r.s.k==="rec") : r.s.k===su.st);
+    const showOk = r => su.show==="All" || (su.show==="noff" && !r.c.ff) || (su.show==="nogf" && !r.c.gf) || (su.show==="ffnogf" && r.c.ff && !r.c.gf);
+    const ORDER = {rec:0, new:1, xc:2, ret:3};
+    const list = inLvG.filter(r=>stOk(r)&&showOk(r)&&(!su.q||r.a.name.toLowerCase().includes(su.q.toLowerCase())))
+      .sort((x,y)=> (y.c.ff?1:0)-(x.c.ff?1:0) || ORDER[x.s.k]-ORDER[y.s.k] || x.a.level.localeCompare(y.a.level)*-1 || x.a.g.localeCompare(y.a.g) || (y.a.grade||0)-(x.a.grade||0) || x.a.name.localeCompare(y.a.name));
+    const n = f => inLvG.filter(f).length;
+    const ffN = n(r=>r.c.ff), gfN = n(r=>r.c.gf), watchN = n(r=>r.c.ff&&(r.s.k==="new"||r.s.k==="rec"));
+    const box = (r,f,label) => `<label class="su-box"><input type="checkbox" ${r.c[f]?"checked":""} onchange="suToggle('${r.a.id}','${f}')" aria-label="${label} for ${esc(r.a.name)}"><span>${label}</span></label>`;
+    const setSu = (k,v) => `su.${k}='${v}';render()`;
+    return `${back}<div class="stack"><div><div class="eyebrow">Coaches only · ${inLvG.length} athletes</div><h1>Sign-ups</h1>
+        <p class="lede">Check off who's in Final Forms and who's filled out the Google Form. Kids add Final Forms at different times, so an empty box is a reminder, not a problem.</p></div>
+      <div class="su-stats">
+        <div class="panel su-stat"><b>${ffN}</b><span>in Final Forms</span></div>
+        <div class="panel su-stat"><b>${gfN}</b><span>Google Form done</span></div>
+        <div class="panel su-stat gold"><b>${watchN}</b><span>new or recruits signed up</span></div>
+        <div class="panel su-stat"><b>${n(r=>!r.c.ff)}</b><span>on the roster, not in Final Forms yet</span></div>
+      </div>
+      <div class="bar" style="justify-content:flex-start">
+        ${segBtns(su.lv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>{su.lv=v;render()})")}
+        ${segBtns(su.g,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>{su.g=v;render()})")}
+        <input id="susearch" class="search" type="search" placeholder="Search name" value="${esc(su.q)}" oninput="su.q=this.value;render();const e=document.getElementById('susearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+      </div>
+      <div class="filters" role="group" aria-label="Who">
+        ${[["All","Everyone"],["watch","New + recruits"],["new","New"],["rec","Recruits"],["xc","XC → first track"],["ret","Returners"]].map(([k,l])=>`<button type="button" aria-pressed="${su.st===k}" onclick="${setSu('st',k)}">${l}</button>`).join("")}
+      </div>
+      <div class="filters" role="group" aria-label="Show">
+        ${[["All","All"],["noff","Not in Final Forms"],["nogf","No Google Form"],["ffnogf","In Final Forms, no Google Form"]].map(([k,l])=>`<button type="button" aria-pressed="${su.show===k}" onclick="${setSu('show',k)}">${l}</button>`).join("")}
+      </div>
+      <span class="ed-msg ${su.msg.kind}" role="status">${esc(su.msg.text)}</span>
+      ${list.length?`<div class="su-list">${list.map(r=>`<div class="su-row ${r.c.ff?"":"su-out"}">
+          <div class="su-who"><a href="#a-${r.a.id}"><b>${esc(r.a.name)}</b></a>
+            <small>${r.a.level} ${r.a.g==="B"?"Boys":"Girls"} · Gr ${r.a.grade??"—"}${r.a.cats.length?" · "+esc(r.a.cats.slice(0,2).join(", ")):""}</small></div>
+          <span class="su-tag su-${r.s.k}">${esc(r.s.l)}</span>
+          <div class="su-boxes">${box(r,"ff","Final Forms")}${box(r,"gf","Google Form")}</div>
+        </div>`).join("")}</div>`
+      :`<p class="note">Nobody matches these filters.</p>`}
+      <p class="note">Final Forms boxes were pre-checked from the Nov 3 export. <b>New</b> = not on last spring's roster or this fall's XC roster. <b>Recruit</b> = on the recruiting list. <b>XC → first track</b> = ran XC this fall, no track marks yet.</p></div>`;
+  },
   hub(){
     const upcoming = SCHEDULE.filter(m => parseD(m.date) >= today).sort((a,b)=>a.date.localeCompare(b.date));
     const nm = upcoming[0];
@@ -1835,8 +1952,8 @@ const views = {
         ${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${cat===c}" onclick="cat='${c}';render()">${c}<span>${c==="All"?base.length:count(c)}</span></button>`).join("")}
       </div>
       ${list.length?`<div class="roster">${list.map(a=>`<a class="ath" href="#a-${a.id}">
-        <div class="athtop"><strong>${esc(a.name)}</strong><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>
-        <span>Grade ${a.grade??"—"} · ${a.events[0]==="XC"?"Cross country":a.events.map(evn).join(", ")}</span>
+        <div class="athtop"><strong>${esc(a.name)}</strong><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>${a.isNew?`<span class="chip new-chip">New</span>`:""}
+        <span>Grade ${a.grade??"—"} · ${a.isNew?"New this season":a.events[0]==="XC"?"Cross country":a.events.map(evn).join(", ")}</span>
         ${(()=>{ const {best,bestHs} = bestRank(a); return best||bestHs ? `<div class="card-rank">${best?`<span class="rk ${best.r===1?"r1":best.r<=3?"r3":""}">#${best.r} ${esc(evn(best.k))}</span>`:""}${bestHs?`<span class="hs-tag">★ Top 3 overall · ${esc(evn(bestHs.k))}</span>`:""}</div>` : ""; })()}
         <div>${a.cats.map(c=>`<span class="chip ${c===cat?"on":""}">${esc(c)}</span>`).join("")}</div></a>`).join("")}</div>`
       :`<p class="note">No athletes match these filters.</p>`}
@@ -2441,8 +2558,8 @@ const views = {
     if(!a) return `${back}<h1>Athlete not found</h1><p><a href="#athletes">Back to Athletes</a></p>`;
     const evs = [...new Set([...Object.keys(a.prs), ...assignedEvents(a), ...Object.keys(a.goals||{}), ...a.events.filter(e=>e!=="XC" && !e.startsWith("4x"))])].sort((x,y)=>Object.keys(EV_NAME).indexOf(x)-Object.keys(EV_NAME).indexOf(y));
     return `<a class="backlink" href="#athletes">← Athletes</a>
-      <div class="stack"><div><div class="eyebrow">${a.level} · ${a.g==="B"?"Boys":"Girls"} · Grade ${a.grade??"—"} · ${a.cats.map(esc).join(" · ")}</div><h1>${esc(a.name)}</h1>
-        <p class="lede">${a.events[0]==="XC"?"Cross country runner, no track marks yet":`Events: ${a.events.map(e=>`<span class="chip">${esc(evn(e))}</span>`).join("")}`}</p>
+      <div class="stack"><div><div class="eyebrow">${a.level} · ${a.g==="B"?"Boys":"Girls"} · Grade ${a.grade??"—"}${a.cats.length?" · "+a.cats.map(esc).join(" · "):""}</div><h1>${esc(a.name)}</h1>
+        <p class="lede">${a.isNew?"New this season. Events to be decided.":a.events[0]==="XC"?"Cross country runner, no track marks yet":`Events: ${a.events.map(e=>`<span class="chip">${esc(evn(e))}</span>`).join("")}`}</p>
         <div class="anetrow"><a class="anet" href="${a.anet?anetAthlete(a.anet):anetTeam(a.level)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${a.anet?"Full results":"Team page"} ↗</a></div></div>
       <div class="panel"><h2>Best marks &amp; goals</h2>${a.level==="JH"&&evs.some(e=>{const m=markRank(a,e);return m&&m.hs;})?`<p class="hs-note"><span class="hs-tag">★ Top 3 overall</span> = top 3 of all ${a.g==="B"?"boys":"girls"} in the program, high school included.</p>`:""}<div class="prgrid">
         ${evs.map(e=>{ const m = markRank(a,e); return `<div class="pr ${m&&m.hs?"pr-hs":""}"><div class="ev">${esc(evn(e))}</div><div class="mk">${esc(a.prs[e]||"—")}</div>${a.pri&&a.pri[e]?`<div class="when2">${esc(a.pri[e])}</div>`:""}
@@ -2483,7 +2600,7 @@ function render(){
     `<a href="#coaches" ${key==="coaches"?'aria-current="page"':""}>${canPost?"Coaches":"Coach login"}</a>`].join("");
   document.getElementById("tabs").innerHTML = top;
   const sub = document.getElementById("subnav");
-  if (curG) { sub.hidden = false; sub.innerHTML = `<div class="wrap subnav-in">${SECTIONS.filter(x=>x.g===curG).map(x=>`<a href="#${x.id}" ${x.id===key?'aria-current="page"':""}>${x.name}</a>`).join("")}</div>`; }
+  if (curG) { sub.hidden = false; sub.innerHTML = `<div class="wrap subnav-in">${SECTIONS.filter(x=>x.g===curG && (!x.coach || canPost)).map(x=>`<a href="#${x.id}" ${x.id===key?'aria-current="page"':""}>${x.name}</a>`).join("")}</div>`; }
   else { sub.hidden = true; sub.innerHTML = ""; }
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
 }
@@ -2501,6 +2618,7 @@ async function loadAll(){
   if (Array.isArray(w)) WORKOUTS = w;
   if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
+  if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
   render();
 }
