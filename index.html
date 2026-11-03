@@ -2026,7 +2026,7 @@ const views = {
             ${cg.map(t=>`<div class="fire-team"><b>${t.lv} ${GN[t.g]}</b>${t.gaps.length?t.gaps.map(x=>`<span class="cov ${x.n?"thin":"gap"} gchip">${esc(evLabel(x.ev))} · ${x.n}</span>`).join(""):`<span class="muted">All covered</span>`}</div>`).join("")}
             <a class="fire-link" href="#coverage">Coverage →</a></div>
           <div class="panel fire"><div class="fire-h"><h3>Recruits to follow up with</h3><span class="fire-n">${hr.length}</span></div>
-            <p class="note" style="margin:0">Warmest leads, closest to joining.</p>
+            <p class="note" style="margin:0">Closest to joining.</p>
             ${hr.length?`<ol class="fire-list">${hr.map(({r,h,cs})=>`<li><span><b>${esc(r.name)}</b><small>${r.lvl} ${r.g==="B"?"Boys":"Girls"}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""} · ${cs[cs.length-1].self?"self signed up on Final Forms":"last: "+esc(cs[cs.length-1].by)}</small></span>${meter(h)}</li>`).join("")}</ol>`
               :`<p class="fire-empty">No warm leads yet. Once kids start reporting talks, the top 5 show up here.</p>`}
             <a class="fire-link" href="#recruiting">Recruiting →</a></div>
@@ -2461,7 +2461,7 @@ const views = {
         ${segBtns(rf.lv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>{rf.lv=v;render()})")}
         ${segBtns(rf.g,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>{rf.g=v;render()})")}
         ${segBtns(rf.gr,[["All","All grades"],["9","Fr"],["10","So"],["11","Jr"],["12","Sr"],["JH","JH"]],"(v=>{rf.gr=v;render()})")}
-        ${segBtns(rf.sort,[["heat","Hottest first"],["name","A–Z"]],"(v=>{rf.sort=v;render()})")}
+        ${segBtns(rf.sort,[["heat","Closest to joining"],["name","A–Z"]],"(v=>{rf.sort=v;render()})")}
         <input id="rsearch" class="search" type="search" placeholder="Search name" value="${esc(rf.q)}" oninput="rf.q=this.value;render();const e=document.getElementById('rsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
       </div>
       <div class="legend">${["none","cold","cool","warming","warm","hot","joined"].map(k=>meter({k,l:HEAT_NAMES[k],lvl:{none:0,cold:1,cool:2,warming:3,warm:4,hot:5,joined:5}[k]})).join("")}</div>
