@@ -3,3 +3,4 @@ window.HUB_CONFIG = {
   anonKey: "sb_publishable_hiYT9wotOtNiuE2U4SYl3Q_3iP_2pvg",
   publicInitials: false
 };
+
