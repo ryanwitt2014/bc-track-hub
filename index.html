@@ -112,6 +112,13 @@ td a{font-weight:600}
 .cf-yr{flex:1 1 90px;border:1px solid var(--line);border-radius:5px;padding:10px 12px;display:grid;gap:2px}
 .cf-yr span{font:600 12px var(--mono);color:var(--muted)}.cf-yr b{font:800 26px var(--display);line-height:1}.cf-yr small{font-size:12px;color:var(--muted)}
 .cf-yr.top{border-color:var(--gold);background:var(--gold-soft)}
+.cf-ch{text-align:right;white-space:nowrap}
+.cf-d,.cf-p{display:inline-block;font:700 12px var(--mono);border-radius:3px;padding:1px 5px;margin-left:4px;color:var(--muted)}
+.cf-d.up,.cf-p.up{color:#1f7a3d;background:#e3f3e8}.cf-d.dn,.cf-p.dn{color:#b3261e;background:#fbe7e5}
+.cf-d.new{color:var(--gold-ink);background:var(--gold-soft)}
+.cf-yd{margin-top:4px}.cf-yd .cf-d:first-child{margin-left:0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cf-d.up,:root:not([data-theme="light"]) .cf-p.up{color:#7fd69a;background:#163a22}:root:not([data-theme="light"]) .cf-d.dn,:root:not([data-theme="light"]) .cf-p.dn{color:#ff9b91;background:#3a1714}}
+:root[data-theme="dark"] .cf-d.up,:root[data-theme="dark"] .cf-p.up{color:#7fd69a;background:#163a22}:root[data-theme="dark"] .cf-d.dn,:root[data-theme="dark"] .cf-p.dn{color:#ff9b91;background:#3a1714}
 .cf-card .bar{margin-bottom:6px}
 tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -2303,16 +2310,23 @@ const views = {
     const ord = n => n+({1:"st",2:"nd",3:"rd"}[n]||"th");
     const fin = (y,g) => { const r = y[g].find(x=>x[0]===BC); const scored = y[g].filter(x=>x[1]).length; return r ? {pl:r[1], pts:r[2], of:scored} : null; };
     const pts = p => String(p).replace(/\.5$/,"½");
+    const prevOf = (y,g,team) => { const i = C.rows.findIndex(x=>x.yr===y.yr); const py = C.rows.slice(i+1).find(x=>x.yr===y.yr-1); if(!py) return undefined; return py[g].find(r=>r[0]===team) || null; };
+    const plD = (cur,prev) => { if(prev===undefined) return ""; if(prev===null) return `<span class="cf-d new">new</span>`; if(!cur[1]||!prev[1]) return `<span class="cf-d">·</span>`;
+      const d = prev[1]-cur[1]; return d>0?`<span class="cf-d up" title="Up ${d} from ${ord(prev[1])}">▲${d}</span>`:d<0?`<span class="cf-d dn" title="Down ${-d} from ${ord(prev[1])}">▼${-d}</span>`:`<span class="cf-d" title="Same place">–</span>`; };
+    const ptD = (cur,prev) => { if(!prev) return ""; const d = Math.round((cur[2]-prev[2])*2)/2; const s = pts(Math.abs(d));
+      return `<span class="cf-p ${d>0?"up":d<0?"dn":""}">${d>0?"+":d<0?"−":"±"}${s}</span>`; };
     const trend = g => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div><div class="cf-yrs">${C.rows.slice().reverse().map(y=>{ const f = fin(y,g);
-        return `<div class="cf-yr ${f&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f?ord(f.pl):"—"}</b><small>${f?pts(f.pts)+" pts · of "+f.of:""}</small></div>`; }).join("")}</div></div>`;
-    const table = (y,g) => { const rows = y[g].slice().sort((a,b)=>(a[1]??99)-(b[1]??99)); const bc = rows.find(r=>r[0]===BC); const above = bc && bc[1]>1 ? rows.find(r=>r[1]===bc[1]-1) : null;
+        const bcRow = y[g].find(x=>x[0]===BC), pv = bcRow ? prevOf(y,g,BC) : undefined;
+        return `<div class="cf-yr ${f&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f?ord(f.pl):"—"}</b><small>${f?pts(f.pts)+" pts · of "+f.of:""}</small>${pv?`<div class="cf-yd">${plD(bcRow,pv)}${ptD(bcRow,pv)}</div>`:""}</div>`; }).join("")}</div></div>`;
+    const table = (y,g) => { const hasPrev = prevOf(y,g,"__")!==undefined; const rows = y[g].slice().sort((a,b)=>(a[1]??99)-(b[1]??99)); const bc = rows.find(r=>r[0]===BC); const above = bc && bc[1]>1 ? rows.find(r=>r[1]===bc[1]-1) : null;
       return `<div class="panel cf-card"><div class="bar"><h3 style="margin:0">${GN[g]}</h3>${bc?`<span class="muted" style="margin:0">BC ${ord(bc[1])}${above?` · ${pts(above[2]-bc[2])} pts out of ${ord(above[1])}`:""}</span>`:""}</div>
-        <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th></tr></thead><tbody>
-        ${rows.map(r=>`<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td></tr>`).join("")}</tbody></table></div></div>`; };
+        <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th>${hasPrev?`<th class="cf-ch" title="Change from ${y.yr-1}">vs ${y.yr-1}</th>`:""}</tr></thead><tbody>
+        ${rows.map(r=>{ const pv = prevOf(y,g,r[0]); return `<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td>${hasPrev?`<td class="cf-ch">${plD(r,pv)}${ptD(r,pv)}</td>`:""}</tr>`; }).join("")}</tbody></table></div></div>`; };
     const unscored = C.rows.some(y=>["G","B"].some(g=>y[g].some(r=>r[1]===null)));
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
       <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${trend("G")}${trend("B")}</div></div>
       ${C.rows.map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("")}
+      <p class="note"><span class="cf-d up">▲</span> <span class="cf-d dn">▼</span> = places gained or lost from the year before. <span class="cf-p up">+pts</span> <span class="cf-p dn">−pts</span> = points scored compared to the year before, so a team can drop a place and still have improved. <span class="cf-d new">new</span> = not in that meet the year before.</p>
       ${unscored?`<p class="note">— = listed on the results sheet but not scored in the team standings.</p>`:""}</div>`;
   },
   records(){
