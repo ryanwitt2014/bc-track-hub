@@ -1338,8 +1338,10 @@ function edBuild(){
    Table hub_data(key, value, updated_at). Keys: workouts, warmups, logs, recruits, assignments.
    Everyone can read; only signed-in coaches on the coaches list can write (enforced by the database). */
 const SB = (window.supabase && window.HUB_CONFIG && window.HUB_CONFIG.url && !/YOUR_/.test(window.HUB_CONFIG.url))
-  ? window.supabase.createClient(window.HUB_CONFIG.url, window.HUB_CONFIG.anonKey, {auth:{flowType:"pkce", detectSessionInUrl:true, persistSession:true}})
+  ? window.supabase.createClient(window.HUB_CONFIG.url, window.HUB_CONFIG.anonKey, {auth:{flowType:"implicit", detectSessionInUrl:true, persistSession:true, autoRefreshToken:true}})
   : null;
+// Sign-in links come back with tokens (or an error) in the address. Grab it before the client tidies the URL.
+const AUTH_RETURN = /access_token=|error_description=/.test(location.hash) ? location.hash : "";
 const STAMP = {};   // key -> updated_at we last loaded, to catch two coaches saving at once
 let coachEmail = "";
 function saveErr(e){
@@ -1862,7 +1864,7 @@ const views = {
       <div class="panel ed" style="max-width:520px">
         ${!SB ? `<p style="margin:0">Sign-in isn't set up yet. Add the Supabase details to config.js.</p>`
         : coachEmail ? `<p style="margin:0">You're signed in as <b>${esc(coachEmail)}</b>, but that email isn't on the coaches list. Ask Coach Witt to add it.</p><div class="ed-save"><button type="button" class="btn" onclick="signOut()">Sign out</button></div>`
-        : login.sent ? `<p style="margin:0"><b>Check your email.</b> We sent a sign-in link to ${esc(login.email)}. Open it on this device and you'll come right back here, signed in.</p>`
+        : login.sent ? `<p style="margin:0"><b>Check your email.</b> We sent a sign-in link to ${esc(login.email)}. Tap the link in that email and you'll come back here signed in. It works on any device. Links expire after an hour and only work once.</p><p class="note" style="margin:6px 0 0">Nothing came? Check spam or junk, or <a href="#coaches" onclick="login.sent=false;render();return false">send another</a>.</p>`
         : `<p style="margin:0">Enter your coach email and we'll send you a sign-in link. No password needed.</p>
           <label class="ed-row" for="lg-email"><span>Email</span><input id="lg-email" type="email" autocomplete="email" placeholder="you@benton.k12.in.us" onkeydown="if(event.key==='Enter')sendLogin()"></label>
           <div class="ed-save"><button type="button" class="btn primary" onclick="sendLogin()">Email me a sign-in link</button><span class="ed-msg err" role="status">${esc(login.msg)}</span></div>`}
@@ -2503,13 +2505,17 @@ async function loadAll(){
 }
 loadAll();
 /* ---- Coach sign-in (email link) ---- */
-async function checkCoach(){
+let checking = false;
+async function checkCoach(session){
   if (!SB) return;
-  const {data:{session}} = await SB.auth.getSession();
+  if (session === undefined) { const r = await SB.auth.getSession(); session = r.data.session; }
   coachEmail = session && session.user ? (session.user.email||"").toLowerCase() : "";
   if (!coachEmail) { canPost = false; render(); return; }
-  const {data} = await SB.from("coaches").select("email").eq("email", coachEmail).maybeSingle();
-  canPost = !!data; render();
+  const {data, error} = await SB.from("coaches").select("email").eq("email", coachEmail).maybeSingle();
+  canPost = !!data && !error;
+  // Just came back from a sign-in link: go straight to the Coaches tab
+  if (AUTH_RETURN && !checking) { checking = true; if (!/^#(coaches|post)$/.test(location.hash)) location.hash = "#coaches"; }
+  render();
 }
 async function sendLogin(){
   const email = (document.getElementById("lg-email")||{}).value || "";
@@ -2520,7 +2526,14 @@ async function sendLogin(){
   login.sent = true; login.msg = ""; render();
 }
 async function signOut(){ await SB.auth.signOut(); canPost = false; coachEmail = ""; location.hash = "#hub"; render(); }
-if (SB) { SB.auth.onAuthStateChange(()=>checkCoach()); checkCoach(); }
+if (SB) {
+  // Don't call Supabase inside this callback directly (it can stall); hand off with setTimeout.
+  SB.auth.onAuthStateChange((event, session)=>{ setTimeout(()=>checkCoach(session), 0); });
+  if (/error_description=/.test(AUTH_RETURN)) {
+    login.msg = /expired|invalid/i.test(decodeURIComponent(AUTH_RETURN)) ? "That sign-in link expired or was already used. Send a new one." : "Sign-in didn't finish. Send a new link.";
+    history.replaceState(null, "", location.pathname + "#coaches"); render();
+  }
+}
 </script>
 </body>
 </html>
