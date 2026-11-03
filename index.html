@@ -1511,7 +1511,8 @@ function heat(r){
   const cs = REC.contacts.filter(c=>c.rid===r.id);
   if(!cs.length) return {k:"none", l:HEAT_NAMES.none, lvl:0, score:0, n:0};
   const score = cs.reduce((a,c)=>a+SCALE[cHeat(c)].w,0);
-  const k = score>=5?"hot":score>=3?"warm":score>=1?"warming":score<=-3?"cold":"cool";
+  const self = cs.some(c=>c.self);
+  const k = score>=5?"hot":(score>=3||self)?"warm":score>=1?"warming":score<=-3?"cold":"cool";
   const lvl = {hot:5,warm:4,warming:3,cool:2,cold:1}[k];
   return {k, l:HEAT_NAMES[k], lvl, score, n:cs.length};
 }
@@ -1893,12 +1894,14 @@ function suToggle(id, field){
   const before = JSON.parse(JSON.stringify(SIGN));
   const cur = SIGN[id] = Object.assign({}, SIGN[id]);
   cur[field] = !cur[field];
+  if (field==="ff") { if (cur.ff) cur.ffd = iso(today); else delete cur.ffd; }
   if (!cur.ff && !cur.gf) delete SIGN[id];
-  su.msg = {kind:"",text:"Saving…"}; render();
+  su.msg = {kind:"",text:"Saving…"}; applySelfSignups(); render();
   const snapshot = JSON.parse(JSON.stringify(SIGN));
   suQueue = suQueue.then(async()=>{
     try { await saveKey("signups", snapshot); su.msg = {kind:"ok", text:"Saved."}; }
     catch(e){ SIGN = before; su.msg = {kind:"err", text:saveErr(e)}; }
+    applySelfSignups();
     render();
   });
 }
@@ -1930,6 +1933,16 @@ function meetKit(C){
   const unscored = C.rows.some(y=>["G","B"].some(g=>(list(y,g)||[]).some(r=>r[1]===null)));
   const legend = `<p class="note"><span class="cf-d up">▲</span> <span class="cf-d dn">▼</span> = places gained or lost from the year before. <span class="cf-p up">+pts</span> <span class="cf-p dn">−pts</span> = points scored compared to the year before, so a team can drop a place and still have improved. <span class="cf-d new">new</span> = not in that meet the year before.</p>${unscored?`<p class="note">— = listed on the results sheet but not scored.</p>`:""}${C.foot?`<p class="note">${esc(C.foot)}</p>`:""}`;
   return {trend, yrs, years, legend};
+}
+/* Recruits who signed themselves up on Final Forms count as Warm, logged as a "self sign-up" contact (no recruiter credit). */
+const SELF_BY = "Self signed up on Final Forms";
+function applySelfSignups(){
+  const keyOf = (n,l,g) => (n||"").toLowerCase().replace(/\s*\([^)]*\)\s*/g," ").trim()+"|"+l+"|"+g;
+  const signed = {};
+  ATHLETES.forEach(a=>{ if(a.isNew && SIGN[a.id] && SIGN[a.id].ff) signed[keyOf(a.fullName||a.name,a.level,a.g)] = SIGN[a.id].ffd || "2026-11-03"; });
+  REC.contacts = REC.contacts.filter(c=>!c.self || REC.list.some(r=>r.id===c.rid && signed[keyOf(r.fullName||r.name,r.lvl,r.g)]));
+  REC.list.forEach(r=>{ const d = signed[keyOf(r.fullName||r.name,r.lvl,r.g)];
+    if(d && !REC.contacts.some(c=>c.rid===r.id && c.self)) REC.contacts.push({rid:r.id, by:SELF_BY, self:true, heat:4, d}); });
 }
 const views = {
   signups(){
@@ -2009,7 +2022,7 @@ const views = {
             <a class="fire-link" href="#coverage">Coverage →</a></div>
           <div class="panel fire"><div class="fire-h"><h3>Recruits to follow up with</h3><span class="fire-n">${hr.length}</span></div>
             <p class="note" style="margin:0">Warmest leads, closest to joining.</p>
-            ${hr.length?`<ol class="fire-list">${hr.map(({r,h,cs})=>`<li><span><b>${esc(r.name)}</b><small>${r.lvl} ${r.g==="B"?"Boys":"Girls"}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""} · last: ${esc(cs[cs.length-1].by)}</small></span>${meter(h)}</li>`).join("")}</ol>`
+            ${hr.length?`<ol class="fire-list">${hr.map(({r,h,cs})=>`<li><span><b>${esc(r.name)}</b><small>${r.lvl} ${r.g==="B"?"Boys":"Girls"}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""} · ${cs[cs.length-1].self?"self signed up on Final Forms":"last: "+esc(cs[cs.length-1].by)}</small></span>${meter(h)}</li>`).join("")}</ol>`
               :`<p class="fire-empty">No warm leads yet. Once kids start reporting talks, the top 5 show up here.</p>`}
             <a class="fire-link" href="#recruiting">Recruiting →</a></div>
           <div class="panel fire"><div class="fire-h"><h3>Record watch</h3><span class="fire-n">${rw.length}</span></div>
@@ -2424,9 +2437,9 @@ const views = {
     const all = REC.list.map(heat);
     const stat = (n,l) => `<div class="rstat"><b>${n}</b><span>${l}</span></div>`;
     const credit = {};
-    REC.contacts.forEach(c=>{ const x = credit[c.by] ||= {n:0,y:0}; x.n++; if(cHeat(c)>=4) x.y++; });
+    REC.contacts.filter(c=>!c.self).forEach(c=>{ const x = credit[c.by] ||= {n:0,y:0}; x.n++; if(cHeat(c)>=4) x.y++; });
     const joinedBy = {};
-    REC.list.filter(r=>r.status==="joined").forEach(r=>{ new Set(REC.contacts.filter(c=>c.rid===r.id).map(c=>c.by)).forEach(b=>{ joinedBy[b]=(joinedBy[b]||0)+1; }); });
+    REC.list.filter(r=>r.status==="joined").forEach(r=>{ new Set(REC.contacts.filter(c=>c.rid===r.id && !c.self).map(c=>c.by)).forEach(b=>{ joinedBy[b]=(joinedBy[b]||0)+1; }); });
     const top = Object.entries(credit).sort((a,b)=>(joinedBy[b[0]]||0)-(joinedBy[a[0]]||0) || b[1].y-a[1].y || b[1].n-a[1].n).slice(0,8);
     const form = r => `<button type="button" class="btn sm" onclick="talkOpen('${r.id}')">I talked to them</button>`;
     return `${back}<div class="stack"><div><div class="eyebrow">Bring a friend out for track</div><h1>Recruiting</h1>
@@ -2448,11 +2461,11 @@ const views = {
       </div>
       <div class="legend">${["none","cold","cool","warming","warm","hot","joined"].map(k=>meter({k,l:HEAT_NAMES[k],lvl:{none:0,cold:1,cool:2,warming:3,warm:4,hot:5,joined:5}[k]})).join("")}</div>
       <div class="tbl"><table class="rtable"><thead><tr><th>Name</th><th>Heat</th><th>Talked to</th><th>Last contact</th><th></th></tr></thead><tbody>
-        ${rows.map(({r,h,cs})=>{ const last = cs[cs.length-1]; const by = [...new Set(cs.map(c=>c.by))];
+        ${rows.map(({r,h,cs})=>{ const last = cs[cs.length-1]; const by = [...new Set(cs.filter(c=>!c.self).map(c=>c.by))];
           return `<tr class="${r.status==="closed"?"dim":""}"><td><b>${esc(r.name)}</b><div class="muted">${r.lvl} ${r.g==="B"?"Boys":"Girls"}${recGr(r)?" · "+recGr(r):""}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""}</div></td>
             <td>${meter(h)}</td>
             <td>${by.length?by.map(b=>`<span class="chip">${esc(b)}</span>`).join(""):`<span class="muted">Nobody yet</span>`}</td>
-            <td>${last?`${esc(last.by)} · ${scaleTag(last)}<div class="muted">${shortD(last.d)}</div>`:"—"}</td>
+            <td>${last?(last.self?`<span class="resp sc-warm">${esc(SELF_BY)}</span>`:`${esc(last.by)} · ${scaleTag(last)}`)+`<div class="muted">${shortD(last.d)}</div>`:"—"}</td>
             <td>${r.status==="open"?form(r):""}</td></tr>`; }).join("")}
       </tbody></table></div>
       <p class="note">Each talk counts toward their heat: Cold −2, Cool −1, Maybe +1, Warm +2, Hot +3. Warming up at 1, Warm at 3, Hot at 5, Cold at −3. Coaches mark kids as Joined. Your report shows up once a coach adds it.</p></div>`;
@@ -2730,8 +2743,10 @@ async function loadAll(){
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
+  applySelfSignups();
   render();
 }
+applySelfSignups(); render();
 loadAll();
 /* ---- Coach sign-in (email link) ---- */
 let checking = false;
