@@ -119,6 +119,7 @@ td a{font-weight:600}
 .cf-yd{margin-top:4px}.cf-yd .cf-d:first-child{margin-left:0}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cf-d.up,:root:not([data-theme="light"]) .cf-p.up{color:#7fd69a;background:#163a22}:root:not([data-theme="light"]) .cf-d.dn,:root:not([data-theme="light"]) .cf-p.dn{color:#ff9b91;background:#3a1714}}
 :root[data-theme="dark"] .cf-d.up,:root[data-theme="dark"] .cf-p.up{color:#7fd69a;background:#163a22}:root[data-theme="dark"] .cf-d.dn,:root[data-theme="dark"] .cf-p.dn{color:#ff9b91;background:#3a1714}
+.cf-sub{font:700 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:12px}
 .cf-card .bar{margin-bottom:6px}
 tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -700,6 +701,17 @@ const CONF = {
     {yr:2024, G:[["West Lafayette",1,171],["Hamilton Heights",2,157],["Western",3,95],["Northwestern",4,70],["Rensselaer Central",5,43],["Benton Central",6,40],["Twin Lakes",7,23],["Tipton",8,16],["Central Catholic",9,6]],
               B:[["West Lafayette",1,165],["Rensselaer Central",2,104],["Hamilton Heights",3,96],["Twin Lakes",4,69],["Tipton",5,61],["Northwestern",6,43.5],["Western",7,38.5],["Central Catholic",8,33],["Benton Central",9,13]]}]},
 };
+// IHSAA postseason team scores (HS). Same row format as CONF. Boys still to come.
+const POST = [
+  {id:"sec", short:"Sectional", meet:"IHSAA Sectional", foot:"Our sectional moved for 2025: through 2024 it was the Benton Central Sectional; since 2025 it's the Harrison Sectional (Sectional 14), so 2025 shows most teams as new.", rows:[
+    {yr:2026, note:"Harrison · Sectional 14", G:[["Harrison (West Lafayette)",1,208],["West Lafayette",2,117],["Benton Central",3,56.5],["North White",4,54],["Faith Christian",5,45.5],["Tri-County",6,41],["Rossville",7,40],["Twin Lakes",8,21],["Carroll (Flora)",9,17],["Frontier",10,15],["Delphi Community",11,7]]},
+    {yr:2025, note:"Harrison", G:[["Harrison (West Lafayette)",1,215],["West Lafayette",2,164],["Faith Christian",3,44],["North White",4,41],["Benton Central",5,38],["Tri-County",5,38],["Twin Lakes",7,25],["Frontier",8,22],["Rossville",9,17],["Carroll (Flora)",10,15],["Delphi Community",11,5]]},
+    {yr:2024, note:"Benton Central Sectional", G:[["North White",1,130],["Tri-County",2,89.5],["Carroll (Flora)",3,77],["Benton Central",4,70],["Twin Lakes",5,68],["Seeger",6,63],["Delphi Community",7,50],["North Vermillion",8,30.5],["Fountain Central",9,28],["Frontier",10,17],["Covington",11,null]]}]},
+  {id:"reg", short:"Regional", meet:"IHSAA Regional", rows:[
+    {yr:2026, note:"Lafayette Jeff", G:[["Carmel",1,116],["Hamilton Southeastern",2,78],["Westfield",3,56],["Harrison (West Lafayette)",4,54],["Noblesville",4,54],["Fishers",6,49],["Hamilton Heights",7,35],["Western",8,30],["Northwestern",9,28],["Guerin Catholic",10,24],["Kokomo",11,16],["West Lafayette",12,15],["Faith Christian",13,14],["Cass",14,11],["North White",14,11],["Crawfordsville",16,6],["Lafayette Jefferson",16,6],["Benton Central",18,5],["Lapel",19,3],["Clinton Central",19,3],["McCutcheon",20,3],["Logansport",22,2],["Frontier",22,2],["Central Catholic",23,2],["Tri-County",25,1]]},
+    {yr:2025, msgG:{short:"no team points", long:"Benton Central didn't score team points at the 2025 regional but had individual qualifiers. Full results to be added."}},
+    {yr:2024, G:[["Carmel",1,82],["Brownsburg",2,79],["Hamilton Southeastern",3,78],["Avon",4,68],["Noblesville",5,65],["Fishers",6,47],["West Lafayette",7,37],["Westfield",8,36],["Zionsville",9,25],["Monrovia",10,16],["Crawfordsville",11,14],["Hamilton Heights",11,14],["Harrison (West Lafayette)",13,13],["Seeger",14,8],["Plainfield",15,7],["Mooresville",16,6],["North White",16,6],["Guerin Catholic",18,5],["Danville Community",19,4],["Tri-West Hendricks",19,4],["Benton Central",21,3],["Twin Lakes",22,2],["Lebanon",22,2],["McCutcheon",22,2],["Delphi Community",25,null]]}]},
+];
 const RECORDS = {"JH-B": [{"key": "110H","ev": "110m Hurdles (33\")","mk": "19.87","who": "Aiden Zimmerman","yr": 2024},{"key": "100","ev": "100m","mk": "11.80","who": "Garrett Gray","yr": 2009},{"key": "200","ev": "200m","mk": "24.00","who": "Garrett Gray","yr": 2009},{"key": "400","ev": "400m","mk": "53.80","who": "Rhys Johnson","yr": 2009},{"key": "800","ev": "800m","mk": "2:15.20","who": "Mike Charlesworth","yr": 1983},{"key": "1600","ev": "1600m","mk": "5:04.98","who": "Joshua Hoff","yr": 2016},{"key": "HJ","ev": "High Jump","mk": "5' 11\"","who": "Fry / Fisher","yr": "1988 / 2011"},{"key": "LJ","ev": "Long Jump","mk": "18' 7.5\"","who": "Krebs","yr": 1978},{"key": "SP","ev": "Shot Put","mk": "45' 8\"","who": "Davis","yr": 1993},{"key": "DT","ev": "Discus","mk": "147' 10\"","who": "Zach Dimmich","yr": 1994},{"key": "","ev": "4x100m Relay","mk": "49.20","who": "Rooze, Sparenberg, Gray, Johnson","yr": 2009},{"key": "","ev": "4x400m Relay","mk": "3:51.40","who": "Benton Central","yr": 1995}],"JH-G": [{"key": "100H","ev": "100m Hurdles (30\")","mk": "14.50","who": "Kierstin Doyle","yr": 1990},{"key": "100","ev": "100m","mk": "12.90","who": "Ayren Cobb","yr": 2008},{"key": "200","ev": "200m","mk": "27.00","who": "Ayren Cobb","yr": 2008},{"key": "400","ev": "400m","mk": "58.40","who": "Kierstin Doyle","yr": 1990},{"key": "800","ev": "800m","mk": "2:22.96","who": "Lillian Weigle","yr": 2026},{"key": "1600","ev": "1600m","mk": "5:09.00","who": "Lillian Weigle","yr": 2026},{"key": "HJ","ev": "High Jump","mk": "5' 0\"","who": "Lauren Budreau","yr": 1999},{"key": "LJ","ev": "Long Jump","mk": "17' 5.5\"","who": "Kierstin Doyle","yr": 1990},{"key": "SP","ev": "Shot Put","mk": "30' 2\"","who": "McKenzie Oswald","yr": 2025},{"key": "DT","ev": "Discus","mk": "91' 2\"","who": "Sophia Zarate","yr": 2022},{"key": "","ev": "4x100m Relay","mk": "53.00","who": "Foster, DeHaven, Thurston, Doyle","yr": 1990},{"key": "","ev": "4x400m Relay","mk": "4:28.80","who": "Wallpe, Clouse, Sondegroth, Smith","yr": 1990}],"HS-G": [{"key": "100H","ev": "100m Hurdles","mk": "14.57","who": "Tressa Senesac","yr": 2022},{"key": "300H","ev": "300m Hurdles","mk": "42.61","who": "Kiersten Doyle","yr": 1993},{"key": "100","ev": "100m","mk": "12.3","who": "Melissa Budreau","yr": 1984},{"key": "200","ev": "200m","mk": "24.81","who": "Kiersten Doyle","yr": 1993},{"key": "400","ev": "400m","mk": "57.94","who": "Cheri McGrath","yr": 1976},{"key": "800","ev": "800m","mk": "2:13.71","who": "Christy Smith","yr": 1993},{"key": "1600","ev": "1600m","mk": "5:27.33","who": "Loralei Rayman","yr": 2026},{"key": "3200","ev": "3200m","mk": "11:16.60","who": "Cara Hasser","yr": 2016},{"key": "","ev": "4x100m Relay","mk": "50.84","who": "Hardebck, DeHaven, Goodwine, Doyle","yr": 1994},{"key": "","ev": "4x400m Relay","mk": "3:57.94","who": "Hardebck, Wallpe, Smith, Doyle","yr": 1994},{"key": "","ev": "4x800m Relay","mk": "9:53.59","who": "Green, Lemming, McIntosh, Miller","yr": 1999},{"key": "LJ","ev": "Long Jump","mk": "18' 11\"","who": "Kiersten Doyle","yr": 1993},{"key": "HJ","ev": "High Jump","mk": "5' 7\"","who": "Laura Metts","yr": 1995},{"key": "SP","ev": "Shot Put","mk": "41' 4\"","who": "Kym Brooks","yr": 1997},{"key": "PV","ev": "Pole Vault","mk": "9' 6\"","who": "Brooke Flynn","yr": 2010},{"key": "DT","ev": "Discus","mk": "139' 0\"","who": "Kym Brooks","yr": 1997}],"HS-B": [{"key": "110H","ev": "110m Hurdles","mk": "14.34","who": "Austin Budreau","yr": 2002},{"key": "300H","ev": "300m Hurdles","mk": "38.47","who": "Austin Budreau","yr": 2002},{"key": "100","ev": "100m","mk": "11.17","who": "Jamey Mitchell","yr": 2000},{"key": "200","ev": "200m","mk": "22.34","who": "Gary Puetz","yr": 1972},{"key": "400","ev": "400m","mk": "49.46","who": "Garrett Gray","yr": 2013},{"key": "800","ev": "800m","mk": "1:57.54","who": "Dave Kyle","yr": 1983},{"key": "1600","ev": "1600m","mk": "4:19.54","who": "Scott Gall","yr": 1992},{"key": "3200","ev": "3200m","mk": "9:28.68","who": "Logan Wealing","yr": 1999},{"key": "","ev": "4x100m Relay","mk": "44.03","who": "Dalton, A. Budreau, Nunnally, D. Budreau","yr": 2002},{"key": "","ev": "4x400m Relay","mk": "3:27.63","who": "Boardman, Brost, D. Budreau, A. Budreau","yr": 2002},{"key": "","ev": "4x800m Relay","mk": "8:25.60","who": "Owens, Sturgeon, Batts, Strasburger","yr": 2009},{"key": "LJ","ev": "Long Jump","mk": "21' 10\"","who": "Brad Foster","yr": 2006},{"key": "HJ","ev": "High Jump","mk": "6' 5\"","who": "Gary Krebs / Brad Davis","yr": "1982 / 1986"},{"key": "SP","ev": "Shot Put","mk": "58' 8.5\"","who": "Scott Daily","yr": 1972},{"key": "PV","ev": "Pole Vault","mk": "13' 6\"","who": "Matt Hale / Brad Koehler / Joe Fisher","yr": "1998 / 1999 / 2002"},{"key": "DT","ev": "Discus","mk": "168' 8\"","who": "Ben Anderson","yr": 1996}]};
 
 // Coaching staff (from the coaches packet)
@@ -1281,6 +1293,7 @@ const SECTIONS = [
   {id:"fuel", g:"train", name:"Nutrition", blurb:"What to eat and drink for practice and meets"},
   {id:"records", g:"results", name:"Records", blurb:"HS, JH and elementary school records"},
   {id:"conference", g:"results", name:"Conference", blurb:"WCJC and Hoosier Conference team scores by year"},
+  {id:"postseason", g:"results", name:"Postseason", blurb:"HS sectional and regional team scores by year"},
   {id:"coverage", g:"results", name:"Coverage", blurb:"Two athletes in every event"},
   {id:"data", g:"results", name:"Data Log", blurb:"Workout logs, splits, PRs and goals per athlete"},
   {id:"gear", g:"more", name:"Gear", blurb:"Team store, shoe fitting, spikes, group runs"},
@@ -1889,6 +1902,35 @@ function suToggle(id, field){
     render();
   });
 }
+/* ---- Team-score boards (Conference, Sectionals) ---- */
+let ptab = "sec";
+function meetKit(C){
+  const BC = "Benton Central";
+  const ord = n => n+((n%100>=11&&n%100<=13)?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));
+  const pts = p => p==null ? "—" : String(p).replace(/\.5$/,"½");
+  const list = (y,g) => Array.isArray(y[g]) && y[g].length ? y[g] : null;
+  const fin = (y,g) => { const L = list(y,g); if(!L) return null; const r = L.find(x=>x[0]===BC); return r ? {pl:r[1], pts:r[2], of:L.filter(x=>x[1]).length} : {out:true}; };
+  const prevOf = (y,g,team) => { const py = C.rows.find(x=>x.yr===y.yr-1); const L = py && list(py,g); if(!L) return undefined; return L.find(r=>r[0]===team) || null; };
+  const plD = (cur,prev) => { if(prev===undefined) return ""; if(prev===null) return `<span class="cf-d new">new</span>`; if(!cur[1]||!prev[1]) return `<span class="cf-d">·</span>`;
+    const d = prev[1]-cur[1]; return d>0?`<span class="cf-d up" title="Up ${d} from ${ord(prev[1])}">▲${d}</span>`:d<0?`<span class="cf-d dn" title="Down ${-d} from ${ord(prev[1])}">▼${-d}</span>`:`<span class="cf-d" title="Same place">–</span>`; };
+  const ptD = (cur,prev) => { if(!prev || cur[2]==null || prev[2]==null) return ""; const d = Math.round((cur[2]-prev[2])*2)/2;
+    return `<span class="cf-p ${d>0?"up":d<0?"dn":""}">${d>0?"+":d<0?"−":"±"}${pts(Math.abs(d))}</span>`; };
+  const yrs = g => `<div class="cf-yrs">${C.rows.slice().reverse().map(y=>{ const f = fin(y,g), msg = y["msg"+g];
+      const bcRow = list(y,g) && list(y,g).find(x=>x[0]===BC), pv = bcRow ? prevOf(y,g,BC) : undefined;
+      return `<div class="cf-yr ${f&&f.pl&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f&&f.pl?ord(f.pl):"—"}</b><small>${f&&f.pl?pts(f.pts)+" pts · of "+f.of:msg?esc(msg.short||""):f&&f.out?"no team points":"not added yet"}</small>${pv?`<div class="cf-yd">${plD(bcRow,pv)}${ptD(bcRow,pv)}</div>`:""}</div>`; }).join("")}</div>`;
+  const trend = g => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div>${yrs(g)}</div>`;
+  const table = (y,g) => { const L = list(y,g), msg = y["msg"+g];
+    if(!L) return `<div class="panel cf-card"><h3 style="margin:0 0 6px">${GN[g]}</h3><p class="note" style="margin:0">${msg?esc(msg.long):"Results not added yet."}</p></div>`;
+    const hasPrev = prevOf(y,g,"__")!==undefined; const rows = L.slice().sort((a,b)=>(a[1]??999)-(b[1]??999)); const bc = rows.find(r=>r[0]===BC);
+    const above = bc && bc[1]>1 ? rows.filter(r=>r[1] && r[1]<bc[1] && r[2]>bc[2]).pop() : null;
+    return `<div class="panel cf-card"><div class="bar"><h3 style="margin:0">${GN[g]}</h3>${bc?`<span class="muted" style="margin:0">BC ${bc[1]?ord(bc[1]):"—"}${above?` · ${pts(above[2]-bc[2])} pts out of ${ord(above[1])}`:""}</span>`:""}</div>
+      <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th>${hasPrev?`<th class="cf-ch" title="Change from ${y.yr-1}">vs ${y.yr-1}</th>`:""}</tr></thead><tbody>
+      ${rows.map(r=>{ const pv = prevOf(y,g,r[0]); return `<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td>${hasPrev?`<td class="cf-ch">${plD(r,pv)}${ptD(r,pv)}</td>`:""}</tr>`; }).join("")}</tbody></table></div></div>`; };
+  const years = () => C.rows.map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("");
+  const unscored = C.rows.some(y=>["G","B"].some(g=>(list(y,g)||[]).some(r=>r[1]===null)));
+  const legend = `<p class="note"><span class="cf-d up">▲</span> <span class="cf-d dn">▼</span> = places gained or lost from the year before. <span class="cf-p up">+pts</span> <span class="cf-p dn">−pts</span> = points scored compared to the year before, so a team can drop a place and still have improved. <span class="cf-d new">new</span> = not in that meet the year before.</p>${unscored?`<p class="note">— = listed on the results sheet but not scored.</p>`:""}${C.foot?`<p class="note">${esc(C.foot)}</p>`:""}`;
+  return {trend, yrs, years, legend};
+}
 const views = {
   signups(){
     const rows = ATHLETES.map(a=>({a, s:suStatus(a), c:SIGN[a.id]||{}}));
@@ -2306,28 +2348,19 @@ const views = {
     return head + body + `</div>`;
   },
   conference(){
-    const C = CONF[level], BC = "Benton Central";
-    const ord = n => n+({1:"st",2:"nd",3:"rd"}[n]||"th");
-    const fin = (y,g) => { const r = y[g].find(x=>x[0]===BC); const scored = y[g].filter(x=>x[1]).length; return r ? {pl:r[1], pts:r[2], of:scored} : null; };
-    const pts = p => String(p).replace(/\.5$/,"½");
-    const prevOf = (y,g,team) => { const i = C.rows.findIndex(x=>x.yr===y.yr); const py = C.rows.slice(i+1).find(x=>x.yr===y.yr-1); if(!py) return undefined; return py[g].find(r=>r[0]===team) || null; };
-    const plD = (cur,prev) => { if(prev===undefined) return ""; if(prev===null) return `<span class="cf-d new">new</span>`; if(!cur[1]||!prev[1]) return `<span class="cf-d">·</span>`;
-      const d = prev[1]-cur[1]; return d>0?`<span class="cf-d up" title="Up ${d} from ${ord(prev[1])}">▲${d}</span>`:d<0?`<span class="cf-d dn" title="Down ${-d} from ${ord(prev[1])}">▼${-d}</span>`:`<span class="cf-d" title="Same place">–</span>`; };
-    const ptD = (cur,prev) => { if(!prev) return ""; const d = Math.round((cur[2]-prev[2])*2)/2; const s = pts(Math.abs(d));
-      return `<span class="cf-p ${d>0?"up":d<0?"dn":""}">${d>0?"+":d<0?"−":"±"}${s}</span>`; };
-    const trend = g => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div><div class="cf-yrs">${C.rows.slice().reverse().map(y=>{ const f = fin(y,g);
-        const bcRow = y[g].find(x=>x[0]===BC), pv = bcRow ? prevOf(y,g,BC) : undefined;
-        return `<div class="cf-yr ${f&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f?ord(f.pl):"—"}</b><small>${f?pts(f.pts)+" pts · of "+f.of:""}</small>${pv?`<div class="cf-yd">${plD(bcRow,pv)}${ptD(bcRow,pv)}</div>`:""}</div>`; }).join("")}</div></div>`;
-    const table = (y,g) => { const hasPrev = prevOf(y,g,"__")!==undefined; const rows = y[g].slice().sort((a,b)=>(a[1]??99)-(b[1]??99)); const bc = rows.find(r=>r[0]===BC); const above = bc && bc[1]>1 ? rows.find(r=>r[1]===bc[1]-1) : null;
-      return `<div class="panel cf-card"><div class="bar"><h3 style="margin:0">${GN[g]}</h3>${bc?`<span class="muted" style="margin:0">BC ${ord(bc[1])}${above?` · ${pts(above[2]-bc[2])} pts out of ${ord(above[1])}`:""}</span>`:""}</div>
-        <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th>${hasPrev?`<th class="cf-ch" title="Change from ${y.yr-1}">vs ${y.yr-1}</th>`:""}</tr></thead><tbody>
-        ${rows.map(r=>{ const pv = prevOf(y,g,r[0]); return `<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td>${hasPrev?`<td class="cf-ch">${plD(r,pv)}${ptD(r,pv)}</td>`:""}</tr>`; }).join("")}</tbody></table></div></div>`; };
-    const unscored = C.rows.some(y=>["G","B"].some(g=>y[g].some(r=>r[1]===null)));
+    const C = CONF[level], K = meetKit(C);
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
-      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${trend("G")}${trend("B")}</div></div>
-      ${C.rows.map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("")}
-      <p class="note"><span class="cf-d up">▲</span> <span class="cf-d dn">▼</span> = places gained or lost from the year before. <span class="cf-p up">+pts</span> <span class="cf-p dn">−pts</span> = points scored compared to the year before, so a team can drop a place and still have improved. <span class="cf-d new">new</span> = not in that meet the year before.</p>
-      ${unscored?`<p class="note">— = listed on the results sheet but not scored in the team standings.</p>`:""}</div>`;
+      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G")}${K.trend("B")}</div></div>
+      ${K.years()}${K.legend}</div>`;
+  },
+  postseason(){
+    const kits = POST.map(C=>({C, K:meetKit(C)}));
+    const tab = kits.find(x=>x.C.id===ptab) || kits[0];
+    return `${back}<div class="stack"><div><div class="eyebrow">High school · IHSAA postseason</div><h1>Postseason</h1></div>
+      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2>
+        <div class="cols">${["G","B"].map(g=>`<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div>${kits.map(({C,K})=>`<div class="cf-sub">${esc(C.short)}</div>${K.yrs(g)}`).join("")}</div>`).join("")}</div></div>
+      <div class="seg" role="group" aria-label="Meet">${kits.map(({C})=>`<button type="button" aria-pressed="${tab.C.id===C.id}" onclick="ptab='${C.id}';render()">${esc(C.short)}</button>`).join("")}</div>
+      ${tab.K.years()}${tab.K.legend}</div>`;
   },
   records(){
     const pool = ATHLETES.filter(a=>a.level===level && a.g===gsel);
