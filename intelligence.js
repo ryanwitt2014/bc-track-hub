@@ -16,6 +16,8 @@ const css = `
 .ix-pill.new{background:var(--gold);color:var(--gold-ink)}.ix-pill.err{background:#b4472b;color:#fff}.ix-pill.ok{background:var(--accent);color:var(--accent-ink)}
 .ix-edit input{font:13px var(--body);padding:3px 6px;width:100%;min-width:60px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
 .dash-bc{background:var(--gold-soft)}div.dash-bc{border-radius:3px;padding:0 4px;margin:0 -4px}
+.steal{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--accent);margin-right:4px;cursor:pointer;white-space:nowrap}
+.steals{background:var(--gold-soft);border-radius:5px;padding:8px 10px;margin:0 0 10px}
 .lu-ev{display:inline-block;margin:0 10px 2px 0;white-space:nowrap}
 .brief{border-left:4px solid var(--gold)}
 .dash-x{font:700 11px var(--body);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:3px;padding:0 4px;margin-right:4px;cursor:pointer;line-height:1.4}
@@ -518,7 +520,26 @@ function entrants(ev, g, schoolIds, grad){
     if (goalKeys.has(bc.id+"|"+nk(a.fullName||a.name))) return;
     put(bc.id+"|"+nk(a.fullName||a.name), {v:m.value, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, src:"PR"});
   });
+  // 2027 BC relays: built from this year's kids' open times (best four), unless a coach set the time
+  if (grad && bc && schoolIds.includes(bc.id) && /^4x/.test(ev) && !relayFlag(bc.id, ev, g)) {
+    const est = relayFromLegs(ev, g); if (est) best.set("R|"+bc.id, {v:est.v, who:"Relay", school:bc.id, grade:null, bc:true, src:"legs", legs:est.legs});
+  }
+  // steals the coach counted (yes): our kid at the mark that passes that rival
+  if (bc) best.forEach((e) => { if (!e.bc) return; const st = (IX.d.steals||{})[ev+"|"+(e.who==="Relay"?"relay":nk(e.who))]; if (st && better(ev, st.v, e.v)) { e.v = st.v; e.stolen = true; } });
   return [...best.values()].sort((a,b)=> LOWER(ev) ? a.v-b.v : b.v-a.v);
+}
+// Relay estimate from open times: best four BC kids, plus a small rolling-start adjustment
+const RELAY_FROM = {"4x100":["100", -2.0], "4x200":["200", -2.0], "4x400":["400", -1.5], "4x800":["800", 0]};
+let RELAY_DEPTH = 0;
+function relayFromLegs(ev, g){
+  const rf = RELAY_FROM[ev]; if (!rf || RELAY_DEPTH) return null;
+  RELAY_DEPTH++;
+  try {
+    const seen = new Set(), legs = [];
+    bcCandidates(rf[0], g, null, true).sort((a,b)=>a.v-b.v).forEach(c => { const k = c.key || nk(c.who); if (!seen.has(k) && legs.length < 4) { seen.add(k); legs.push(c); } });
+    if (legs.length < 4) return null;
+    return {v: legs.reduce((a,c)=>a+c.v, 0) + rf[1], legs: legs.map(c=>c.who + (c.est?" (est.)":"") + (c.goal?" (goal)":""))};
+  } finally { RELAY_DEPTH--; }
 }
 function projectEvent(ev, g, schoolIds, sc, entries, grad){
   const relay = /^4x/.test(ev), pts = relay ? (sc.relay||sc.ind) : sc.ind, cap = relay ? 1 : entries;
@@ -574,7 +595,8 @@ function bcCandidates(ev, g, m, grad){
     ATHLETES.filter(a=>a.level==="HS" && a.g===g && (a.cats.includes("Distance")||a.cats.includes("Mid Distance")) && !list.some(x=>x.key===a.id || x.key===nk(a.name))).forEach(a => {
       if (USE_GOALS && a.goals && a.goals[ev]) return;
       const b = athleteVdot(a); const r = b && raceSec(a, b, ev); if (!r || !isFinite(r.s)) return;
-      list.push({v:r.s, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, key:a.id, src:"est.", est:true});
+      const st = (IX.d.steals||{})[ev+"|"+nk(a.name)];
+      list.push({v: st && st.v < r.s ? st.v : r.s, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, key:a.id, src:"est.", est:true, stolen: !!(st && st.v < r.s)});
     });
   }
   return list;
@@ -631,6 +653,16 @@ function optimize(m, g, grad, entries, perKid){
 function weeksTo(dateStr){ return Math.max(0, Math.round((new Date(dateStr+"T12:00") - today)/ (7*864e5))); }
 // Plain-English plan, built from the numbers
 let USE_GOALS_VIEW = false;
+function stealsHTML(){
+  const st = Object.entries(IX.d.steals||{}); if (!st.length) return "";
+  return `<div class="steals"><b>Counted (${st.length}):</b> ${st.map(([k,v])=>`<span class="ix-pill ok">${esc(v.label)} <button type="button" class="dash-x" aria-label="Uncount" onclick="IX.toggleSteal(${esc(JSON.stringify(k))}, 0, '', false)">✕</button></span>`).join(" ")}
+    <button type="button" class="btn sm" onclick="IX.d.steals={};render()">Clear all</button><p class="note" style="margin:4px 0 0">Scores, lineup, and the list below now assume these happen.</p></div>`;
+}
+function toggleSteal(key, v, label, on){
+  IX.d.steals = IX.d.steals || {};
+  if (on) IX.d.steals[key] = {v, label}; else delete IX.d.steals[key];
+  render();
+}
 function briefHTML(m, g, A, O, naiveBC){
   const bcId = A.bc && A.bc.id; if (!bcId) return "";
   const teams = Object.entries(A.team).map(([s,v])=>[+s, v]).sort((a,b)=>b[1]-a[1]);
@@ -665,12 +697,15 @@ function briefHTML(m, g, A, O, naiveBC){
   const head = rank===1
     ? `<b>Projected 1st</b> with ${mine%1?mine.toFixed(1):mine}, ${behind ? `${(mine-behind[1]).toFixed(1).replace(/\.0$/,"")} ahead of ${esc(sN(behind[0]))}` : ""}. The goal is holding the lead.`
     : `<b>Projected ${rank}${["st","nd","rd"][rank-1]||"th"}</b> with ${mine%1?mine.toFixed(1):mine}. <b>${need.toFixed(1).replace(/\.0$/,"").replace(/\.5$/,"½")} points</b> from beating ${esc(sN(leader[0]))}${ahead && ahead[0]!==leader[0] ? ` (${(ahead[1]-mine).toFixed(1).replace(/\.0$/,"")} from ${esc(sN(ahead[0]))})` : ""}.`;
-  const lev = l => `<li><b>${esc(evLabel(l.ev))}</b>: ${/^4x/.test(l.ev) ? `our relay moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(sN(l.y.school))}` : `${esc(l.x.who)} ${l.x.est?"(est.) ":""}moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(l.y.who)} (${esc(sN(l.y.school))})`} by finding <b>${esc(gapTxt(l.ev, l.gap))}</b>${l.pct>0?` (${l.pct.toFixed(1)}%)`:""}. <b>+${l.gain}</b>${l.swing>l.gain?`, a <b>${l.swing}-point swing</b> vs ${esc(sN(target))}`:""}. <span class="ix-pill ${l.f.k<=1?"ok":l.f.k===2?"new":"err"}">${l.f.tag}</span></li>`;
+  const stealKey = l => l.ev+"|"+(/^4x/.test(l.ev) ? "relay" : nk(l.x.who));
+  const target2 = l => FIELD.has(l.ev) ? l.y.v + 0.25 : l.y.v - 0.01;
+  const lev = l => `<li><label class="steal"><input type="checkbox" onchange="IX.toggleSteal(${esc(JSON.stringify(stealKey(l)))}, ${target2(l)}, ${esc(JSON.stringify((/^4x/.test(l.ev)?"Relay":l.x.who)+" · "+evLabel(l.ev)+" past "+(/^4x/.test(l.ev)?schoolName(l.y.school):l.y.who)))}, this.checked)"> Count it</label> <b>${esc(evLabel(l.ev))}</b>: ${/^4x/.test(l.ev) ? `our relay moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(sN(l.y.school))}` : `${esc(l.x.who)} ${l.x.est?"(est.) ":""}moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(l.y.who)} (${esc(sN(l.y.school))})`} by finding <b>${esc(gapTxt(l.ev, l.gap))}</b>${l.pct>0?` (${l.pct.toFixed(1)}%)`:""}. <b>+${l.gain}</b>${l.swing>l.gain?`, a <b>${l.swing}-point swing</b> vs ${esc(sN(target))}`:""}. <span class="ix-pill ${l.f.k<=1?"ok":l.f.k===2?"new":"err"}">${l.f.tag}</span></li>`;
   return `<div class="panel brief"><div class="bar"><h2>Ways to steal points</h2><button type="button" class="btn sm" onclick="IX.copyBrief()">Copy for Claude</button></div>
     <p style="margin:0 0 6px">${head}</p>
     <p class="note" style="margin:0 0 10px">${esc(when)}${USE_GOALS_VIEW ? " This view uses our kids' goal marks." : ""}</p>
     ${O && O.gain>0 ? `<p style="margin:0 0 10px">📋 <b>Lineup:</b> putting kids in their best events (below) is worth <b>+${O.gain%1?O.gain.toFixed(1):O.gain}</b> over everyone running everything they have a mark in.${O.notes.length?" "+O.notes.map(esc).join(" "):""}</p>` : ""}
-    ${plan.length ? `<p style="margin:0"><b>${rank>1 ? (sum>=need ? "A path to the win" : "Biggest moves") : "Where to add cushion"}</b>${rank>1 && sum>=need ? ` (together about +${sum%1?sum.toFixed(1):sum} vs ${esc(sN(target))}, enough to pass them)` : ""}:</p><ol class="dash-list">${plan.map(lev).join("")}</ol>` : `<p class="note" style="margin:0">No realistic single pass-ups found. Look at the lineup and open spots.</p>`}
+    ${stealsHTML()}
+    ${plan.length ? `<p style="margin:0"><b>${rank>1 ? (sum>=need ? "A path to the win" : "Biggest moves") : "Where to add cushion"}</b>${rank>1 && sum>=need ? ` (together about +${sum%1?sum.toFixed(1):sum} vs ${esc(sN(target))}, enough to pass them)` : ""}:</p><ol class="dash-list">${plan.map(lev).join("")}</ol>${plan.some(l=>l.f.k<=1) ? `<div class="ed-save" style="margin-top:6px"><button type="button" class="btn sm" onclick='${esc("IX.countMany("+JSON.stringify(plan.filter(l=>l.f.k<=1).map(l=>[stealKey(l), target2(l), (/^4x/.test(l.ev)?"Relay":l.x.who)+" · "+evLabel(l.ev)+" past "+(/^4x/.test(l.ev)?schoolName(l.y.school):l.y.who)]))+")")}'>Count all Realistic</button></div>` : ""}` : `<p class="note" style="margin:0">No realistic single pass-ups found. Look at the lineup and open spots.</p>`}
     ${open.length ? `<p style="margin:10px 0 0">🎯 <b>Coverage:</b> nobody from BC in ${open.map(o=>`${esc(evLabel(o.ev))} (${o.spots} open spot${o.spots===1?"":"s"})`).join(", ")}. Any kid who finishes there scores. Worth finding a body.</p>` : ""}
     ${topGroups.length ? `<p style="margin:10px 0 0">🏋️ <b>Training focus:</b> ${topGroups.map(([gname,v])=>`${esc(gname)} (+${v%1?v.toFixed(1):v})`).join(" · ")}.</p>` : ""}
     <p class="note" style="margin:10px 0 0">Realistic/Stretch is based on how much a kid typically gains on rivals in the weeks left, with everyone else improving too. It's a guide, not a guarantee. Opponents' new kids won't show until they race.</p></div>`;
@@ -713,12 +748,12 @@ function dashView(){
     const bcBest = e.field.find(x=>x.bc);
     return `<tr><td><b>${esc(evLabel(e.ev))}</b></td>
       <td class="wrap">${top.map(x=>`<div class="${x.bc?"dash-bc":""}"><span class="mono">${x.place}.</span> ${x.who==="Relay" && d.grad ? (IX.d.radj===e.ev+"|"+x.school ? `<span class="ix-edit"><input id="radj" style="width:80px" placeholder="new time" value="${esc((relayFlag(x.school,e.ev,d.g)||{}).adj_mark||"")}"></span><button type="button" class="btn sm primary" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', document.getElementById('radj').value.trim())">Save</button><button type="button" class="btn sm" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', '')">Drop relay</button><button type="button" class="btn sm" onclick="IX.d.radj=null;render()">Cancel</button> `
-      : `<button type="button" class="dash-x" title="Adjust this relay" aria-label="Adjust ${esc(sName(x.school))} relay" onclick="IX.d.radj='${e.ev}|${x.school}';render()">✎</button>`) : ""}${!x.bc && x.who!=="Relay" && d.grad ? `<button type="button" class="dash-x" title="Mark ${esc(x.who)} not returning" aria-label="Mark ${esc(x.who)} not returning" onclick="IX.markGone(${x.school}, ${esc(JSON.stringify(x.who))})">✕</button>` : ""}${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.adj?` <span class="ix-pill">adjusted</span>`:""}${x.goal?` <span class="ix-pill ok">goal</span>`:""}${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
+      : `<button type="button" class="dash-x" title="Adjust this relay" aria-label="Adjust ${esc(sName(x.school))} relay" onclick="IX.d.radj='${e.ev}|${x.school}';render()">✎</button>`) : ""}${!x.bc && x.who!=="Relay" && d.grad ? `<button type="button" class="dash-x" title="Mark ${esc(x.who)} not returning" aria-label="Mark ${esc(x.who)} not returning" onclick="IX.markGone(${x.school}, ${esc(JSON.stringify(x.who))})">✕</button>` : ""}${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.legs?` <span class="muted" title="Estimated from open times">(${x.legs.map(esc).join(", ")})</span>`:""}${x.stolen?` <span class="ix-pill ok">counted</span>`:""}${x.adj?` <span class="ix-pill">adjusted</span>`:""}${x.goal?` <span class="ix-pill ok">goal</span>`:""}${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
       <td class="wrap">${bcBest ? `<b>${bcBest.place}${["st","nd","rd"][bcBest.place-1]||"th"}</b> · ${esc(bcBest.who)} <span class="mono">${esc(fmtMark(e.ev, bcBest.v))}</span>` : `<span class="muted">No BC mark</span>`}</td>
       <td class="mono">${e.field.filter(x=>x.bc).reduce((a,x)=>a+x.pts,0)||""}</td></tr>`; };
   return `<div class="panel ed ix"><div class="ix-grid">
-      <label class="ed-row" for="dm"><span>Meet</span><select id="dm" onchange="IX.d.meet=this.value;IX.d.entries='';render()">${ms.map(x=>`<option value="${esc(x.key)}" ${x.key===m.key?"selected":""}>${esc(new Date(x.date+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))} · ${esc(x.name)}</option>`).join("")}</select></label>
-      <div class="ed-row"><span>Gender</span>${m.gOnly ? `<b>${m.gOnly==="G"?"Girls":"Boys"}</b>` : segBtns(d.g,[["G","Girls"],["B","Boys"]],"(v=>{IX.d.g=v;render()})")}</div>
+      <label class="ed-row" for="dm"><span>Meet</span><select id="dm" onchange="IX.d.meet=this.value;IX.d.entries='';IX.d.steals={};render()">${ms.map(x=>`<option value="${esc(x.key)}" ${x.key===m.key?"selected":""}>${esc(new Date(x.date+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))} · ${esc(x.name)}</option>`).join("")}</select></label>
+      <div class="ed-row"><span>Gender</span>${m.gOnly ? `<b>${m.gOnly==="G"?"Girls":"Boys"}</b>` : segBtns(d.g,[["G","Girls"],["B","Boys"]],"(v=>{IX.d.g=v;IX.d.steals={};render()})")}</div>
       <label class="ed-row" for="dk"><span>Individual events per kid</span><input id="dk" type="text" inputmode="numeric" value="${perKid}" oninput="IX.d.perKid=this.value" onchange="render()"></label>
       <label class="ed-row" for="de"><span>Entries per school</span><input id="de" type="text" inputmode="numeric" value="${entries}" oninput="IX.d.entries=this.value" onchange="render()"></label>
       <label class="ed-check" for="dug"><input id="dug" type="checkbox" ${d.useGoals?"checked":""} ${nGoals?"":"disabled"} onchange="IX.d.useGoals=this.checked;render()"> Use goals: BC kids at their goal marks ${nGoals?`(${nGoals} ${d.g==="G"?"girls":"boys"} have goals)`:"(no goals set yet: add them on Data Log)"}</label>
@@ -768,7 +803,8 @@ async function copyBrief(){
   catch(e) { IX.msg = {kind:"err", text:"Couldn't copy automatically. Your browser blocked it."}; }
   render();
 }
-Object.assign(IX, {copyBrief, markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
+function countMany(list){ IX.d.steals = IX.d.steals || {}; list.forEach(([k,v,label])=>IX.d.steals[k]={v,label}); render(); }
+Object.assign(IX, {toggleSteal, countMany, copyBrief, markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
   saveMeet:ixSaveMeet, delMeet:ixDelMeet, saveSchool:ixSaveSchool, doMerge:ixMerge, readFile, template:downloadTemplate,
   _test:{parsePasted, looksLikeCSV, normEvent, normGender, parseMark, parseCSV, mapHeader, inferScoring, fmtMark}});
 if (typeof render === "function") render();
