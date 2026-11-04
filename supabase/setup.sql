@@ -28,7 +28,7 @@ drop policy if exists "Coaches can add"            on public.hub_data;
 drop policy if exists "Coaches can update"         on public.hub_data;
 drop policy if exists "Coach can see own row"      on public.coaches;
 
-create policy "Anyone can read the hub" on public.hub_data for select using (true);
+create policy "Anyone can read the hub" on public.hub_data for select using (key <> 'midnotes' or public.is_coach());  -- Mid-Distance coach notes: coaches only
 create policy "Coaches can add"         on public.hub_data for insert to authenticated with check (public.is_coach());
 create policy "Coaches can update"      on public.hub_data for update to authenticated using (public.is_coach()) with check (public.is_coach());
 create policy "Coach can see own row"   on public.coaches  for select to authenticated using (email = lower(coalesce(auth.jwt() ->> 'email', '')));
