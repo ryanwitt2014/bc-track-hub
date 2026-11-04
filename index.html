@@ -242,6 +242,8 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .mweek.now{outline:2px solid var(--gold)}
 .mypace{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 6px;font-family:var(--mono);font-size:13px;color:var(--accent)}
 .mypace b{font-family:var(--body);font-weight:700;color:var(--fg)}
+.mylast{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+td.ok{color:var(--accent);font-weight:700}td.warn{color:#b4472b;font-weight:700}
 .mylist{margin:0;padding-left:18px}.mylist li{margin:2px 0}
 .mepick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600}
 .mepick select{font:15px var(--body);padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--fg);max-width:100%}
@@ -460,6 +462,7 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-table .sh-notes{min-width:90px}
 .sh-table .sh-pace{text-align:left;font-size:10px;line-height:1.25;white-space:normal;min-width:120px}.sh-table td.sh-pace b{font-weight:700}
 .sh-table .sh-wide{min-width:110px}
+.sh-table .sh-last{text-align:left;font-size:9px;line-height:1.2;white-space:normal;max-width:150px;color:#333}
 .cover .cv-days{columns:3 260px;column-gap:18px;margin-top:10px;font-size:11px;color:#111}
 .cv-day{break-inside:avoid;margin:0 0 10px;border-top:2px solid #111;padding-top:4px}.cv-day h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .cv-blk{margin:0 0 5px}.cv-blk ul{margin:1px 0 0;padding-left:14px}.cv-blk li{margin:0}.cv-f{color:#666;font-style:italic}
@@ -548,7 +551,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04l";
+const HUB_VERSION = "11-04m";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1897,7 +1900,27 @@ const vdotOf = (m, sec) => { const t = sec/60, v = m/t; const vo2 = -4.60 + 0.18
 const vAt = V => (-0.182258 + Math.sqrt(0.182258**2 - 4*0.000104*(-4.60 - V))) / (2*0.000104);  // m/min
 const paceFor = (V, frac, dist) => dist / vAt(V*frac) * 60;  // seconds
 const mmss = s => { s = Math.round(s); const m = Math.floor(s/60), r = s - m*60; return m ? `${m}:${String(r).padStart(2,"0")}` : `${r}`; };
+// Coach-set VDOT (hub_data key "vdot"): {id: {V, why, d}}. Wins over race-based VDOT until cleared.
+let VOVR = {}, voMsg = {};
+const MEET_M = {"800":800, "1600":1600, "1609":1609.34, "Mile":1609.34, "3200":3200, "XC 3K":3000, "XC 5K":5000, "3000":3000, "5000":5000};
+const meetEv = ev => { const s = String(ev||"").replace(/\s+/g," ").trim(); const n = s.replace(/m$/i,"").replace(/^XC\s*/i, m => "XC ").toUpperCase();
+  if (/^XC 5K|^5K|^5000/.test(n)) return "XC 5K"; if (/^XC 3K|^3K|^3000/.test(n)) return "XC 3K"; if (/^MILE/.test(n)) return "Mile";
+  return ["800","1600","3200"].find(x => n===x) || null; };
+function raceVdot(a){
+  let best = null;
+  const tryMark = (k, mk, src) => { const m = MEET_M[k]; if (!m || !mk) return; const sec = tSec(String(mk).replace(/[hc]$/,"")); if (!isFinite(sec)) return;
+    const V = vdotOf(m, sec); if (!best || V > best.V) best = {V, k, mk, m, src}; };
+  PACE_SRC.forEach(([k])=>tryMark(k, a.prs[k], "PR"));
+  (a.meets||[]).forEach(x => tryMark(meetEv(x.ev), x.mk, x.m || "meet"));
+  if (!best) tryMark("800", a.prs["800"], "PR");
+  return best;
+}
 function athleteVdot(a){
+  const o = VOVR[a.id];
+  if (o && isFinite(+o.V)) return {V:+o.V, k:"Coach set", mk:o.why ? "· "+o.why : "", src:"coach", race: raceVdot(a)};
+  return raceVdot(a);
+}
+function athleteVdotOld(a){
   let best = null;
   const tryKey = (k, m) => { const mk = a.prs[k]; if(!mk) return; const sec = tSec(String(mk).replace(/[hc]$/,"")); if(!isFinite(sec)) return;
     const V = vdotOf(m, sec); if(!best || V > best.V) best = {V, k, mk, m}; };
@@ -2063,6 +2086,22 @@ function myItems(a, d){
   mine.forEach(c=>items.push(...d.groups[c]));
   return forLv(items, a.level).filter(it=>tagsFit(splitTags(it.t).tags, a));
 }
+let curDay = "Mon";
+function checkHTML(a){
+  const b = athleteVdot(a); if (!b) return "";
+  const c = workoutCheck(a), o = VOVR[a.id], msg = voMsg[a.id];
+  if (!c.s.length && !o) return "";
+  const row = x => `<tr><td>${esc(x.l.d)}</td><td>${esc(x.l.w||x.k)}</td><td class="mono">${tFmt(x.target*x.dist/400)} /${x.dist}</td><td class="mono">${tFmt(x.actual*x.dist/400)} /${x.dist}</td>
+    <td class="mono ${x.pct>=2?"ok":x.pct<=-3?"warn":""}">${x.pct>=0?"▲ "+x.pct.toFixed(1)+"% fast":"▼ "+(-x.pct).toFixed(1)+"% slow"}</td></tr>`;
+  return `<div class="panel"><div class="bar"><h2>Workout check</h2><span class="muted">Average rep vs target pace, last ${c.s.length} quality session${c.s.length===1?"":"s"}</span></div>
+    ${c.s.length ? `<div class="tbl"><table><thead><tr><th>Date</th><th>Workout</th><th>Target</th><th>Actual avg</th><th></th></tr></thead><tbody>${c.s.map(row).join("")}</tbody></table></div>` : ""}
+    ${c.sugg ? `<p style="margin:10px 0 0"><b>Paces look easy.</b> ${c.fast.length} recent sessions were 2%+ faster than target. Workouts suggest VDOT about <b>${c.sugg.toFixed(1)}</b> (now ${b.V.toFixed(1)}).</p>` : ""}
+    ${c.slow.length>=2 ? `<p style="margin:10px 0 0"><b>Running slower than target.</b> Check for fatigue, illness, or heat before changing paces.</p>` : ""}
+    ${o ? `<p class="note" style="margin:10px 0 0">Paces are coach-set at VDOT ${(+o.V).toFixed(1)}${o.why?" ("+esc(o.why)+")":""} since ${esc(o.d||"")}. Race-based VDOT is ${b.race?b.race.V.toFixed(1):"—"}. A faster race result shows up here but won't change paces until you clear this.</p>` : ""}
+    ${canPost ? `<div class="ed-save">${c.sugg?`<button type="button" class="btn primary" onclick="voSet('${a.id}', ${c.sugg.toFixed(1)}, 'from workouts')">Use VDOT ${c.sugg.toFixed(1)}</button>`:""}
+      ${o?`<button type="button" class="btn" onclick="voSet('${a.id}', null)">Go back to race-based paces</button>`:""}</div>` : ""}
+    ${msg ? `<p class="ed-msg ${msg.kind}" role="status" style="margin:0">${esc(msg.text)}</p>` : ""}</div>`;
+}
 function myWeekHTML(a){
   if(!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
   const vw = visibleWeeks(); if(!vw.length) return "";
@@ -2073,12 +2112,13 @@ function myWeekHTML(a){
   const line = it => {
     const {text} = splitTags(it.t);
     const ps = /^Warm-up/i.test(text) ? [] : linePaces(a, text);
-    return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}</li>`;
+    const lt = lastTime(a, text, dayDate(w, curDay));
+    return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}${lt?`<div class="mylast">Last time · ${esc(lastShort(lt))}</div>`:""}</li>`;
   };
   return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
-    ${days.length ? `<div class="days">${days.map(({d,items})=>`<div class="day"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a)) || focusFor(d,a.level))}</small></div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`).join("")}</div>`
+    ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a)) || focusFor(d,a.level))}</small></div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">No workouts posted for this week yet.</p>`}
     <p class="note" style="margin:8px 0 0">Paces come from your best race, same as the <a href="#paces">Paces</a> page. Effort matters more than hitting the exact number.</p></div>`;
 }   // "Find my pace" picker open on the Workouts page
@@ -2205,6 +2245,55 @@ function sheetFit(tags, a){
   try { return tagsFit(tags, a); } finally { if (saved) DTAGS[a.id] = saved; else delete DTAGS[a.id]; }
 }
 function kidReps(a, d, cat, lv){ return sheetRaw(d, cat, lv).filter(it => timedLine(it) && sheetFit(splitTags(it.t).tags, a)).flatMap(it => lineReps(splitTags(it.t).text)); }
+// A workout's "shape" so repeated workouts can be matched: main pace word + rep sizes. "3 × 5 min Tempo" ~ "4 × 5 min Tempo".
+function wSig(text){
+  const k = paceKinds(text).filter(x => x!=="Easy"), reps = [...new Set(lineReps(text))].sort();
+  if (!reps.length) return "";
+  return (k[0] || (/flying/i.test(text) ? "fly" : "reps")) + "|" + reps.join(",");
+}
+function logSig(l){
+  const s = wSig(l.w || ""); if (s) return s;
+  if (!l.reps || !l.reps.length) return "";
+  const k = paceKinds(l.w || "").filter(x => x!=="Easy");
+  return (k[0] || "reps") + "|" + [...new Set(l.reps.map(r => r.unit==="mi" ? r.dist+"mi" : String(r.dist)))].sort().join(",");
+}
+// Most recent logged session that matches this line (before the given date)
+function lastTime(a, text, before){
+  const sig = wSig(text); if (!sig) return null;
+  const b4 = before ? iso(before) : "9999";
+  return (a.log||[]).filter(l => l.kind==="run" && l.reps && l.reps.length && (l.iso||"") < b4 && logSig(l)===sig)
+    .sort((x,y)=>(y.iso||"").localeCompare(x.iso||""))[0] || null;
+}
+const per400 = r => { const t = tSec(r.time), m = r.unit==="mi" ? r.dist*1609.34 : +r.dist; return isFinite(t) && m>0 ? t*400/m : NaN; };
+const lastShort = l => l ? `${l.d}: ${splitsText(l)}` : "";
+// How a logged session compares with the target pace for its main pace word
+function sessionCheck(a, l){
+  const k = paceKinds(l.w||"").find(x => x!=="Easy"); if (!k || !l.reps || !l.reps.length) return null;
+  const secs = l.reps.map(per400).filter(isFinite); if (!secs.length) return null;
+  const actual = secs.reduce((x,y)=>x+y,0)/secs.length, b = raceVdot(a) || athleteVdot(a);
+  let target = null, frac = PACE_FRAC[k];
+  if (frac && b) target = paceFor(athleteVdot(a).V, frac, 400);
+  else if (RACE_M[k]) { const r = raceSec(a, b, k); if (r) target = r.s*400/RACE_M[k]; }
+  if (!target) return null;
+  const pct = (target-actual)/target*100;   // + = faster than target
+  const implied = frac ? (() => { const v = 400/actual*60; return (-4.60 + 0.182258*v + 0.000104*v*v)/frac; })() : null;
+  const r0 = l.reps[0], dist = r0.unit==="mi" ? r0.dist*1609.34 : +r0.dist || 400;
+  return {k, actual, target, pct, implied, l, dist: Math.round(dist)};
+}
+function workoutCheck(a){
+  const s = (a.log||[]).filter(l=>l.kind==="run").sort((x,y)=>(y.iso||"").localeCompare(x.iso||"")).map(l=>sessionCheck(a,l)).filter(Boolean).slice(0,4);
+  const fast = s.filter(x=>x.pct>=2), slow = s.filter(x=>x.pct<=-3);
+  const imp = s.map(x=>x.implied).filter(Boolean);
+  const sugg = fast.length>=2 && imp.length ? Math.min(...imp.slice(0,3)) : null;   // conservative: the lowest of the recent workout VDOTs
+  return {s, fast, slow, sugg: sugg && sugg > (athleteVdot(a)||{V:0}).V + 0.3 ? sugg : null};
+}
+async function voSet(id, V, why){
+  const next = JSON.parse(JSON.stringify(VOVR));
+  if (V===null) delete next[id]; else next[id] = {V: Math.round(V*10)/10, why, d: iso(today)};
+  try { await saveKey("vdot", next); VOVR = next; voMsg[id] = {kind:"ok", text: V===null ? "Back to race-based paces." : "Paces updated."}; }
+  catch(e){ voMsg[id] = {kind:"err", text:saveErr(e)}; }
+  render();
+}
 const sheetLine = t => { const {tags, text} = splitTags(t); return (tags.length ? "(" + tags.map(x=>TAG_CHIP[x]||x).join(", ") + ") " : "") + text; };
 function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
   const levels = lv==="Both" ? ["HS","JH"] : [lv];
@@ -2224,6 +2313,12 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
   // Auto boxes: each kid gets one box per timed rep in their version of today's workout, labeled with the rep.
   const reps = timed ? Object.fromEntries(kids.map(a=>[a.id, kidReps(a, d, cat, lv)])) : null;
   const nAuto = timed ? Math.max(1, ...Object.values(reps).map(r=>r.length), ...sheetRaw(d, cat, lv).filter(timedLine).map(it=>lineReps(splitTags(it.t).text).length)) : 0;
+  // Last time this kid did a workout like today's (from the data log)
+  const lastFor = a => { if (!d || field) return null; const its = sheetRaw(d, cat, lv).filter(it => timedLine(it) && sheetFit(splitTags(it.t).tags, a));
+    for (const it of its) { const l = lastTime(a, splitTags(it.t).text, date); if (l) return l; } return null; };
+  const lasts = Object.fromEntries(kids.map(a=>[a.id, lastFor(a)]));
+  const withLast = Object.values(lasts).some(Boolean);
+  const lastCell = a => withLast ? `<td class="sh-last">${lasts[a.id] ? esc(lastShort(lasts[a.id])) : ""}</td>` : "";
   const autoCells = a => { const r = reps[a.id] || [];
     if (!r.length) return `<td colspan="${nAuto}" class="sh-runrow">${withPace ? "Distance ________ &nbsp; Pace ________" : "—"}</td>`;
     return r.map(x=>`<td class="sh-rep"><i>${esc(x)}</i></td>`).join("") + Array.from({length:nAuto-r.length},()=>`<td class="sh-na"></td>`).join(""); };
@@ -2239,14 +2334,14 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
     <div class="sh-work"><div><b>Focus:</b> ${esc(focus||"—")}</div>
       ${items.length ? `<ol>${items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ol>` : `<div class="sh-lines"><div></div><div></div><div></div></div>`}</div>
     <table class="sh-table"><thead>
-      ${field || runCols || timed ? "" : `<tr class="sh-dist"><th colspan="${3 + (withPace?1:0)}" style="text-align:right">Rep distance →</th>${Array.from({length:n},()=>`<th></th>`).join("")}<th></th></tr>`}
-      <tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${withPace?`<th class="sh-pace">Target pace</th>`:""}
+      ${field || runCols || timed ? "" : `<tr class="sh-dist"><th colspan="${3 + (withPace?1:0) + (withLast?1:0)}" style="text-align:right">Rep distance →</th>${Array.from({length:n},()=>`<th></th>`).join("")}<th></th></tr>`}
+      <tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${withPace?`<th class="sh-pace">Target pace</th>`:""}${withLast?`<th class="sh-last">Last time</th>`:""}
         ${workHead}<th class="sh-notes">Notes</th></tr></thead>
-      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)} <span class="sh-g">${a.g}${lv==="Both"?" "+a.level:""}</span>${tagNote(a)}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}
+      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)} <span class="sh-g">${a.g}${lv==="Both"?" "+a.level:""}</span>${tagNote(a)}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}${lastCell(a)}
         ${timed ? autoCells(a) : workCells}<td></td></tr>`).join("")}
-        ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${withPace?"<td></td>":""}${timed ? Array.from({length:nAuto},()=>`<td></td>`).join("") : workCells}<td></td></tr>`).join("")}
+        ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${withPace?"<td></td>":""}${withLast?"<td></td>":""}${timed ? Array.from({length:nAuto},()=>`<td></td>`).join("") : workCells}<td></td></tr>`).join("")}
       </tbody></table>
-    <div class="sh-foot">${field ? "Write each attempt as feet-inches (15-4.5). X = foul or miss." : (timed ? "Each box shows the rep (400 = 400m, 5′ = 5 min, fly 20 = flying 20m). Write the time in the box. Shaded = not in that kid's workout." : runCols ? "Write how far each kid ran (miles or minutes) and their average pace." : "Write the rep distance at the top of each column, then each kid's time (78.4 or 1:18.4).")}
+    <div class="sh-foot">${field ? "Write each attempt as feet-inches (15-4.5). X = foul or miss." : (timed ? "Each box shows the rep (400 = 400m, 5′ = 5 min, fly 20 = flying 20m). Write the time in the box; for minute reps (5′), write the average 400 split. Shaded = not in that kid's workout." + (withLast ? " Last time = the most recent logged session of this same workout." : "") : runCols ? "Write how far each kid ran (miles or minutes) and their average pace." : "Write the rep distance at the top of each column, then each kid's time (78.4 or 1:18.4).")}
       Take a photo at the end of practice and send it in. · ${esc(dayName||"")} ${esc(cat)} ${lv}</div>
   </section>`;
 }
@@ -3519,6 +3614,7 @@ const views = {
             .map(([l,u,v])=>`<div class="pr"><div class="ev">${l} ${u}</div><div class="mk">${v}</div></div>`).join("")}</div>
           <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+``; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
       ${myWeekHTML(a)}
+      ${checkHTML(a)}
       <div><h2 style="margin-bottom:10px">Workout log</h2>
         ${a.log.length?`<div class="tbl"><table><thead><tr><th>Date</th><th>Workout</th><th>Splits / marks</th><th>Notes</th></tr></thead><tbody>
           ${a.log.map(l=>`<tr><td class="mono">${esc(l.d)}</td><td>${esc(l.w)}</td><td class="split">${esc(splitsText(l))||"—"}</td><td>${esc(l.n)}</td></tr>`).join("")}</tbody></table></div>`
@@ -3568,6 +3664,7 @@ async function loadAll(){
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
+  if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) WINTER = {ids: byKey.winter.ids};
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
