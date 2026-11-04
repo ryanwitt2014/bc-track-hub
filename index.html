@@ -499,7 +499,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-03h";
+const HUB_VERSION = "11-04a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1874,10 +1874,11 @@ function paceBody(text, tags){
     return rows.length ? `<table>${rows.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td class="mono">${v}</td></tr>`).join("")}</table>`
       : `<p class="muted" style="margin:0">No race on file for ${esc(a.name)} yet, so there are no paces. Run it by effort.</p>`;
   }
-  const rows = tagAthletes().filter(x=>tagsFit(tags, x)).map(x=>({x, r:linePaces(x, text)})).filter(o=>o.r.length);
+  const rows = tagAthletes().filter(x=>tagsFit(tags, x)).map(x=>({x, r:linePaces(x, text), v:(athleteVdot(x)||{V:0}).V})).filter(o=>o.r.length)
+    .sort((p,q)=>q.v-p.v);   // fastest to slowest, same order as the Paces page
   if (!rows.length) return `<p class="muted" style="margin:0">No paces on file for these runners yet.</p>`;
   return `<table>${rows.map(({x,r})=>`<tr><td><b>${esc(x.name)}</b></td><td class="mono">${r.map(([k,v])=>r.length>1?`${esc(k)}: ${v}`:v).join("<br>")}</td></tr>`).join("")}</table>
-    <p class="note" style="margin:6px 0 0">Pick your name at the top of the page to see just yours.</p>`;
+    <p class="note" style="margin:6px 0 0">Fastest to slowest. Pick your name at the top of the page to see just yours.</p>`;
 }
 
 /* ---- Mark rankings ---- */
