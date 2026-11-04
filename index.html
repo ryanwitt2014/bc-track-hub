@@ -208,6 +208,16 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .ed-msg.ok{color:var(--accent);font-weight:600}
 .ed-msg.err{color:var(--track);font-weight:600}
 .ed-acts{white-space:nowrap;display:flex;gap:6px}
+.tchip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;background:var(--gold-soft);border:1px solid var(--gold);border-radius:3px;padding:0 5px;margin-right:5px;white-space:nowrap;vertical-align:1px}
+.pbox summary{cursor:pointer;list-style:none}
+.pbox summary::-webkit-details-marker{display:none}
+.pbtn{display:inline-block;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:3px;padding:0 6px;margin-left:6px;color:var(--accent);white-space:nowrap;vertical-align:1px}
+.pbox[open] .pbtn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pbody{margin:6px 0 4px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--bg);border-radius:4px;font-size:14px}
+.pbody table{width:100%;border-collapse:collapse}.pbody td{padding:3px 8px 3px 0;vertical-align:top;border-top:1px solid var(--line)}
+.pbody .mono{font-family:var(--mono);font-size:13px}
+.mepick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600}
+.mepick select{font:15px var(--body);padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--fg);max-width:100%}
 .ed select{font:15px var(--body);width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg);min-width:0}
 .ed-fe{display:grid;gap:6px}
 .reps{display:grid;gap:6px}
@@ -489,7 +499,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-03g";
+const HUB_VERSION = "11-03h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1398,7 +1408,10 @@ const back = `<a class="backlink" href="#hub">← Back to Hub</a>`;
 const levelToggle = () => `<div class="seg" role="group" aria-label="Level">
   ${["JH","HS"].map(l => `<button type="button" aria-pressed="${level===l}" onclick="setLevel('${l}')">${l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>`;
 const itemHTML = it => {
-  const label = esc(it.t);
+  const {tags, text} = splitTags(it.t);
+  const label = tags.map(x=>`<span class="tchip">${esc(TAG_CHIP[x]||x)}</span>`).join("") + esc(text);
+  if (PACE_CTX && !it.url && !it.link && paceKinds(text).length)
+    return `<details class="pbox"><summary>${label}<span class="pbtn">Paces</span></summary><div class="pbody">${paceBody(text, tags)}</div></details>`;
   if (it.url) return `${label} <a class="vid" href="${esc(it.url)}" target="_blank" rel="noopener"><i>▶</i>Video</a>`;
   if (it.link) return `<a href="${esc(it.link)}">${label}</a>`;
   return label;
@@ -1407,6 +1420,8 @@ const itemHTML = it => {
 const li = arr => arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
 function blockHTML(name, arr, combo){
   if(!arr || !arr.length) return "";
+  PACE_CTX = /Distance/.test(name);
+  if (PACE_CTX && meAth()) { arr = arr.filter(it => tagsFit(splitTags(it.t).tags, meAth())); if(!arr.length) return ""; }
   const cls = combo ? "evblock combo" : "evblock";
   if(wlv!=="Both"){
     const mine = forLv(arr,wlv);
@@ -1522,6 +1537,16 @@ async function publishWeeks(next, okText){
   const err = await publishFiles({"workouts.json": JSON.stringify(next, null, 1)});
   if(err){ edMsg={kind:"err",text:err}; render(); return false; }
   WORKOUTS = next; edMsg={kind:"ok",text:okText}; render(); return true;
+}
+
+/* ---- Runner tags editor ---- */
+function dtSet(id, k, v){ const t = Object.assign({}, dtDraft[id]); if(v) t[k] = v; else delete t[k];
+  if (Object.keys(t).length) dtDraft[id] = t; else delete dtDraft[id]; dtMsg = {kind:"",text:""}; }
+async function dtSave(){
+  const err = await publishFiles({"dtags.json": JSON.stringify(dtDraft)});
+  if (err) dtMsg = {kind:"err", text:err};
+  else { DTAGS = JSON.parse(JSON.stringify(dtDraft)); dtMsg = {kind:"ok", text:"Tags saved. Runners now see their version on the Workouts page."}; }
+  render();
 }
 
 /* ---- Warm-up editor ---- */
@@ -1766,12 +1791,94 @@ function athleteVdot(a){
 function paceSet(V){
   return {
     easy: [mmss(paceFor(V,0.70,1609)), mmss(paceFor(V,0.62,1609))],
+    steady: mmss(paceFor(V,0.84,1609)),
     tempo: mmss(paceFor(V,0.88,1609)), tempo400: mmss(paceFor(V,0.88,400)),
     int400: mmss(paceFor(V,0.98,400)), int800: mmss(paceFor(V,0.98,800)), int1k: mmss(paceFor(V,0.98,1000)),
     rep200: mmss(paceFor(V,1.06,200)), rep400: mmss(paceFor(V,1.06,400)),
   };
 }
 const paceAthletes = () => ATHLETES.filter(a=>a.cats.includes("Distance")||a.cats.includes("Mid Distance")).map(a=>({a, b:athleteVdot(a)})).filter(x=>x.b);
+
+/* ---- Runner tags + "My plan" + paces for a workout line ---- */
+// DTAGS[id] = {lv:"A"|"B"|"C", path:"Distance"|"Hybrid"|"Mid"}. Coaches set these on Coaches → Runner Tags (hub_data key "dtags").
+// A workout line can start with tags, e.g. "[B] 3 × 4 min Tempo" or "[Mid] [Hybrid] 4 × 200m at 800 pace".
+// No tag = everyone. Picking your name on the Workouts page hides lines tagged for other runners.
+let DTAGS = {}, dtDraft = null, dtMsg = {kind:"",text:""};
+const LEVEL_NAMES = {A:"A · Established", B:"B · Intermediate", C:"C · Developing"};
+const PATH_NAMES = {Distance:"Distance (1600/3200)", Hybrid:"Hybrid (800/1600)", Mid:"Mid-distance (400/800)"};
+const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys"};
+const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
+const tagAthletes = () => ATHLETES.filter(a=>a.level==="HS" && (a.cats.includes("Distance")||a.cats.includes("Mid Distance"))).sort((x,y)=>x.name.localeCompare(y.name));
+// Uses the same "Who are you?" pick as Recruiting (me / setMe), so a runner picks their name once.
+const meAth = () => (me && ATHLETES.find(a=>a.id===me && a.level==="HS")) || null;
+function setPlan(id){ if (id) { wlv = "HS"; try { localStorage.setItem("hub-wlv","HS"); } catch(e) {} } setMe(id||""); }
+function splitTags(t){
+  let s = String(t||""); const tags = [];
+  const m = s.match(/^(\s*\[[^\]]{1,20}\])+\s*/);
+  if (m) { m[0].replace(/\[([^\]]+)\]/g, (_,x)=>{ x.split(",").forEach(y=>{ y=y.trim(); if(y) tags.push(y); }); return ""; }); s = s.slice(m[0].length); }
+  return {tags, text:s};
+}
+function tagsFit(tags, a){
+  if (!a || !tags.length) return true;
+  const t = DTAGS[a.id] || {};
+  const lv = tags.filter(x=>TAG_LV.includes(x)), pa = tags.filter(x=>TAG_PATH.includes(x)), g = tags.filter(x=>x==="Girls"||x==="Boys");
+  if (lv.length && t.lv && !lv.includes(t.lv)) return false;   // level not set yet = see every version
+  if (pa.length && t.path && !pa.includes(t.path)) return false;
+  if (g.length && !g.includes(a.g==="G"?"Girls":"Boys")) return false;
+  return true;
+}
+const RACE_M = {"800":800, "1600":1600, "3200":3200};
+function raceSec(a, b, ev){
+  const pr = a.prs[ev], s = pr ? tSec(String(pr).replace(/[hc]$/,"")) : NaN;
+  if (isFinite(s)) return {s, src:"PR"};
+  if (!b) return null;
+  const m = RACE_M[ev]; let lo = m/10, hi = m/1.2;   // bisection on race time for this VDOT
+  for (let i=0;i<60;i++){ const mid=(lo+hi)/2; if (vdotOf(m, mid) > b.V) lo = mid; else hi = mid; }
+  return {s:(lo+hi)/2, src:"est."};
+}
+function paceKinds(text){
+  const k = [];
+  if (/^Warm-up and cool-down/i.test(text)) return k;
+  if (/\b(Easy|long run|recovery run)\b/i.test(text)) k.push("Easy");
+  ["Steady","Tempo","Interval"].forEach(x=>{ if (new RegExp("\\b"+x+"\\b").test(text)) k.push(x); });
+  if (/\bRep pace\b/.test(text)) k.push("Rep");
+  ["800","1600","3200"].forEach(e=>{ if (new RegExp("\\b"+e+" pace\\b").test(text)) k.push(e); });
+  return k;
+}
+const PACE_FRAC = {Steady:0.84, Tempo:0.88, Interval:0.98, Rep:1.06};
+// Paces for one runner on one workout line, using the same numbers as the Paces page
+function linePaces(a, text){
+  const b = athleteVdot(a), out = [];
+  const ds = [...new Set([...text.matchAll(/(\d{3,4})\s*m\b/g)].map(x=>+x[1]))];
+  paceKinds(text).forEach(k=>{
+    if (RACE_M[k]) {
+      const r = raceSec(a, b, k); if (!r) return;
+      const reps = ds.length ? ds : [400];
+      out.push([`${k} pace`, reps.map(d=>{ const s = r.s*d/RACE_M[k]; return `${s<60 ? s.toFixed(1)+"s" : mmss(s)} per ${d}m`; }).join(" · ") + (r.src==="est." ? ` <span class="muted">(est. from VDOT)</span>` : ` <span class="muted">(from ${k} PR)</span>`)]);
+      return;
+    }
+    if (!b) return;
+    const p = paceSet(b.V);
+    if (k==="Easy") { out.push(["Easy", `${p.easy[0]}–${p.easy[1]} /mi`]); return; }
+    const f = PACE_FRAC[k];
+    const base = (k==="Steady"||k==="Tempo") ? [`${mmss(paceFor(b.V,f,1609))} /mi`, `${mmss(paceFor(b.V,f,400))} /400`] : [`${mmss(paceFor(b.V,f,200))} /200`, `${mmss(paceFor(b.V,f,400))} /400`];
+    out.push([k, base.concat(ds.filter(d=>d!==200&&d!==400).map(d=>`${mmss(paceFor(b.V,f,d))} per ${d}m`)).join(" · ")]);
+  });
+  return out;
+}
+let PACE_CTX = false;   // true while drawing a Distance / Mid Distance block
+function paceBody(text, tags){
+  const a = meAth();
+  if (a) {
+    const rows = linePaces(a, text);
+    return rows.length ? `<table>${rows.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td class="mono">${v}</td></tr>`).join("")}</table>`
+      : `<p class="muted" style="margin:0">No race on file for ${esc(a.name)} yet, so there are no paces. Run it by effort.</p>`;
+  }
+  const rows = tagAthletes().filter(x=>tagsFit(tags, x)).map(x=>({x, r:linePaces(x, text)})).filter(o=>o.r.length);
+  if (!rows.length) return `<p class="muted" style="margin:0">No paces on file for these runners yet.</p>`;
+  return `<table>${rows.map(({x,r})=>`<tr><td><b>${esc(x.name)}</b></td><td class="mono">${r.map(([k,v])=>r.length>1?`${esc(k)}: ${v}`:v).join("<br>")}</td></tr>`).join("")}</table>
+    <p class="note" style="margin:6px 0 0">Pick your name at the top of the page to see just yours.</p>`;
+}
 
 /* ---- Mark rankings ---- */
 // HS vs JH comparison only where the event is the same: flat races and jumps.
@@ -2281,6 +2388,15 @@ const views = {
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
       <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
+      ${wlv!=="JH" ? `<label class="mepick" for="mepick">HS distance: show my plan
+        <select id="mepick" onchange="setPlan(this.value)"><option value="">Everyone (all versions)</option>${tagAthletes().map(a=>`<option value="${a.id}" ${a.id===me?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label>` : ""}
+      ${(()=>{ const a = meAth(); if(!a) return `<p class="note" style="margin:0">Tap any distance line marked <span class="pbtn" style="margin:0">Paces</span> to see paces from the <a href="#paces">Paces</a> page.</p>`;
+        const t = DTAGS[a.id] || {};
+        return `<div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${esc(a.name)}'s plan</b>
+          ${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}
+          · lines for other groups are hidden. Tap a line marked <span class="pbtn" style="margin:0">Paces</span> for your paces.
+          ${!t.lv||!t.path?`<br><span class="muted">Your coach hasn't set your ${!t.lv&&!t.path?"level and group":!t.lv?"level":"group"} yet, so you'll see every version of those lines.</span>`:""}
+          <a href="#workouts" onclick="setPlan('');return false">Show everyone</a></p></div>`; })()}
       <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
       <p class="note">▶ Video buttons open in a new tab. The next scheduled week shows here ahead of time. Weeks after that stay hidden.</p></div>`;
   },
@@ -2295,10 +2411,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["recruit","Recruiting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["recruit","Recruiting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : views._post();
+    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : views._post();
     return head + body + `</div>`;
   },
   _warmEdit(){
@@ -2430,6 +2546,22 @@ const views = {
         <div><h2 style="margin-bottom:10px">Meet results</h2>${a.meets.length?`<div class="tbl"><table><thead><tr><th>Meet</th><th>Event</th><th>Mark</th><th></th></tr></thead><tbody>
           ${a.meets.map((m,i)=>`<tr><td>${esc(m.m)}</td><td>${esc(m.ev)}</td><td class="mono">${esc(m.mk)}${m.pl?` · ${esc(m.pl)}`:""}</td><td class="ed-acts">${rm("meets",i)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="note">None yet.</p>`}</div>
       </div>`;
+  },
+  _tagEdit(){
+    if(!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
+    const sel = (id,k,opts) => `<select aria-label="${k==="lv"?"Level":"Group"}" onchange="dtSet('${id}','${k}',this.value)"><option value="">Not set</option>${Object.entries(opts).map(([v,l])=>`<option value="${v}" ${((dtDraft[id]||{})[k]||"")===v?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+    return `<p class="lede" style="margin:0">Give each HS distance runner a level and a group. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
+      <div class="panel ed"><div class="tbl"><table><thead><tr><th>Runner</th><th>Events</th><th>Level</th><th>Group</th></tr></thead><tbody>
+        ${tagAthletes().map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td>${esc(a.events.map(evn).join(", "))||"—"}</td>
+          <td>${sel(a.id,"lv",LEVEL_NAMES)}</td><td>${sel(a.id,"path",PATH_NAMES)}</td></tr>`).join("")}
+      </tbody></table></div>
+      <div class="ed-save"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button></div>
+      <p class="ed-msg ${dtMsg.kind}" role="status" style="margin:0">${esc(dtMsg.text)}</p></div>
+      <div class="panel"><h3>Tagging workout lines</h3><ul class="exp">
+        <li>Start a line in Post Workouts with a tag to show it only to those runners: <span class="tchip">[A]</span><span class="tchip">[B]</span><span class="tchip">[C]</span> for level, <span class="tchip">[Distance]</span><span class="tchip">[Hybrid]</span><span class="tchip">[Mid]</span> for group, <span class="tchip">[Girls]</span><span class="tchip">[Boys]</span>.</li>
+        <li>Mix them: <b>[B] [Hybrid] 3 × 4 min Tempo</b> shows to Level B hybrids only. A line with no tag is for everyone.</li>
+        <li>Use the Paces page words so the Paces button works: <b>Easy, Steady, Tempo, Interval, Rep pace, 800 pace, 1600 pace, 3200 pace</b>. Write rep distances like <b>4 × 200m</b>.</li>
+        <li>Runners with no level or group set see every version.</li></ul></div>`;
   },
   _recEdit(){
     if(!rc) rcReset();
@@ -2752,20 +2884,23 @@ const views = {
     rows.sort((x,y)=>y.b.V-x.b.V);
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">VDOT training paces</div><h1>Paces</h1></div>
         <div class="bar">${segBtns(level,[["HS","HS"],["JH","JH"]],"(v=>{level=v;render()})")}${segBtns(ag,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>setA('g',v))")}</div></div>
-      <p class="lede" style="margin:0">Paces come from each runner's best race (mile, 3200, or this fall's XC). Find your name, then use these for <b>easy</b>, <b>tempo</b>, <b>interval</b>, and <b>rep</b> days.</p>
+      <p class="lede" style="margin:0">Paces come from each runner's best race (mile, 3200, or this fall's XC). Find your name, then use these for <b>Easy</b>, <b>Steady</b>, <b>Tempo</b>, <b>Interval</b>, <b>Rep</b>, and <b>800/1600 pace</b> days. These are the same words used on the Workouts page.</p>
       <input id="psearch" class="search" type="search" placeholder="Search name" value="${esc(pq)}" oninput="pq=this.value;render();const e=document.getElementById('psearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
-      <div class="tbl"><table class="ptable"><thead><tr><th>Athlete</th><th>Based on</th><th>VDOT</th><th>Easy /mi</th><th>Tempo /mi</th><th>Tempo /400</th><th>Interval /400</th><th>Interval /800</th><th>Rep /200</th><th>Rep /400</th></tr></thead><tbody>
+      <div class="tbl"><table class="ptable"><thead><tr><th>Athlete</th><th>Based on</th><th>VDOT</th><th>Easy /mi</th><th>Steady /mi</th><th>Tempo /mi</th><th>Tempo /400</th><th>Interval /400</th><th>Interval /800</th><th>Rep /200</th><th>Rep /400</th><th>800 pace /200</th><th>1600 pace /400</th></tr></thead><tbody>
         ${rows.map(({a,b})=>{ const p = paceSet(b.V); return `<tr><td><a href="#a-${a.id}"><b>${esc(a.name)}</b></a><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td>
           <td>${esc(evn(b.k))} ${esc(b.mk)}</td><td class="mono"><b>${b.V.toFixed(1)}</b></td>
-          <td class="mono">${p.easy[0]}–${p.easy[1]}</td><td class="mono">${p.tempo}</td><td class="mono">${p.tempo400}</td>
-          <td class="mono">${p.int400}</td><td class="mono">${p.int800}</td><td class="mono">${p.rep200}</td><td class="mono">${p.rep400}</td></tr>`; }).join("") || `<tr><td colspan="10" class="muted">No runners match.</td></tr>`}
+          <td class="mono">${p.easy[0]}–${p.easy[1]}</td><td class="mono">${p.steady}</td><td class="mono">${p.tempo}</td><td class="mono">${p.tempo400}</td>
+          <td class="mono">${p.int400}</td><td class="mono">${p.int800}</td><td class="mono">${p.rep200}</td><td class="mono">${p.rep400}</td>
+          ${["800","1600"].map(ev=>{ const r = raceSec(a, b, ev); return `<td class="mono">${r?mmss(r.s*(ev==="800"?200:400)/RACE_M[ev]):"—"}${r&&r.src==="est."?"*":""}</td>`; }).join("")}</tr>`; }).join("") || `<tr><td colspan="13" class="muted">No runners match.</td></tr>`}
       </tbody></table></div>
       <div class="cols">
         <div class="panel"><h3>What each pace is for</h3><dl class="inj-dl">
           <dt>Easy</dt><dd>Recovery runs and long runs. Conversational. Slower is fine.</dd>
+          <dt>Steady</dt><dd>Strong but relaxed, a notch slower than Tempo. Used for the middle of some aerobic runs.</dd>
           <dt>Tempo</dt><dd>Comfortably hard, about 20 minutes of steady effort. Tempo runs and cruise intervals.</dd>
           <dt>Interval</dt><dd>Hard. 400s to 1000s with jog recovery about as long as the rep.</dd>
-          <dt>Rep</dt><dd>Fast and smooth. 200s and 400s with full recovery. Speed and form.</dd></dl></div>
+          <dt>Rep</dt><dd>Fast and smooth. 200s and 400s with full recovery. Speed and form.</dd>
+          <dt>800 / 1600 pace</dt><dd>Your current race pace for that event, from your PR. * = estimated from your VDOT because there's no PR yet.</dd></dl></div>
         <div class="panel"><h3>About these numbers</h3><ul class="exp">
           <li>Calculated with Jack Daniels' VDOT formulas from the race shown.</li>
           <li>XC courses vary, so XC-based paces can run a little slow. A new track race updates them.</li>
@@ -2932,7 +3067,7 @@ const views = {
         return `<div class="panel"><div class="bar"><h2>Training paces</h2><span class="muted">VDOT ${b.V.toFixed(1)} · from ${esc(evn(b.k))} ${esc(b.mk)}</span></div>
           <div class="prgrid">${[["Easy","/mi",`${p.easy[0]}–${p.easy[1]}`],["Tempo","/mi",p.tempo],["Tempo","/400",p.tempo400],["Interval","/400",p.int400],["Interval","/800",p.int800],["Rep","/200",p.rep200],["Rep","/400",p.rep400]]
             .map(([l,u,v])=>`<div class="pr"><div class="ev">${l} ${u}</div><div class="mk">${v}</div></div>`).join("")}</div>
-          <p class="note" style="margin:8px 0 0"><a href="#paces">What each pace means →</a></p></div>`; })()}
+          <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+`<a href="#workouts" onclick="setPlan('${a.id}')"><b>My workouts →</b></a> · `; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
       <div><h2 style="margin-bottom:10px">Workout log</h2>
         ${a.log.length?`<div class="tbl"><table><thead><tr><th>Date</th><th>Workout</th><th>Splits / marks</th><th>Notes</th></tr></thead><tbody>
           ${a.log.map(l=>`<tr><td class="mono">${esc(l.d)}</td><td>${esc(l.w)}</td><td class="split">${esc(splitsText(l))||"—"}</td><td>${esc(l.n)}</td></tr>`).join("")}</tbody></table></div>`
@@ -2981,6 +3116,7 @@ async function loadAll(){
   if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
+  if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
   applySelfSignups();
