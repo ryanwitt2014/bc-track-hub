@@ -16,6 +16,8 @@ const css = `
 .ix-pill.new{background:var(--gold);color:var(--gold-ink)}.ix-pill.err{background:#b4472b;color:#fff}.ix-pill.ok{background:var(--accent);color:var(--accent-ink)}
 .ix-edit input{font:13px var(--body);padding:3px 6px;width:100%;min-width:60px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
 .dash-bc{background:var(--gold-soft)}div.dash-bc{border-radius:3px;padding:0 4px;margin:0 -4px}
+.dash-x{font:700 11px var(--body);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:3px;padding:0 4px;margin-right:4px;cursor:pointer;line-height:1.4}
+.dash-x:hover{color:#b4472b;border-color:#b4472b}
 .dash-list{margin:0;padding-left:20px;display:grid;gap:6px}
 .ix-stat{font-family:var(--mono);font-size:28px;font-weight:500}
 `;
@@ -25,7 +27,7 @@ const st = document.createElement("style"); st.textContent = css; document.head.
 const IX = window.IX = {
   tab:"dash", loaded:false, loading:false, err:"",
   schools:[], meets:[], counts:{}, batches:[],
-  imp:{name:"", date:"", level:"HS", type:"conference", host:"", url:"", note:"", gender:"row", csv:"", file:"", rows:null, map:{}, saving:false, msg:null},
+  imp:{name:"", date:"", level:"HS", type:"conference", host:"", url:"", note:"", gender:"row", scoring:"auto", csv:"", file:"", rows:null, map:{}, saving:false, msg:null},
   rf:{meet:"", event:"", gender:"", school:"", rows:null, loading:false}, edit:null, medit:null, sedit:null, merge:null, del:null, msg:null,
 };
 
@@ -95,9 +97,61 @@ function bcAthlete(name, level){
 
 /* ---------- import preview ---------- */
 function meetKey(){ return [nk(IX.imp.name), IX.imp.date||"", IX.imp.level].join("|"); }
+// Results copied straight from a web page (MileSplit "PLACE ATHLETE TEAM MARK", or "Athlete: Team: Result: Place:" lists).
+// Turns them into CSV-style rows so the same preview and save run on them.
+const GRADES = {SR:12, JR:11, SO:10, FR:9, "8":8, "7":7};
+function looksLikeCSV(t){ const first = String(t||"").trim().split("\n")[0].toLowerCase(); return /(^|[,\t])\s*(event|athlete|name)\s*([,\t]|$)/.test(first) && /[,\t]/.test(first); }
+function parsePasted(text){
+  const lines = String(text||"").replace(/\r/g,"").replace(/(\d|["'”-])(Boys|Girls) /g, "$1\n$2 ").replace(/More Results/g,"\n").split("\n").map(l=>l.trim());
+  const HEAD = /^(?:(Varsity|JV|C?omplete|Results)\s+)?(Boys|Girls)\s+(.+?)(?:\s+(Finals|Prelims|Preliminaries|Final))?$/i;
+  const ROW_G = /^(\d+|-|--)\s+(.+?)\s+(SR|JR|SO|FR|7|8)\s+(.+?)\s+(\S+)(?:\s+(\d+))?$/;
+  const MARK = String.raw`(\d{1,2}:\d{2}(?:\.\d+)?|\d{1,3}\.\d+|\d+-\d+(?:\.\d+)?|\d+'\s*\d+(?:\.\d+)?"?|DQ|DNF|DNS|NT|NH|FS)`;
+  const ROW_END = new RegExp(String.raw`^(\d+|-|--)\s+(.+?)\s+` + MARK + String.raw`(?:\s+(\d+))?$`);          // place first: "1 Name Team 5:12.4 [heat]"
+  const ROW_PL_LAST = new RegExp(String.raw`^(.+?)\s+` + MARK + String.raw`\s+(\d+|-)$`);                           // place last: "Name Team 5:12 1"
+  // known team names: our schools + aliases, plus any team seen in a row that has a grade
+  const teams = new Set(); IX.schools.forEach(s=>{ teams.add(s.name); if (s.short) teams.add(s.short); (s.aliases||[]).forEach(a=>teams.add(a)); });
+  lines.forEach(l=>{ const m = l.match(ROW_G); if (m) teams.add(m[4]); });
+  const byLen = [...teams].filter(Boolean).sort((a,b)=>b.length-a.length);
+  const splitTeam = who => { const t = byLen.find(t => who===t || who.endsWith(" "+t)); return t ? [who===t ? "" : who.slice(0, -t.length-1).trim(), t] : null; };
+  const out = [], bad = [], relayN = {}; let ev = null, g = null, rnd = "F", jv = false;
+  for (const l of lines) {
+    if (!l || /^place\b/i.test(l) || /^athlete:/i.test(l)) continue;
+    const h = l.match(HEAD);
+    if (h && !/\d\s*\d*$/.test(l.replace(/\d+m\b/gi,"").replace(/\b(100|110|200|300|400|800|1600|3200|4x\d+)\b/gi,""))) {
+      jv = /^jv/i.test(h[1]||""); g = /^b/i.test(h[2]) ? "B" : "G"; ev = h[3].trim(); rnd = /^prelim/i.test(h[4]||"") ? "P" : "F"; continue; }
+    if (!ev || jv) continue;
+    const relay = /relay|4\s*x/i.test(ev);
+    const push = (pl, ath, team, gr, mark) => {
+      if (relay) { const k = ev+g+rnd+team; relayN[k] = (relayN[k]||0)+1; ath = "ABCDEFGH"[relayN[k]-1]; }
+      out.push([ev, g, rnd, /^-/.test(pl) ? "" : pl, ath, team, gr, mark, ""]); };
+    let m = !relay && l.match(ROW_G);
+    if (m) { push(m[1], m[2], m[4], GRADES[m[3]]||"", m[5]); continue; }
+    m = l.match(ROW_END);
+    if (m) { const st = relay ? ["", m[2]] : splitTeam(m[2]); if (st) { push(m[1], st[0], st[1], "", m[3]); continue; } }
+    m = l.match(ROW_PL_LAST);
+    if (m) { const who = m[1].replace(/^-\s+/, ""), st = relay ? ["", who] : splitTeam(who); if (st) { push(m[3], st[0], st[1], "", m[2].replace(/(\d+)'\s*(\d+(?:\.\d+)?)"?/, "$1-$2")); continue; } }
+    bad.push(l);
+  }
+  // drop exact repeats (pages often list an event twice)
+  const seen = new Set(), rows = out.filter(r=>{ const k = r.join("|"); if (seen.has(k)) return false; seen.add(k); return true; });
+  return {rows: [["event","gender","round","place","athlete","school","grade","mark","points"], ...rows], bad};
+}
+// Points from places when the results don't list them (ties split the points)
+function applyScoring(rows, sc){
+  const by = {};
+  rows.forEach(r => { if (r.errs.length || r.dupInFile || r.round!=="F" || !r.place) return; const k = r.event+"|"+r.gender; (by[k] = by[k]||{}); (by[k][r.place] = by[k][r.place]||[]).push(r); });
+  Object.values(by).forEach(grp => Object.entries(grp).forEach(([pl, rs]) => {
+    const P = rs[0].relay ? (sc.relay||sc.ind) : sc.ind;
+    const share = rs.reduce((a,_,i)=>a + (P[+pl-1+i]||0), 0) / rs.length;
+    rs.forEach(r => { r.points = share || null; });
+  }));
+}
+const SCORING_OPTS = {auto:null, "10-8-6-5-4-3-2-1":{ind:[10,8,6,5,4,3,2,1], relay:[10,8,6,5,4,3,2,1]}, "6-4-3-2-1":{ind:[6,4,3,2,1], relay:[6,4,3,2,1]}, "5-3-1":{ind:[5,3,1], relay:[5]}};
 function buildPreview(){
   const p = IX.imp; p.msg = null;
-  const rows = parseCSV(p.csv);
+  let rows; p.unread = [];
+  if (looksLikeCSV(p.csv)) rows = parseCSV(p.csv);
+  else { const r = parsePasted(p.csv); rows = r.rows; p.unread = r.bad; p.pasted = true; }
   if (rows.length < 2) { p.rows = null; p.msg = {kind:"err", text:"Paste at least a header row and one result."}; return; }
   const H = mapHeader(rows[0]);
   const need = ["event","athlete","mark"].filter(f=>H[f]==null);
@@ -119,6 +173,7 @@ function buildPreview(){
     return {n:i+2, raw:Object.fromEntries(rows[0].map((h,j)=>[h, r[j]??""])), event, gender, round, place:isFinite(place)?place:null, athlete:g("athlete"), school,
       grade:isFinite(grade)?grade:null, mark:g("mark"), value:m.value, status:m.status||"", points:isFinite(points)?points:null, relay, key, errs, dupInFile};
   });
+  if (p.scoring && p.scoring!=="auto" && SCORING_OPTS[p.scoring] && !p.rows.some(r=>r.points!=null)) { applyScoring(p.rows, SCORING_OPTS[p.scoring]); p.scoredBy = p.scoring; } else p.scoredBy = null;
   // unknown schools: start as "new"
   const names = [...new Set(p.rows.filter(r=>!r.errs.length).map(r=>r.school).filter(Boolean))];
   names.forEach(n => { if (!findSchool(n) && !(nk(n) in p.map)) p.map[nk(n)] = "new"; });
@@ -143,6 +198,7 @@ async function ixLoad(force){
     IX.schools = await fetchAll(()=>SB.from("schools").select("*").order("name"));
     IX.meets = await fetchAll(()=>SB.from("meets").select("*").order("meet_date",{ascending:false}));
     IX.batches = await fetchAll(()=>SB.from("import_batches").select("*").order("created_at",{ascending:false}));
+    try { IX.flags = await fetchAll(()=>SB.from("athlete_flags").select("*")); IX.flagsMissing = false; } catch(e) { IX.flags = []; IX.flagsMissing = true; }
     const ids = await fetchAll(()=>SB.from("results").select("meet_id,school_id"));
     IX.counts = {meet:{}, school:{}}; ids.forEach(r=>{ IX.counts.meet[r.meet_id]=(IX.counts.meet[r.meet_id]||0)+1; IX.counts.school[r.school_id]=(IX.counts.school[r.school_id]||0)+1; });
     IX.loaded = true;
@@ -185,10 +241,10 @@ async function ixSave(){
     const dups = recs.length - inserted;
     await SB.from("import_batches").update({inserted, duplicates:dups}).eq("id", batch.id);
     // 5. scoring: keep what's set, otherwise infer from the points column
-    if (!meet.scoring) { const sc = inferScoring(good); if (sc) await SB.from("meets").update({scoring:sc}).eq("id", meet.id); }
+    if (!meet.scoring) { const sc = p.scoredBy ? {...SCORING_OPTS[p.scoredBy], inferred:false, basis:"chosen at import"} : inferScoring(good); if (sc) await SB.from("meets").update({scoring:sc}).eq("id", meet.id); }
     p.saving = false;
     p.msg = {kind:"ok", text:`Saved to "${meet.name}": ${inserted} new result${inserted===1?"":"s"}${dups?`, ${dups} already in the system (skipped)`:""}${p.rows.length-good.length?`, ${p.rows.length-good.length} row${p.rows.length-good.length===1?"":"s"} with problems not saved`:""}.`};
-    p.rows = null; p.csv = ""; p.file = ""; p.map = {};
+    p.rows = null; p.csv = ""; p.file = ""; p.map = {}; p.pasted = false; p.unread = [];
     IX.loaded = false; IX.all = null; await ixLoad(true);
   } catch(e) { p.saving = false; p.msg = {kind:"err", text:"Save failed: " + (e.message||e)}; render(); }
 }
@@ -273,12 +329,13 @@ function importView(){
         ${fld("ix-host","Host",p.host,"IX.imp.host=this.value","text","optional")}
         ${fld("ix-url","Source link",p.url,"IX.imp.url=this.value","url","where the results came from")}
         ${fld("ix-note","Source note",p.note,"IX.imp.note=this.value","text","e.g. Hy-Tek PDF from AD")}
+        <label class="ed-row" for="ix-sc"><span>Scoring</span><select id="ix-sc" onchange="IX.imp.scoring=this.value;if(IX.imp.rows)IX.preview()">${Object.keys(SCORING_OPTS).map(k=>`<option value="${k}" ${p.scoring===k?"selected":""}>${k==="auto"?"From the points column / set later":k==="5-3-1"?"5-3-1, relays 5 (dual)":k==="6-4-3-2-1"?"6-4-3-2-1 (tri/quad)":k+" (conference, sectional, invite)"}</option>`).join("")}</select></label>
         <label class="ed-row" for="ix-g"><span>Gender</span><select id="ix-g" onchange="IX.imp.gender=this.value;if(IX.imp.csv)IX.preview()"><option value="row" ${p.gender==="row"?"selected":""}>From the gender column</option><option value="B" ${p.gender==="B"?"selected":""}>All boys</option><option value="G" ${p.gender==="G"?"selected":""}>All girls</option></select></label>
       </div></div>
     <div class="panel ed ix"><div class="bar"><h2>2 · The results</h2><button type="button" class="btn sm" onclick="IX.template()">Download CSV template</button></div>
-      <p style="margin:0">Upload a CSV, or paste rows copied from a spreadsheet. Columns: <b>event, gender, round, place, athlete, school, grade, mark, points</b> (only event, athlete, and mark are required). Or send the results to Claude and paste what comes back.</p>
+      <p style="margin:0"><b>Fastest:</b> open the results page (MileSplit or similar), select all (Ctrl+A), copy (Ctrl+C), and paste it below. Then <b>Check rows</b>. A CSV with columns <b>event, gender, round, place, athlete, school, grade, mark, points</b> also works.</p>
       <label class="ed-row" for="ix-file"><span>CSV file</span><input id="ix-file" type="file" accept=".csv,.txt,.tsv,text/csv" onchange="IX.readFile(this)"></label>
-      <textarea id="ix-csv" rows="8" aria-label="Paste results" placeholder="event,gender,place,athlete,school,grade,mark,points" oninput="IX.imp.csv=this.value">${esc(p.csv)}</textarea>
+      <textarea id="ix-csv" rows="8" aria-label="Paste results" placeholder="Paste the copied results page here" oninput="IX.imp.csv=this.value">${esc(p.csv)}</textarea>
       <div class="ed-save"><button type="button" class="btn" onclick="IX.preview()">Check rows</button>${p.file?`<span class="muted">${esc(p.file)}</span>`:""}</div>
       ${msgHTML(p.msg)}</div>
     ${p.rows ? `<div class="panel ix"><h2>3 · Check and save</h2>
@@ -288,6 +345,8 @@ function importView(){
         <div class="ix-grid" style="margin-top:8px">${newSchools.map(([k,v])=>{ const nm = p.rows.find(r=>nk(r.school)===k)?.school || k;
           return `<label class="ed-row"><span>${esc(nm)}</span><select onchange="IX.imp.map['${esc(k)}']=this.value"><option value="new" ${v==="new"?"selected":""}>Add as a new school</option>
             ${IX.schools.map(s=>`<option value="${s.id}" ${String(v)===String(s.id)?"selected":""}>Same as ${esc(s.name)}</option>`).join("")}</select></label>`; }).join("")}</div></div>` : ""}
+      ${p.pasted ? `<p class="note" style="margin:0 0 6px">Read from pasted text: ${ready.length} results.${p.unread && p.unread.length ? ` <b>${p.unread.length} line${p.unread.length===1?"":"s"} couldn't be read</b> (usually headers or ads): <span class="mono">${p.unread.slice(0,4).map(esc).join(" · ")}${p.unread.length>4?" …":""}</span>` : ""}</p>` : ""}
+      ${p.scoredBy ? `<p class="note" style="margin:0 0 6px">Points filled in from places using <b>${esc(p.scoredBy)}</b> (finals only, ties split).</p>` : ""}
       ${(()=>{ const sc = inferScoring(ready); return sc ? `<p class="note" style="margin:8px 0">Scoring from the points column: <b>${sc.ind.join("-")}</b>${sc.relay.join()!==sc.ind.join()?`, relays <b>${sc.relay.join("-")}</b>`:""}.</p>` : `<p class="note" style="margin:8px 0">No points column, so scoring will be worked out later from team totals.</p>`; })()}
       <div class="tbl"><table class="ix-tbl"><thead><tr><th>Row</th><th>Event</th><th>G</th><th>Rd</th><th>Pl</th><th>Athlete</th><th>School</th><th>Gr</th><th>Mark</th><th>Read as</th><th>Pts</th><th>Problem</th></tr></thead><tbody>
         ${p.rows.slice(0,400).map(r=>`<tr class="${r.errs.length?"ix-bad":r.dupInFile?"ix-dup":""}"><td>${r.n}</td><td>${esc(r.event?evLabel(r.event):"?")}</td><td>${r.gender||"?"}</td><td>${r.round}</td><td>${r.place??""}</td>
@@ -392,6 +451,32 @@ function scheduleMeets(){
   return out;
 }
 // Best mark per athlete (or per relay team) in an event, for the chosen schools
+// Opponents a coach marked as not returning
+const isGone = (schoolId, name) => (IX.flags||[]).some(f => f.school_id===schoolId && f.athlete_key===nk(name) && f.status==="gone");
+async function markGone(schoolId, name){
+  if (IX.flagsMissing) { IX.msg = {kind:"err", text:"Run supabase/migrations/003_scouting_not_returning.sql in Supabase first."}; render(); return; }
+  const {data, error} = await SB.from("athlete_flags").insert({school_id:schoolId, athlete:name, athlete_key:nk(name), status:"gone", created_by:coachEmail}).select().single();
+  if (error) { IX.msg = {kind:"err", text:error.message}; } else { IX.flags.push(data); IX.msg = {kind:"ok", text:`${name} marked not returning.`}; }
+  render();
+}
+async function unGone(id){
+  const {error} = await SB.from("athlete_flags").delete().eq("id", id);
+  if (error) { IX.msg = {kind:"err", text:error.message}; } else { IX.flags = IX.flags.filter(f=>f.id!==id); IX.msg = {kind:"ok", text:"Back in the projections."}; }
+  render();
+}
+// Relay adjustments: key "4x800|G" per school. adj_mark = new projected time; empty = not a factor.
+const relayKey = (ev, g) => ev+"|"+g;
+const relayFlag = (schoolId, ev, g) => (IX.flags||[]).find(f => f.status==="relay" && f.school_id===schoolId && f.athlete_key===nk(relayKey(ev,g)));
+async function setRelay(schoolId, ev, g, mark){
+  if (IX.flagsMissing) { IX.msg = {kind:"err", text:"Run supabase/migrations/003_scouting_not_returning.sql in Supabase first."}; render(); return; }
+  const m = mark ? parseMark(ev, mark) : {ok:true};
+  if (mark && (!m.ok || m.value==null)) { IX.msg = {kind:"err", text:`"${mark}" isn't a time I can read.`}; render(); return; }
+  const old = relayFlag(schoolId, ev, g); if (old) await SB.from("athlete_flags").delete().eq("id", old.id);
+  const {data, error} = await SB.from("athlete_flags").insert({school_id:schoolId, athlete:`${schoolName(schoolId)} ${evLabel(ev)} (${g==="G"?"girls":"boys"})`, athlete_key:nk(relayKey(ev,g)), status:"relay", adj_mark:mark||null, created_by:coachEmail}).select().single();
+  if (error) { IX.msg = {kind:"err", text:error.message}; } else { IX.flags = (IX.flags||[]).filter(f=>f!==old).concat([data]); IX.msg = {kind:"ok", text: mark ? `Relay set to ${mark}.` : "Relay dropped from the projection."}; }
+  IX.d.radj = null; render();
+}
+async function noteGone(id, note){ const f = IX.flags.find(x=>x.id===id); if (!f) return; f.note = note; await SB.from("athlete_flags").update({note}).eq("id", id); }
 // Grade for results that didn't list one: the same kid's grade at another meet
 let GRADE_FILL = null;
 function gradeOf(r){
@@ -407,9 +492,15 @@ function entrants(ev, g, schoolIds, grad){
     if (r.event!==ev || r.gender!==g || r.mark_value==null || !schoolIds.includes(r.school_id)) return;
     const gr = r.relay ? null : gradeOf(r);
     if (grad && gr===12) return;                                       // graduated
+    if (grad && !r.relay && isGone(r.school_id, r.athlete)) return;    // marked not returning
     if (grad && bc && r.school_id===bc.id && !r.relay && !(r.bc_athlete_id ? ATHLETES.some(a=>a.id===r.bc_athlete_id) : onRoster(r.athlete))) return;   // not on this year's roster
+    if (r.relay && grad) { const rf = relayFlag(r.school_id, ev, g); if (rf) return; }   // replaced by the coach's adjustment below
     const key = r.relay ? "R|"+r.school_id : r.school_id+"|"+nk(r.athlete);
     put(key, {v:+r.mark_value, who:r.relay ? "Relay" : r.athlete, school:r.school_id, grade: gr ? (grad ? gr+1 : gr) : null, bc: bc && r.school_id===bc.id, src:"2026"});
+  });
+  // coach-adjusted relays
+  if (grad && /^4x/.test(ev)) (IX.flags||[]).filter(f=>f.status==="relay" && f.athlete_key===nk(relayKey(ev,g)) && schoolIds.includes(f.school_id) && f.adj_mark).forEach(f => {
+    const m = parseMark(ev, f.adj_mark); if (m.ok && m.value!=null) put("R|"+f.school_id, {v:m.value, who:"Relay", school:f.school_id, grade:null, bc: bc && f.school_id===bc.id, src:"adjusted", adj:true});
   });
   // our current roster's PRs (covers new kids and marks from meets we didn't import)
   if (bc && schoolIds.includes(bc.id) && !/^4x/.test(ev)) ATHLETES.filter(a=>a.level==="HS" && a.g===g && a.prs && a.prs[ev]).forEach(a => {
@@ -449,6 +540,20 @@ function dashData(m, g, grad, entries){
   return {evs, team, opps, open, bc};
 }
 const gapTxt = (ev, gap) => FIELD.has(ev) ? (gap>=12 ? `${Math.floor(gap/12)}' ${(gap%12).toFixed(1)}"` : `${gap.toFixed(1)}"`) : (gap>=60 ? fmtMark(ev, gap) : gap.toFixed(2)+"s");
+function goneHTML(){
+  const fl = (IX.flags||[]).filter(f=>f.status==="gone"||f.status==="relay"), q = IX.d.q||"";
+  let hits = [];
+  if (q.trim().length >= 3) { const k = nk(q), seen = new Set();
+    (IX.all||[]).forEach(r => { if (r.relay || !nk(r.athlete).includes(k)) return; const key = r.school_id+"|"+nk(r.athlete); if (seen.has(key) || isGone(r.school_id, r.athlete)) return; seen.add(key); hits.push(r); }); hits = hits.slice(0,8); }
+  return `<details class="panel" ${IX.d.goneOpen?"open":""} ontoggle="IX.d.goneOpen=this.open"><summary><b>Not returning &amp; relay changes (${fl.length})</b> <span class="muted">· left out of or adjusted in the 2027 view. Tap ✕ next to a name, ✎ next to a relay, or search.</span></summary>
+    ${IX.flagsMissing ? `<p class="ed-msg err" style="margin:8px 0 0">Run <b>supabase/migrations/003_scouting_not_returning.sql</b> in Supabase to turn this on.</p>` : ""}
+    ${msgHTML(IX.msg)}
+    ${fl.length ? `<div class="tbl" style="margin-top:8px"><table class="ix-tbl"><tbody>${fl.map(f=>`<tr><td><b>${esc(f.athlete)}</b>${f.status==="relay"?` <span class="ix-pill">${f.adj_mark?"relay → "+esc(f.adj_mark):"relay dropped"}</span>`:""}</td><td>${esc(schoolName(f.school_id))}</td>
+      <td class="ix-edit"><input value="${esc(f.note||"")}" placeholder="why (optional)" onchange="IX.noteGone(${f.id}, this.value)"></td><td><button type="button" class="btn sm" onclick="IX.unGone(${f.id})">Undo</button></td></tr>`).join("")}</tbody></table></div>` : ""}
+    <label class="ed-row ix" for="gq" style="margin-top:8px"><span>Find an athlete</span><input id="gq" type="text" value="${esc(q)}" placeholder="name, 3+ letters" oninput="IX.d.q=this.value;render();const e=document.getElementById('gq');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></label>
+    ${hits.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${hits.map(r=>`<button type="button" class="btn sm" onclick="IX.markGone(${r.school_id}, ${esc(JSON.stringify(r.athlete))})">✕ ${esc(r.athlete)} · ${esc(schoolName(r.school_id))}</button>`).join("")}</div>` : ""}
+  </details>`;
+}
 function dashView(){
   if (!IX.all) { setTimeout(ixAll, 0); return `<p class="note">Loading results…</p>`; }
   if (!IX.all.length) return `<div class="panel"><p style="margin:0">No results yet. Import some meets first.</p></div>`;
@@ -463,7 +568,8 @@ function dashView(){
   const evRow = e => { const top = e.field.slice(0, Math.max(e.scoring, 3));
     const bcBest = e.field.find(x=>x.bc);
     return `<tr><td><b>${esc(evLabel(e.ev))}</b></td>
-      <td class="wrap">${top.map(x=>`<div class="${x.bc?"dash-bc":""}"><span class="mono">${x.place}.</span> ${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
+      <td class="wrap">${top.map(x=>`<div class="${x.bc?"dash-bc":""}"><span class="mono">${x.place}.</span> ${x.who==="Relay" && d.grad ? (IX.d.radj===e.ev+"|"+x.school ? `<span class="ix-edit"><input id="radj" style="width:80px" placeholder="new time" value="${esc((relayFlag(x.school,e.ev,d.g)||{}).adj_mark||"")}"></span><button type="button" class="btn sm primary" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', document.getElementById('radj').value.trim())">Save</button><button type="button" class="btn sm" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', '')">Drop relay</button><button type="button" class="btn sm" onclick="IX.d.radj=null;render()">Cancel</button> `
+      : `<button type="button" class="dash-x" title="Adjust this relay" aria-label="Adjust ${esc(sName(x.school))} relay" onclick="IX.d.radj='${e.ev}|${x.school}';render()">✎</button>`) : ""}${!x.bc && x.who!=="Relay" && d.grad ? `<button type="button" class="dash-x" title="Mark ${esc(x.who)} not returning" aria-label="Mark ${esc(x.who)} not returning" onclick="IX.markGone(${x.school}, ${esc(JSON.stringify(x.who))})">✕</button>` : ""}${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.adj?` <span class="ix-pill">adjusted</span>`:""}${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
       <td class="wrap">${bcBest ? `<b>${bcBest.place}${["st","nd","rd"][bcBest.place-1]||"th"}</b> · ${esc(bcBest.who)} <span class="mono">${esc(fmtMark(e.ev, bcBest.v))}</span>` : `<span class="muted">No BC mark</span>`}</td>
       <td class="mono">${e.field.filter(x=>x.bc).reduce((a,x)=>a+x.pts,0)||""}</td></tr>`; };
   return `<div class="panel ed ix"><div class="ix-grid">
@@ -477,6 +583,7 @@ function dashView(){
       <div class="panel"><h2>Projected team scores</h2><div class="tbl"><table><tbody>${teams.map(([s,v],i)=>`<tr class="${+s===bcId?"dash-bc":""}"><td>${i+1}</td><td><b>${esc(sName(+s))}</b></td><td class="mono">${v%1?v.toFixed(1):v}</td></tr>`).join("")}</tbody></table></div></div>
       <div class="panel"><h2>Closest points to grab</h2>${D.opps.length ? `<ol class="dash-list">${D.opps.slice(0,8).map(o=>`<li><b>${esc(evLabel(o.ev))}</b>: ${esc(o.x.who)} (${o.x.place}${["st","nd","rd"][o.x.place-1]||"th"}, <span class="mono">${esc(fmtMark(o.ev,o.x.v))}</span>) ${o.gap<1e-6 ? `is <b>tied</b> with ${esc(sName(o.ahead.school))} (lost on misses/tiebreak).` : `is <b>${esc(gapTxt(o.ev,o.gap))}</b> behind ${esc(sName(o.ahead.school))}.`} Passing them is <b>+${o.gain}</b>.</li>`).join("")}</ol>` : `<p class="note" style="margin:0">No close calls found.</p>`}
         ${D.open.length ? `<p style="margin:10px 0 0"><b>Open scoring spots</b> (fewer entrants than places that score): ${D.open.map(o=>`${esc(evLabel(o.ev))} (${o.spots}${o.bcIn?"":", no BC entry"})`).join(" · ")}. An entry there scores just by finishing.</p>` : ""}</div></div>
+    ${goneHTML()}
     <div class="tbl"><table class="ix-tbl"><thead><tr><th>Event</th><th>Projected top places</th><th>Our best</th><th>BC pts</th></tr></thead><tbody>${D.evs.map(evRow).join("")}</tbody></table></div>`;
 }
 
@@ -494,8 +601,8 @@ function ixView(){
   return head + body;
 }
 
-Object.assign(IX, {view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
+Object.assign(IX, {markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
   saveMeet:ixSaveMeet, delMeet:ixDelMeet, saveSchool:ixSaveSchool, doMerge:ixMerge, readFile, template:downloadTemplate,
-  _test:{normEvent, normGender, parseMark, parseCSV, mapHeader, inferScoring, fmtMark}});
+  _test:{parsePasted, looksLikeCSV, normEvent, normGender, parseMark, parseCSV, mapHeader, inferScoring, fmtMark}});
 if (typeof render === "function") render();
 })();
