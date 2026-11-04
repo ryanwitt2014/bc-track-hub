@@ -460,6 +460,10 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-table .sh-notes{min-width:90px}
 .sh-table .sh-pace{text-align:left;font-size:10px;line-height:1.25;white-space:normal;min-width:120px}.sh-table td.sh-pace b{font-weight:700}
 .sh-table .sh-wide{min-width:110px}
+.wstars{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wstar{font:600 14px var(--body);border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);padding:4px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.wstar span{color:var(--gold);font-size:16px;line-height:1}.wstar small{color:var(--muted);font-weight:500}
+.wstar[aria-pressed="true"]{background:var(--gold-soft);border-color:var(--gold)}
 .sh-table td.sh-rep{position:relative;min-width:40px}.sh-table td.sh-rep i{position:absolute;top:1px;left:2px;font-style:normal;font-size:7.5px;color:#777}
 .sh-table td.sh-na{background:repeating-linear-gradient(45deg,#e6e6e6 0 3px,#fff 3px 6px)}
 .sh-table td.sh-runrow{text-align:left;color:#555;font-size:10px;padding-left:8px}
@@ -539,7 +543,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04j";
+const HUB_VERSION = "11-04k";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2126,7 +2130,17 @@ const EV_CAT = {"100":"Sprints","200":"Sprints","400":"Sprints","4x100":"Sprints
   "100H":"Hurdles","110H":"Hurdles","300H":"Hurdles","LJ":"Long Jump","HJ":"High Jump","PV":"Pole Vault","SP":"Shot Put","DT":"Discus"};
 const FIELD_CATS = new Set(["Long Jump","High Jump","Pole Vault","Shot Put","Discus"]);
 const PACE_CATS = new Set(["Distance","Mid Distance"]);
-let sh = {week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:""};
+let sh = {week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
+// Winter conditioning roster: starred kids are the only ones printed on sheets before official practice starts.
+const OFFICIAL_START = "2027-02-15";
+let WINTER = {ids:[]}, wQueue = Promise.resolve(), wMsg = {kind:"",text:""};
+const isWinter = a => WINTER.ids.includes(a.id);
+function winterOn(date){ if (sh.winter==="on") return true; if (sh.winter==="off") return false; return !!date && date < parseD(OFFICIAL_START); }
+function toggleWinter(id){
+  const next = {ids: isWinter({id}) ? WINTER.ids.filter(x=>x!==id) : [...WINTER.ids, id]};
+  WINTER = next; wMsg = {kind:"",text:"Saving…"}; render();
+  wQueue = wQueue.then(async()=>{ try { await saveKey("winter", WINTER); wMsg = {kind:"ok", text:`Saved · ${WINTER.ids.length} starred`}; } catch(e){ wMsg = {kind:"err", text:saveErr(e)}; } render(); });
+}
 // Who goes on a group's sheet: kids assigned to an event in that group on the Event Assignments board.
 // If a team has no assignments saved yet, fall back to the athlete's event groups.
 function groupRoster(lv, cat){
@@ -2187,9 +2201,10 @@ function sheetFit(tags, a){
 }
 function kidReps(a, d, cat, lv){ return sheetRaw(d, cat, lv).filter(it => timedLine(it) && sheetFit(splitTags(it.t).tags, a)).flatMap(it => lineReps(splitTags(it.t).text)); }
 const sheetLine = t => { const {tags, text} = splitTags(t); return (tags.length ? "(" + tags.map(x=>TAG_CHIP[x]||x).join(", ") + ") " : "") + text; };
-function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d}){
+function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
   const levels = lv==="Both" ? ["HS","JH"] : [lv];
-  const kids = levels.flatMap(l=>groupRoster(l, cat));
+  const wOn = winterOn(date) && WINTER.ids.length;
+  const kids = levels.flatMap(l=>groupRoster(l, cat)).filter(a => !wOn || isWinter(a));
   const field = FIELD_CATS.has(cat), withPace = sh.paces && PACE_CATS.has(cat);
   const timed = !field && sheetRaw(d, cat, lv).some(timedLine);
   const repDay = timed || (!field && sheetRaw(d, cat, lv).some(it => isRepLine(it.t)));
@@ -2212,7 +2227,7 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d}){
   return `<section class="sheet">
     <div class="sh-head">
       <div><div class="sh-brand">Benton Central Track &amp; Field · Practice Sheet</div>
-        <div class="sh-title">${esc(cat)} · ${lv==="Both"?"HS + JH":lv}</div></div>
+        <div class="sh-title">${esc(cat)} · ${lv==="Both"?"HS + JH":lv}${wOn?" · Winter conditioning":""}</div></div>
       <div class="sh-meta"><div><b>${esc(dateLabel)}</b></div><div>Coach: ______________</div></div>
     </div>
     <div class="sh-work"><div><b>Focus:</b> ${esc(focus||"—")}</div>
@@ -2240,7 +2255,7 @@ function buildSheets(){
       const lvs = sh.lv==="Both" ? ["Both"] : [sh.lv];
       lvs.forEach(lv=>{
         const focus = d ? (typeof d.focus==="string" ? d.focus : (lv==="Both" ? Object.entries(d.focus||{}).map(([l,f])=>l+": "+f).join(" · ") : (d.focus||{})[lv]||"")) : "";
-        out.push(sheetHTML({dateLabel, dayName: d ? d.day : "", focus, cat, lv, items: sheetItems(d, cat, lv), d}));
+        out.push(sheetHTML({dateLabel, dayName: d ? d.day : "", focus, cat, lv, items: sheetItems(d, cat, lv), d, date}));
       });
     });
   });
@@ -2714,6 +2729,16 @@ const views = {
           <label class="ed-row" for="sh-cols"><span>Boxes per kid</span><input id="sh-cols" type="number" min="3" max="12" value="${sh.cols}" onchange="sh.cols=+this.value;render()"></label>
           <label class="ed-check" for="sh-pace"><input id="sh-pace" type="checkbox" ${sh.paces?"checked":""} onchange="sh.paces=this.checked;render()"> Show paces (Distance &amp; Mid)</label>
         </div>
+        <div class="ed-row"><span>Who's on the sheet</span>${segBtns(sh.winter,[["auto","Auto"],["on","★ Winter only"],["off","Everyone"]],"(v=>{sh.winter=v;render()})")}</div>
+        <p class="note" style="margin:0"><b>Auto</b> prints only ★ winter conditioning kids before official practice starts (${parseD(OFFICIAL_START).toLocaleDateString("en-US",{month:"short",day:"numeric"})}), and everyone after. ${WINTER.ids.length?`${WINTER.ids.length} kid${WINTER.ids.length===1?"":"s"} starred.`:"No one is starred yet, so everyone prints."}
+          <a href="#coaches" onclick="sh.wedit=!sh.wedit;render();return false">${sh.wedit?"Done starring":"★ Star winter kids"}</a></p>
+        ${sh.wedit ? (()=>{ const lvs = sh.lv==="Both" ? ["HS","JH"] : [sh.lv];
+            const pool = sh.wall ? ATHLETES.filter(a=>lvs.includes(a.level)) : [...new Map(lvs.flatMap(l=>sh.groups.flatMap(g=>groupRoster(l,g))).map(a=>[a.id,a])).values()];
+            pool.sort((x,y)=>x.level.localeCompare(y.level) || x.g.localeCompare(y.g) || x.name.localeCompare(y.name));
+            return `<div class="panel" style="padding:12px 14px"><div class="bar"><b>Tap to star kids doing December conditioning</b>
+              <label class="ed-check" for="w-all"><input id="w-all" type="checkbox" ${sh.wall?"checked":""} onchange="sh.wall=this.checked;render()"> Show every athlete, not just the groups picked above</label></div>
+              <div class="wstars">${pool.map(a=>`<button type="button" class="wstar" aria-pressed="${isWinter(a)}" onclick="toggleWinter('${a.id}')"><span>${isWinter(a)?"★":"☆"}</span>${esc(a.name)} <small>${a.level} ${a.g}</small></button>`).join("") || `<span class="muted">No athletes in these groups.</span>`}</div>
+              <p class="ed-msg ${wMsg.kind}" role="status" style="margin:6px 0 0">${esc(wMsg.text)}</p></div>`; })() : ""}
         <div class="ed-save"><button type="button" class="btn primary" onclick="window.print()" ${sh.groups.length?"":"disabled"}>Print sheets</button>
           <span class="note" style="margin:0">To save a PDF instead, choose <b>Save as PDF</b> as the printer.</span></div>
       </div>`;
@@ -3491,6 +3516,7 @@ async function loadAll(){
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
+  if (byKey.winter && Array.isArray(byKey.winter.ids)) WINTER = {ids: byKey.winter.ids};
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
