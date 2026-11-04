@@ -16,6 +16,8 @@ const css = `
 .ix-pill.new{background:var(--gold);color:var(--gold-ink)}.ix-pill.err{background:#b4472b;color:#fff}.ix-pill.ok{background:var(--accent);color:var(--accent-ink)}
 .ix-edit input{font:13px var(--body);padding:3px 6px;width:100%;min-width:60px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
 .dash-bc{background:var(--gold-soft)}div.dash-bc{border-radius:3px;padding:0 4px;margin:0 -4px}
+.lu-ev{display:inline-block;margin:0 10px 2px 0;white-space:nowrap}
+.brief{border-left:4px solid var(--gold)}
 .dash-x{font:700 11px var(--body);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:3px;padding:0 4px;margin-right:4px;cursor:pointer;line-height:1.4}
 .dash-x:hover{color:#b4472b;border-color:#b4472b}
 .dash-list{margin:0;padding-left:20px;display:grid;gap:6px}
@@ -516,8 +518,8 @@ function projectEvent(ev, g, schoolIds, sc, entries, grad){
   field.forEach((e,i)=>{ e.place = i+1; e.pts = pts[i]||0; });
   return {ev, field, pts, scoring: pts.length};
 }
-function dashData(m, g, grad, entries){
-  const evs = evFor(g).map(ev => projectEvent(ev, g, m.schools, m.sc, entries, grad));
+function dashData(m, g, grad, entries){ return analyze(evFor(g).map(ev => projectEvent(ev, g, m.schools, m.sc, entries, grad)), m); }
+function analyze(evs, m){
   const team = {}; m.schools.forEach(s=>team[s]=0);
   evs.forEach(e => e.field.forEach(x => team[x.school] = (team[x.school]||0) + x.pts));
   const bc = bcSchool(), opps = [], open = [];
@@ -539,6 +541,130 @@ function dashData(m, g, grad, entries){
   opps.sort((a,b)=> (a.pct+0.05)/a.gain - (b.pct+0.05)/b.gain);
   return {evs, team, opps, open, bc};
 }
+
+/* ---------- Phase 5: lineup optimizer + "Ways to steal points" ----------
+   Opponents enter their best (up to the per-school entry cap). BC kids are placed to score the most team points,
+   with each kid limited to N individual events (relays are kept as projected, outside the limit). */
+const EV_GROUP = ev => /^4x/.test(ev) ? "Relays" : ["100","200","100H","110H","300H"].includes(ev) ? "Sprints & hurdles" : ev==="400" ? "Sprints & hurdles" : ["800","1600","3200"].includes(ev) ? "Distance" : ["HJ","LJ","PV"].includes(ev) ? "Jumps" : "Throws";
+// realistic gain on rivals per week of training, % of the mark (rivals improve too, so this is the relative edge)
+const RATE = ev => ["100","200"].includes(ev) ? 0.05 : ["100H","110H","300H","400"].includes(ev) ? 0.10 : ["800","1600","3200"].includes(ev) ? 0.12 : ["HJ","LJ","PV"].includes(ev) ? 0.15 : ["SP","DT"].includes(ev) ? 0.25 : 0.08;
+const CAP = ev => ["100","200"].includes(ev) ? 1.5 : ["SP","DT"].includes(ev) ? 6 : 4;
+function feasibility(ev, pct, weeks){
+  const room = Math.min(CAP(ev), RATE(ev) * Math.max(weeks, 0));
+  if (pct <= 0.0001) return {tag:"Tiebreak", k:0};
+  if (pct <= room*0.5) return {tag:"Realistic", k:1};
+  if (pct <= room) return {tag:"Stretch", k:2};
+  return {tag:"Long shot", k:3};
+}
+function bcCandidates(ev, g, m, grad){
+  const bc = bcSchool(); if (!bc) return [];
+  const rid = name => { const k = nk(name).split(" "); const a = ATHLETES.find(a=>{ if (a.level!=="HS") return false; const n = nk(a.fullName||a.name).split(" "); return n.join(" ")===k.join(" ") || (n[0]===k[0] && n[n.length-1]===k[k.length-1]); }); return a ? a.id : null; };
+  const list = entrants(ev, g, [bc.id], grad).filter(x=>x.bc).map(x=>{ const id = x.id || rid(x.who); return {...x, id, key: id || nk(x.who)}; });
+  // distance kids in a distance event they haven't run: estimate from their VDOT (Daniels equivalence)
+  if (["800","1600","3200"].includes(ev) && typeof athleteVdot==="function" && typeof raceSec==="function") {
+    ATHLETES.filter(a=>a.level==="HS" && a.g===g && (a.cats.includes("Distance")||a.cats.includes("Mid Distance")) && !list.some(x=>x.key===a.id || x.key===nk(a.name))).forEach(a => {
+      const b = athleteVdot(a); const r = b && raceSec(a, b, ev); if (!r || !isFinite(r.s)) return;
+      list.push({v:r.s, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, key:a.id, src:"est.", est:true});
+    });
+  }
+  return list;
+}
+function placeField(ev, opp, mine, pts){
+  const field = [...opp, ...mine].sort((a,b)=> LOWER(ev) ? a.v-b.v : b.v-a.v).map(x=>({...x}));
+  field.forEach((x,i)=>{ x.place = i+1; x.pts = pts[i]||0; });
+  return field;
+}
+function optimize(m, g, grad, entries, perKid){
+  const bc = bcSchool(); const evs = evFor(g);
+  const ind = evs.filter(ev=>!/^4x/.test(ev)), rel = evs.filter(ev=>/^4x/.test(ev));
+  const opp = {}, cand = {}, pts = m.sc.ind;
+  ind.forEach(ev => { const per = {}; opp[ev] = entrants(ev, g, m.schools.filter(s=>!bc || s!==bc.id), grad).filter(x=>{ per[x.school]=(per[x.school]||0)+1; return per[x.school] <= entries; }); cand[ev] = bcCandidates(ev, g, m, grad); });
+  const evPts = (ev, mine) => placeField(ev, opp[ev], mine, pts).filter(x=>x.bc).reduce((a,x)=>a+x.pts, 0);
+  const pick = {}; ind.forEach(ev=>pick[ev]=[]);
+  const load = k => ind.reduce((a,ev)=>a + (pick[ev].some(x=>x.key===k)?1:0), 0);
+  const total = () => ind.reduce((a,ev)=>a+evPts(ev, pick[ev]), 0);
+  // greedy: keep adding the entry that adds the most points
+  for (let guard=0; guard<200; guard++) {
+    let best = null;
+    ind.forEach(ev => { if (pick[ev].length >= entries) return; const base = evPts(ev, pick[ev]);
+      cand[ev].forEach(c => { if (pick[ev].some(x=>x.key===c.key) || load(c.key) >= perKid) return;
+        const gain = evPts(ev, [...pick[ev], c]) - base; if (gain > 0 && (!best || gain > best.gain || (gain===best.gain && !c.est && best.c.est))) best = {ev, c, gain}; }); });
+    if (!best) break; pick[best.ev].push(best.c);
+  }
+  // swaps: try moving each kid's entry to a better event, or swapping in a different kid
+  for (let round=0; round<6; round++) {
+    let improved = false;
+    for (const ev of ind) for (const cur of [...pick[ev]]) {
+      const before = total();
+      for (const ev2 of ind) for (const c of cand[ev2]) {
+        if (ev2===ev && c.key===cur.key) continue;
+        if (pick[ev2].some(x=>x.key===c.key)) continue;
+        const keep = pick[ev]; pick[ev] = pick[ev].filter(x=>x!==cur);
+        const fits = pick[ev2].length < entries && (load(c.key) < perKid);
+        if (fits) { pick[ev2].push(c); if (total() > before + 1e-9) { improved = true; break; } pick[ev2].pop(); }
+        pick[ev] = keep;
+      }
+      if (improved) break;
+    }
+    if (!improved) break;
+  }
+  const out = ind.map(ev => ({ev, field: placeField(ev, opp[ev], pick[ev], pts), pts, scoring: pts.length}))
+    .concat(rel.map(ev => projectEvent(ev, g, m.schools, m.sc, entries, grad)));
+  out.sort((a,b)=>evs.indexOf(a.ev)-evs.indexOf(b.ev));
+  // lineup per kid
+  const kids = {};
+  out.forEach(e => e.field.filter(x=>x.bc && x.who!=="Relay").forEach(x => { const k = x.key||x.id||nk(x.who); (kids[k] = kids[k] || {who:x.who, id:x.id, evs:[], pts:0}); kids[k].evs.push({ev:e.ev, place:x.place, pts:x.pts, est:x.est, v:x.v}); kids[k].pts += x.pts; }));
+  // kids with marks who didn't make the lineup
+  const benched = {}; ind.forEach(ev => cand[ev].filter(c=>!c.est && !kids[c.key]).forEach(c => { (benched[c.key] = benched[c.key] || {who:c.who, evs:[]}).evs.push(ev); }));
+  return {evs: out, kids: Object.values(kids).sort((a,b)=>b.pts-a.pts), benched: Object.values(benched)};
+}
+function weeksTo(dateStr){ return Math.max(0, Math.round((new Date(dateStr+"T12:00") - today)/ (7*864e5))); }
+// Plain-English plan, built from the numbers
+function briefHTML(m, g, A, O, naiveBC){
+  const bcId = A.bc && A.bc.id; if (!bcId) return "";
+  const teams = Object.entries(A.team).map(([s,v])=>[+s, v]).sort((a,b)=>b[1]-a[1]);
+  const rank = teams.findIndex(t=>t[0]===bcId)+1, mine = A.team[bcId]||0;
+  const leader = teams[0], ahead = rank>1 ? teams[rank-2] : null, behind = teams[rank] || null;
+  const weeks = weeksTo(m.date), sN = id => schoolName(id);
+  const target = rank===1 ? (behind && behind[0]) : leader[0];
+  const need = rank===1 ? 0 : leader[1] - mine + 0.5;
+  // levers: pass-ups, valued as the swing against the team we're chasing (or holding off)
+  const levers = [];
+  A.evs.forEach(e => e.field.forEach((x,i) => {
+    if (!x.bc || x.who==="Relay" && !/^4x/.test(e.ev)) return;
+    for (let j=i-1; j>=Math.max(0,i-2); j--) {
+      const y = e.field[j]; if (y.bc) break;
+      const gain = (e.pts[j]||0) - (x.pts||0); if (gain<=0) continue;
+      // everyone from j..i-1 drops one place
+      let theirLoss = 0; for (let k=j;k<i;k++) if (e.field[k].school===target) theirLoss += (e.pts[k]||0) - (e.pts[k+1]||0);
+      const gap = Math.abs(y.v - x.v), pct = gap / y.v * 100, f = feasibility(e.ev, pct, weeks);
+      levers.push({ev:e.ev, x, y, places:i-j, gain, swing: gain + theirLoss, gap, pct, f});
+    }
+  }));
+  levers.sort((a,b)=> a.f.k - b.f.k || (b.swing/(a.pct+0.3)) - (a.swing/(b.pct+0.3)) );
+  const usable = levers.filter(l=>l.f.k<=2);
+  // pick a set of levers (one per kid per event) until the gap is covered
+  let sum = 0; const plan = []; const used = new Set();
+  for (const l of usable) { const k = l.ev+"|"+l.x.who; if (used.has(k)) continue; used.add(k); plan.push(l); sum += l.swing; if (rank>1 && sum >= need) break; if (plan.length>=8) break; }
+  const open = A.open.filter(o=>!o.bcIn);
+  const groups = {}; plan.forEach(l => { const gname = EV_GROUP(l.ev); groups[gname] = (groups[gname]||0) + l.swing; });
+  const topGroups = Object.entries(groups).sort((a,b)=>b[1]-a[1]);
+  const overLimit = O ? null : null;
+  const when = weeks>16 ? `${weeks} weeks out: lots of time. Most of these gains come from training, so build them into the season plan now.` : weeks>6 ? `${weeks} weeks out: in season. Target the specific kids and events below in practice and test them at regular-season meets.` : weeks>0 ? `${weeks} week${weeks===1?"":"s"} out: fitness is mostly set. Points now come from the lineup, relays, and execution.` : "This meet has passed.";
+  const head = rank===1
+    ? `<b>Projected 1st</b> with ${mine%1?mine.toFixed(1):mine}, ${behind ? `${(mine-behind[1]).toFixed(1).replace(/\.0$/,"")} ahead of ${esc(sN(behind[0]))}` : ""}. The goal is holding the lead.`
+    : `<b>Projected ${rank}${["st","nd","rd"][rank-1]||"th"}</b> with ${mine%1?mine.toFixed(1):mine}. <b>${need.toFixed(1).replace(/\.0$/,"").replace(/\.5$/,"½")} points</b> from beating ${esc(sN(leader[0]))}${ahead && ahead[0]!==leader[0] ? ` (${(ahead[1]-mine).toFixed(1).replace(/\.0$/,"")} from ${esc(sN(ahead[0]))})` : ""}.`;
+  const lev = l => `<li><b>${esc(evLabel(l.ev))}</b>: ${/^4x/.test(l.ev) ? `our relay moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(sN(l.y.school))}` : `${esc(l.x.who)} ${l.x.est?"(est.) ":""}moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(l.y.who)} (${esc(sN(l.y.school))})`} by finding <b>${esc(gapTxt(l.ev, l.gap))}</b>${l.pct>0?` (${l.pct.toFixed(1)}%)`:""}. <b>+${l.gain}</b>${l.swing>l.gain?`, a <b>${l.swing}-point swing</b> vs ${esc(sN(target))}`:""}. <span class="ix-pill ${l.f.k<=1?"ok":l.f.k===2?"new":"err"}">${l.f.tag}</span></li>`;
+  return `<div class="panel brief"><div class="bar"><h2>Ways to steal points</h2><button type="button" class="btn sm" onclick="IX.copyBrief()">Copy for Claude</button></div>
+    <p style="margin:0 0 6px">${head}</p>
+    <p class="note" style="margin:0 0 10px">${esc(when)}</p>
+    ${O && O.gain>0 ? `<p style="margin:0 0 10px">📋 <b>Lineup:</b> putting kids in their best events (below) is worth <b>+${O.gain%1?O.gain.toFixed(1):O.gain}</b> over everyone running everything they have a mark in.${O.notes.length?" "+O.notes.map(esc).join(" "):""}</p>` : ""}
+    ${plan.length ? `<p style="margin:0"><b>${rank>1 ? (sum>=need ? "A path to the win" : "Biggest moves") : "Where to add cushion"}</b>${rank>1 && sum>=need ? ` (together about +${sum%1?sum.toFixed(1):sum} vs ${esc(sN(target))}, enough to pass them)` : ""}:</p><ol class="dash-list">${plan.map(lev).join("")}</ol>` : `<p class="note" style="margin:0">No realistic single pass-ups found. Look at the lineup and open spots.</p>`}
+    ${open.length ? `<p style="margin:10px 0 0">🎯 <b>Coverage:</b> nobody from BC in ${open.map(o=>`${esc(evLabel(o.ev))} (${o.spots} open spot${o.spots===1?"":"s"})`).join(", ")}. Any kid who finishes there scores. Worth finding a body.</p>` : ""}
+    ${topGroups.length ? `<p style="margin:10px 0 0">🏋️ <b>Training focus:</b> ${topGroups.map(([gname,v])=>`${esc(gname)} (+${v%1?v.toFixed(1):v})`).join(" · ")}.</p>` : ""}
+    <p class="note" style="margin:10px 0 0">Realistic/Stretch is based on how much a kid typically gains on rivals in the weeks left, with everyone else improving too. It's a guide, not a guarantee. Opponents' new kids won't show until they race.</p></div>`;
+}
+
 const gapTxt = (ev, gap) => FIELD.has(ev) ? (gap>=12 ? `${Math.floor(gap/12)}' ${(gap%12).toFixed(1)}"` : `${gap.toFixed(1)}"`) : (gap>=60 ? fmtMark(ev, gap) : gap.toFixed(2)+"s");
 function goneHTML(){
   const fl = (IX.flags||[]).filter(f=>f.status==="gone"||f.status==="relay"), q = IX.d.q||"";
@@ -561,8 +687,10 @@ function dashView(){
   let m = ms.find(x=>x.key===d.meet) || ms.find(x=>x.date >= iso(today)) || ms[0];
   if (!m) return `<div class="panel"><p style="margin:0">No HS meets on the schedule.</p></div>`;
   if (m.gOnly) d.g = m.gOnly;
-  const entries = +d.entries || m.entries;
-  const D = dashData(m, d.g, d.grad, entries);
+  const entries = +d.entries || m.entries, perKid = +d.perKid || 3;
+  const O = optimize(m, d.g, d.grad, entries, perKid); O.gain = 0; O.notes = [];
+  const D = analyze(O.evs, m);
+  IX.lastBrief = {m, g:d.g, D, O, perKid, entries};
   const sName = id => schoolName(id), bcId = D.bc && D.bc.id;
   const teams = Object.entries(D.team).sort((a,b)=>b[1]-a[1]);
   const evRow = e => { const top = e.field.slice(0, Math.max(e.scoring, 3));
@@ -575,14 +703,21 @@ function dashView(){
   return `<div class="panel ed ix"><div class="ix-grid">
       <label class="ed-row" for="dm"><span>Meet</span><select id="dm" onchange="IX.d.meet=this.value;IX.d.entries='';render()">${ms.map(x=>`<option value="${esc(x.key)}" ${x.key===m.key?"selected":""}>${esc(new Date(x.date+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))} · ${esc(x.name)}</option>`).join("")}</select></label>
       <div class="ed-row"><span>Gender</span>${m.gOnly ? `<b>${m.gOnly==="G"?"Girls":"Boys"}</b>` : segBtns(d.g,[["G","Girls"],["B","Boys"]],"(v=>{IX.d.g=v;render()})")}</div>
+      <label class="ed-row" for="dk"><span>Individual events per kid</span><input id="dk" type="text" inputmode="numeric" value="${perKid}" oninput="IX.d.perKid=this.value" onchange="render()"></label>
       <label class="ed-row" for="de"><span>Entries per school</span><input id="de" type="text" inputmode="numeric" value="${entries}" oninput="IX.d.entries=this.value" onchange="render()"></label>
       <label class="ed-check" for="dg"><input id="dg" type="checkbox" ${d.grad?"checked":""} onchange="IX.d.grad=this.checked;render()"> 2027 view: last year's seniors removed, everyone a grade older</label></div>
       <p class="note" style="margin:0">Teams: ${m.schools.map(s=>esc(sName(s))).join(", ")}${m.missing.length?` · <b>No 2026 data for ${esc(m.missing.join(", "))}</b>`:""} · Scoring ${esc(m.sc.ind.join("-"))}${m.sc.relay&&m.sc.relay.join()!==m.sc.ind.join()?`, relays ${esc(m.sc.relay.join("-"))}`:""}${m.sc.inferred&&m.tmpl&&/assumed/.test(m.sc.basis||"")?" (assumed)":""}.
-        Marks are each kid's best from last season, plus our current roster's PRs. It's a projection, not a prediction.</p></div>
+        Marks are each kid's best from last season, plus our current roster's PRs. BC kids are placed in the events that score the most, up to ${perKid} individual events each (Indiana's limit is 4 including relays; relays are counted separately here, so check with your AD). It's a projection, not a prediction.</p></div>
+    ${briefHTML(m, d.g, D, O)}
     <div class="cols">
       <div class="panel"><h2>Projected team scores</h2><div class="tbl"><table><tbody>${teams.map(([s,v],i)=>`<tr class="${+s===bcId?"dash-bc":""}"><td>${i+1}</td><td><b>${esc(sName(+s))}</b></td><td class="mono">${v%1?v.toFixed(1):v}</td></tr>`).join("")}</tbody></table></div></div>
       <div class="panel"><h2>Closest points to grab</h2>${D.opps.length ? `<ol class="dash-list">${D.opps.slice(0,8).map(o=>`<li><b>${esc(evLabel(o.ev))}</b>: ${esc(o.x.who)} (${o.x.place}${["st","nd","rd"][o.x.place-1]||"th"}, <span class="mono">${esc(fmtMark(o.ev,o.x.v))}</span>) ${o.gap<1e-6 ? `is <b>tied</b> with ${esc(sName(o.ahead.school))} (lost on misses/tiebreak).` : `is <b>${esc(gapTxt(o.ev,o.gap))}</b> behind ${esc(sName(o.ahead.school))}.`} Passing them is <b>+${o.gain}</b>.</li>`).join("")}</ol>` : `<p class="note" style="margin:0">No close calls found.</p>`}
         ${D.open.length ? `<p style="margin:10px 0 0"><b>Open scoring spots</b> (fewer entrants than places that score): ${D.open.map(o=>`${esc(evLabel(o.ev))} (${o.spots}${o.bcIn?"":", no BC entry"})`).join(" · ")}. An entry there scores just by finishing.</p>` : ""}</div></div>
+    <div class="panel"><div class="bar"><h2>Best lineup for this meet</h2><span class="muted">BC ${(()=>{ const t = D.team[D.bc&&D.bc.id]||0; return t%1?t.toFixed(1):t; })()} pts</span></div>
+      ${O.kids.length ? `<div class="tbl"><table class="ix-tbl"><thead><tr><th>Athlete</th><th>Events (projected place · pts)</th><th>Pts</th></tr></thead><tbody>
+        ${O.kids.map(k=>`<tr><td><b>${k.id?`<a href="#a-${k.id}">${esc(k.who)}</a>`:esc(k.who)}</b></td><td class="wrap">${k.evs.map(e=>`<span class="lu-ev">${esc(evLabel(e.ev))}${e.est?` <span class="ix-pill new" title="Estimated from their other distance marks">est.</span>`:""} · ${e.place}${["st","nd","rd"][e.place-1]||"th"}${e.pts?` · <b>${e.pts%1?e.pts.toFixed(1):e.pts}</b>`:""}</span>`).join("")}</td><td class="mono">${k.pts%1?k.pts.toFixed(1):k.pts}</td></tr>`).join("")}</tbody></table></div>` : `<p class="note" style="margin:0">No BC marks for this gender yet.</p>`}
+      ${O.benched.length ? `<p class="note" style="margin:8px 0 0">Not in the scoring lineup (they don't change the points here, but could run for experience or as relay legs): ${O.benched.map(b=>`${esc(b.who)} (${b.evs.map(evLabel).map(esc).join(", ")})`).join(" · ")}.</p>` : ""}
+      <p class="note" style="margin:6px 0 0"><b>est.</b> = a distance kid placed in a race they haven't run, using a time estimated from their other races. Worth a try at a regular-season meet before trusting it.</p></div>
     ${goneHTML()}
     <div class="tbl"><table class="ix-tbl"><thead><tr><th>Event</th><th>Projected top places</th><th>Our best</th><th>BC pts</th></tr></thead><tbody>${D.evs.map(evRow).join("")}</tbody></table></div>`;
 }
@@ -601,7 +736,19 @@ function ixView(){
   return head + body;
 }
 
-Object.assign(IX, {markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
+async function copyBrief(){
+  const b = IX.lastBrief; if (!b) return; const {m, g, D, O} = b, sN = id => schoolName(id);
+  const teams = Object.entries(D.team).sort((x,y)=>y[1]-x[1]).map(([s,v])=>`${sN(+s)} ${v}`).join(", ");
+  const lines = [`Meet: ${m.name} (${m.date}), ${g==="G"?"girls":"boys"}. Scoring ${m.sc.ind.join("-")}. Teams: ${m.schools.map(sN).join(", ")}.`,
+    `Projected team scores: ${teams}.`, `BC lineup (max ${b.perKid} individual events each):`,
+    ...O.kids.map(k=>`- ${k.who}: ${k.evs.map(e=>`${evLabel(e.ev)}${e.est?" (est.)":""} ${e.place}th ${e.pts}pts ${fmtMark(e.ev,e.v)}`).join("; ")}`),
+    `Events (projected top places):`, ...D.evs.map(e=>`- ${evLabel(e.ev)}: ${e.field.slice(0, e.scoring+1).map(x=>`${x.place}. ${x.who} (${sN(x.school)}) ${fmtMark(e.ev,x.v)}`).join("; ")}`),
+    `Question: what's our best plan to win this meet?`];
+  try { await navigator.clipboard.writeText(lines.join("\n")); IX.msg = {kind:"ok", text:"Copied. Paste it into a chat with Claude."}; }
+  catch(e) { IX.msg = {kind:"err", text:"Couldn't copy automatically. Your browser blocked it."}; }
+  render();
+}
+Object.assign(IX, {copyBrief, markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
   saveMeet:ixSaveMeet, delMeet:ixDelMeet, saveSchool:ixSaveSchool, doMerge:ixMerge, readFile, template:downloadTemplate,
   _test:{parsePasted, looksLikeCSV, normEvent, normGender, parseMark, parseCSV, mapHeader, inferScoring, fmtMark}});
 if (typeof render === "function") render();
