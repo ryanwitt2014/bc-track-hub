@@ -15,13 +15,15 @@ const css = `
 .ix-pill{display:inline-block;font-size:12px;font-weight:700;border-radius:3px;padding:1px 7px;margin-right:4px;background:var(--chip)}
 .ix-pill.new{background:var(--gold);color:var(--gold-ink)}.ix-pill.err{background:#b4472b;color:#fff}.ix-pill.ok{background:var(--accent);color:var(--accent-ink)}
 .ix-edit input{font:13px var(--body);padding:3px 6px;width:100%;min-width:60px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.dash-bc{background:var(--gold-soft)}div.dash-bc{border-radius:3px;padding:0 4px;margin:0 -4px}
+.dash-list{margin:0;padding-left:20px;display:grid;gap:6px}
 .ix-stat{font-family:var(--mono);font-size:28px;font-weight:500}
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 
 /* ---------- state ---------- */
 const IX = window.IX = {
-  tab:"import", loaded:false, loading:false, err:"",
+  tab:"dash", loaded:false, loading:false, err:"",
   schools:[], meets:[], counts:{}, batches:[],
   imp:{name:"", date:"", level:"HS", type:"conference", host:"", url:"", note:"", gender:"row", csv:"", file:"", rows:null, map:{}, saving:false, msg:null},
   rf:{meet:"", event:"", gender:"", school:"", rows:null, loading:false}, edit:null, medit:null, sedit:null, merge:null, del:null, msg:null,
@@ -187,7 +189,7 @@ async function ixSave(){
     p.saving = false;
     p.msg = {kind:"ok", text:`Saved to "${meet.name}": ${inserted} new result${inserted===1?"":"s"}${dups?`, ${dups} already in the system (skipped)`:""}${p.rows.length-good.length?`, ${p.rows.length-good.length} row${p.rows.length-good.length===1?"":"s"} with problems not saved`:""}.`};
     p.rows = null; p.csv = ""; p.file = ""; p.map = {};
-    IX.loaded = false; await ixLoad(true);
+    IX.loaded = false; IX.all = null; await ixLoad(true);
   } catch(e) { p.saving = false; p.msg = {kind:"err", text:"Save failed: " + (e.message||e)}; render(); }
 }
 async function ixResults(){
@@ -348,17 +350,147 @@ function schoolsView(){
           : `<button type="button" class="btn sm" onclick="IX.sedit=${esc(JSON.stringify({id:s.id, name:s.name, short:s.short||"", conference:s.conference||"", aliases:(s.aliases||[]).join(", ")}))};render()">Edit</button><button type="button" class="btn sm" onclick="IX.merge=${s.id};render()">Merge</button>`}</td></tr>`; }).join("")}
     </tbody></table></div>`;
 }
+
+/* ---------- Phase 2: Scouting dashboard ----------
+   Pick an upcoming meet → who's in it → project every event from best marks (2026 results + our current roster PRs),
+   with last year's seniors removed. Shows projected team scores, each event's top places, and where BC is closest to more points. */
+IX.d = {meet:"", g:"G", grad:true, entries:"", open:null};
+IX.all = null;
+async function ixAll(){
+  if (IX.all || IX.allLoading) return; IX.allLoading = true;
+  try { IX.all = await fetchAll(()=>SB.from("results").select("id,meet_id,event,gender,round,place,athlete,school_id,grade,mark_value,status,relay,bc_athlete_id")); }
+  catch(e){ IX.err = "Couldn't load results: " + (e.message||e); }
+  GRADE_FILL = null; IX.allLoading = false; render();
+}
+const LOWER = ev => !FIELD.has(ev);
+const better = (ev, a, b) => LOWER(ev) ? a < b : a > b;
+const DASH_EV = ["100","200","400","800","1600","3200","100H","110H","300H","4x100","4x400","4x800","HJ","LJ","PV","SP","DT"];
+const evFor = g => DASH_EV.filter(e => !(g==="G" && e==="110H") && !(g==="B" && e==="100H"));
+function scheduleMeets(){
+  const out = [];
+  (typeof SCHEDULE!=="undefined" ? SCHEDULE : []).filter(m=>m.level==="HS" && !/indoor|regional|hsr/i.test(m.meet)).forEach(m => {
+    const name = m.meet.replace(/\s*\*[^*]+\*/g,"").trim();
+    let type = /conference/i.test(name) ? "conference" : /sectional/i.test(name) ? "sectional" : /invitational|invite/i.test(name) ? "invite" : null;
+    let schools = [], missing = [], tmpl = null;
+    if (type==="conference" || type==="sectional") {
+      tmpl = IX.meets.filter(x=>x.meet_type===type && x.level==="HS").sort((a,b)=>(b.meet_date||"").localeCompare(a.meet_date||""))
+        .find(x => type!=="sectional" || !/girls|boys/i.test(name) || new RegExp(/girls/i.test(name)?"girls":"boys","i").test(x.name));
+      if (tmpl) schools = [...new Set((IX.all||[]).filter(r=>r.meet_id===tmpl.id).map(r=>r.school_id))].filter(Boolean);
+    } else {
+      name.split(/\s*(?:\/|,|\bvs\.?\b|&)\s*/i).map(s=>s.trim()).filter(Boolean).forEach(p => { const s = findSchool(p); if (s) schools.push(s.id); else if (!/^(bc|benton central)$/i.test(p)) missing.push(p); });
+    }
+    const bc = bcSchool(); if (bc && !schools.includes(bc.id)) schools.push(bc.id);
+    const n = schools.length;
+    if (!type) type = n<=2 ? "dual" : n===3 ? "tri" : n===4 ? "quad" : "invite";
+    // scoring: from the matching 2026 meet if we have one, else the defaults
+    if (!tmpl) tmpl = IX.meets.filter(x=>x.level==="HS" && x.meet_type!=="conference" && x.meet_type!=="sectional").map(x=>{ const ids = new Set((IX.all||[]).filter(r=>r.meet_id===x.id).map(r=>r.school_id)); return {x, hit: schools.filter(s=>ids.has(s)).length}; })
+      .filter(o=>o.hit>=Math.min(2,n)).sort((a,b)=>b.hit-a.hit)[0]?.x || null;
+    const sc = tmpl && tmpl.scoring && tmpl.scoring.ind ? tmpl.scoring : type==="dual" ? {ind:[5,3,1], relay:[5]} : (type==="tri"||type==="quad") ? {ind:[6,4,3,2,1], relay:[6,4,3,2,1]} : {ind:[10,8,6,5,4,3,2,1], relay:[10,8,6,5,4,3,2,1]};
+    const gOnly = /girls/i.test(name) && !/boys/i.test(name) ? "G" : /boys/i.test(name) && !/girls/i.test(name) ? "B" : null;
+    out.push({key:m.date+"|"+name, date:m.date, name, type, schools, missing, sc, gOnly, tmpl, entries: (type==="conference"||type==="sectional"||type==="invite") ? 2 : 3});
+  });
+  return out;
+}
+// Best mark per athlete (or per relay team) in an event, for the chosen schools
+// Grade for results that didn't list one: the same kid's grade at another meet
+let GRADE_FILL = null;
+function gradeOf(r){
+  if (r.grade) return r.grade;
+  if (!GRADE_FILL) { GRADE_FILL = new Map(); (IX.all||[]).forEach(x=>{ if (x.grade && !x.relay) { const k = x.school_id+"|"+nk(x.athlete); GRADE_FILL.set(k, Math.max(GRADE_FILL.get(k)||0, x.grade)); } }); }
+  return GRADE_FILL.get(r.school_id+"|"+nk(r.athlete)) || null;
+}
+const onRoster = name => { const k = nk(name).split(" "); return ATHLETES.some(a=>{ if (a.level!=="HS") return false; const n = nk(a.fullName||a.name).split(" "); return n.join(" ")===k.join(" ") || (n[0]===k[0] && n[n.length-1]===k[k.length-1]); }); };
+function entrants(ev, g, schoolIds, grad){
+  const bc = bcSchool(), best = new Map();
+  const put = (key, o) => { const cur = best.get(key); if (!cur || better(ev, o.v, cur.v)) best.set(key, o); };
+  (IX.all||[]).forEach(r => {
+    if (r.event!==ev || r.gender!==g || r.mark_value==null || !schoolIds.includes(r.school_id)) return;
+    const gr = r.relay ? null : gradeOf(r);
+    if (grad && gr===12) return;                                       // graduated
+    if (grad && bc && r.school_id===bc.id && !r.relay && !(r.bc_athlete_id ? ATHLETES.some(a=>a.id===r.bc_athlete_id) : onRoster(r.athlete))) return;   // not on this year's roster
+    const key = r.relay ? "R|"+r.school_id : r.school_id+"|"+nk(r.athlete);
+    put(key, {v:+r.mark_value, who:r.relay ? "Relay" : r.athlete, school:r.school_id, grade: gr ? (grad ? gr+1 : gr) : null, bc: bc && r.school_id===bc.id, src:"2026"});
+  });
+  // our current roster's PRs (covers new kids and marks from meets we didn't import)
+  if (bc && schoolIds.includes(bc.id) && !/^4x/.test(ev)) ATHLETES.filter(a=>a.level==="HS" && a.g===g && a.prs && a.prs[ev]).forEach(a => {
+    const m = parseMark(ev, a.prs[ev]); if (!m.ok || m.value==null) return;
+    put(bc.id+"|"+nk(a.fullName||a.name), {v:m.value, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, src:"PR"});
+  });
+  return [...best.values()].sort((a,b)=> LOWER(ev) ? a.v-b.v : b.v-a.v);
+}
+function projectEvent(ev, g, schoolIds, sc, entries, grad){
+  const relay = /^4x/.test(ev), pts = relay ? (sc.relay||sc.ind) : sc.ind, cap = relay ? 1 : entries;
+  const per = {}, field = [];
+  entrants(ev, g, schoolIds, grad).forEach(e => { per[e.school] = (per[e.school]||0)+1; if (per[e.school] <= cap) field.push(e); });
+  field.forEach((e,i)=>{ e.place = i+1; e.pts = pts[i]||0; });
+  return {ev, field, pts, scoring: pts.length};
+}
+function dashData(m, g, grad, entries){
+  const evs = evFor(g).map(ev => projectEvent(ev, g, m.schools, m.sc, entries, grad));
+  const team = {}; m.schools.forEach(s=>team[s]=0);
+  evs.forEach(e => e.field.forEach(x => team[x.school] = (team[x.school]||0) + x.pts));
+  const bc = bcSchool(), opps = [], open = [];
+  evs.forEach(e => {
+    const scorers = e.field.filter(x=>x.pts>0).length;
+    if (scorers < e.scoring) open.push({ev:e.ev, spots:e.scoring-scorers, bcIn:e.field.some(x=>x.bc)});
+    e.field.forEach((x,i) => { if (!x.bc || i===0) return;
+      const ahead = e.field[i-1]; if (ahead.bc) return;
+      const gain = (e.pts[i-1]||0) - (e.pts[i]||0); if (gain<=0) return;
+      const gap = Math.abs(ahead.v - x.v), pct = gap / ahead.v * 100;
+      opps.push({ev:e.ev, x, ahead, gain, gap, pct}); });
+    // BC kid just outside the scoring places
+    const outIdx = e.field.findIndex((x,i)=>x.bc && i>=e.scoring);
+    if (outIdx>0 && e.scoring>0 && outIdx===e.scoring) { const last = e.field[e.scoring-1]; if (!last.bc) { const x = e.field[outIdx], gap = Math.abs(last.v-x.v);
+      opps.push({ev:e.ev, x, ahead:last, gain:e.pts[e.scoring-1]||0, gap, pct: gap/last.v*100}); } }
+  });
+  const seenO = new Set(); const uniq = opps.filter(o=>{ const k = o.ev+"|"+o.x.who+"|"+o.ahead.who; if (seenO.has(k)) return false; seenO.add(k); return true; });
+  opps.length = 0; opps.push(...uniq);
+  opps.sort((a,b)=> (a.pct+0.05)/a.gain - (b.pct+0.05)/b.gain);
+  return {evs, team, opps, open, bc};
+}
+const gapTxt = (ev, gap) => FIELD.has(ev) ? (gap>=12 ? `${Math.floor(gap/12)}' ${(gap%12).toFixed(1)}"` : `${gap.toFixed(1)}"`) : (gap>=60 ? fmtMark(ev, gap) : gap.toFixed(2)+"s");
+function dashView(){
+  if (!IX.all) { setTimeout(ixAll, 0); return `<p class="note">Loading results…</p>`; }
+  if (!IX.all.length) return `<div class="panel"><p style="margin:0">No results yet. Import some meets first.</p></div>`;
+  const ms = scheduleMeets(), d = IX.d;
+  let m = ms.find(x=>x.key===d.meet) || ms.find(x=>x.date >= iso(today)) || ms[0];
+  if (!m) return `<div class="panel"><p style="margin:0">No HS meets on the schedule.</p></div>`;
+  if (m.gOnly) d.g = m.gOnly;
+  const entries = +d.entries || m.entries;
+  const D = dashData(m, d.g, d.grad, entries);
+  const sName = id => schoolName(id), bcId = D.bc && D.bc.id;
+  const teams = Object.entries(D.team).sort((a,b)=>b[1]-a[1]);
+  const evRow = e => { const top = e.field.slice(0, Math.max(e.scoring, 3));
+    const bcBest = e.field.find(x=>x.bc);
+    return `<tr><td><b>${esc(evLabel(e.ev))}</b></td>
+      <td class="wrap">${top.map(x=>`<div class="${x.bc?"dash-bc":""}"><span class="mono">${x.place}.</span> ${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
+      <td class="wrap">${bcBest ? `<b>${bcBest.place}${["st","nd","rd"][bcBest.place-1]||"th"}</b> · ${esc(bcBest.who)} <span class="mono">${esc(fmtMark(e.ev, bcBest.v))}</span>` : `<span class="muted">No BC mark</span>`}</td>
+      <td class="mono">${e.field.filter(x=>x.bc).reduce((a,x)=>a+x.pts,0)||""}</td></tr>`; };
+  return `<div class="panel ed ix"><div class="ix-grid">
+      <label class="ed-row" for="dm"><span>Meet</span><select id="dm" onchange="IX.d.meet=this.value;IX.d.entries='';render()">${ms.map(x=>`<option value="${esc(x.key)}" ${x.key===m.key?"selected":""}>${esc(new Date(x.date+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))} · ${esc(x.name)}</option>`).join("")}</select></label>
+      <div class="ed-row"><span>Gender</span>${m.gOnly ? `<b>${m.gOnly==="G"?"Girls":"Boys"}</b>` : segBtns(d.g,[["G","Girls"],["B","Boys"]],"(v=>{IX.d.g=v;render()})")}</div>
+      <label class="ed-row" for="de"><span>Entries per school</span><input id="de" type="text" inputmode="numeric" value="${entries}" oninput="IX.d.entries=this.value" onchange="render()"></label>
+      <label class="ed-check" for="dg"><input id="dg" type="checkbox" ${d.grad?"checked":""} onchange="IX.d.grad=this.checked;render()"> 2027 view: last year's seniors removed, everyone a grade older</label></div>
+      <p class="note" style="margin:0">Teams: ${m.schools.map(s=>esc(sName(s))).join(", ")}${m.missing.length?` · <b>No 2026 data for ${esc(m.missing.join(", "))}</b>`:""} · Scoring ${esc(m.sc.ind.join("-"))}${m.sc.relay&&m.sc.relay.join()!==m.sc.ind.join()?`, relays ${esc(m.sc.relay.join("-"))}`:""}${m.sc.inferred&&m.tmpl&&/assumed/.test(m.sc.basis||"")?" (assumed)":""}.
+        Marks are each kid's best from last season, plus our current roster's PRs. It's a projection, not a prediction.</p></div>
+    <div class="cols">
+      <div class="panel"><h2>Projected team scores</h2><div class="tbl"><table><tbody>${teams.map(([s,v],i)=>`<tr class="${+s===bcId?"dash-bc":""}"><td>${i+1}</td><td><b>${esc(sName(+s))}</b></td><td class="mono">${v%1?v.toFixed(1):v}</td></tr>`).join("")}</tbody></table></div></div>
+      <div class="panel"><h2>Closest points to grab</h2>${D.opps.length ? `<ol class="dash-list">${D.opps.slice(0,8).map(o=>`<li><b>${esc(evLabel(o.ev))}</b>: ${esc(o.x.who)} (${o.x.place}${["st","nd","rd"][o.x.place-1]||"th"}, <span class="mono">${esc(fmtMark(o.ev,o.x.v))}</span>) ${o.gap<1e-6 ? `is <b>tied</b> with ${esc(sName(o.ahead.school))} (lost on misses/tiebreak).` : `is <b>${esc(gapTxt(o.ev,o.gap))}</b> behind ${esc(sName(o.ahead.school))}.`} Passing them is <b>+${o.gain}</b>.</li>`).join("")}</ol>` : `<p class="note" style="margin:0">No close calls found.</p>`}
+        ${D.open.length ? `<p style="margin:10px 0 0"><b>Open scoring spots</b> (fewer entrants than places that score): ${D.open.map(o=>`${esc(evLabel(o.ev))} (${o.spots}${o.bcIn?"":", no BC entry"})`).join(" · ")}. An entry there scores just by finishing.</p>` : ""}</div></div>
+    <div class="tbl"><table class="ix-tbl"><thead><tr><th>Event</th><th>Projected top places</th><th>Our best</th><th>BC pts</th></tr></thead><tbody>${D.evs.map(evRow).join("")}</tbody></table></div>`;
+}
+
 function ixView(){
   if (!SB) return `<div class="panel"><p style="margin:0">Supabase isn't set up.</p></div>`;
   if (!IX.loaded && !IX.loading && !IX.err) setTimeout(()=>ixLoad(), 0);
-  const tabs = [["import","Import results"],["meets","Meets"],["results","Results"],["schools","Schools"]];
+  const tabs = [["dash","Dashboard"],["import","Import results"],["meets","Meets"],["results","Results"],["schools","Schools"]];
   const nRes = Object.values(IX.counts.meet||{}).reduce((a,b)=>a+b,0);
   const head = `<p class="lede" style="margin:0">Opponent results for scouting. <b>Coaches only</b>: nothing here is visible on the public Hub.</p>
-    <div class="cols"><div class="panel"><div class="ix-stat">${IX.meets.length}</div><div class="muted">meets</div></div><div class="panel"><div class="ix-stat">${nRes}</div><div class="muted">results</div></div><div class="panel"><div class="ix-stat">${IX.schools.length}</div><div class="muted">schools</div></div></div>
+    <div class="cols ${IX.tab==="dash"?"no-dash":""}"><div class="panel"><div class="ix-stat">${IX.meets.length}</div><div class="muted">meets</div></div><div class="panel"><div class="ix-stat">${nRes}</div><div class="muted">results</div></div><div class="panel"><div class="ix-stat">${IX.schools.length}</div><div class="muted">schools</div></div></div>
     <div class="seg ix-tabs" role="group" aria-label="Scouting">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${IX.tab===k}" onclick="IX.tab='${k}';IX.msg=null;render()">${l}</button>`).join("")}</div>`;
   if (IX.err) return head + `<div class="panel"><p style="margin:0" class="ed-msg err">${esc(IX.err)}</p><div class="ed-save"><button type="button" class="btn" onclick="IX.err='';IX.reload()">Try again</button></div></div>`;
   if (!IX.loaded) return head + `<p class="note">Loading scouting data…</p>`;
-  const body = IX.tab==="meets" ? msgHTML(IX.msg) + meetsView() : IX.tab==="results" ? resultsView() : IX.tab==="schools" ? schoolsView() : importView();
+  const body = IX.tab==="dash" ? dashView() : IX.tab==="meets" ? msgHTML(IX.msg) + meetsView() : IX.tab==="results" ? resultsView() : IX.tab==="schools" ? schoolsView() : importView();
   return head + body;
 }
 
