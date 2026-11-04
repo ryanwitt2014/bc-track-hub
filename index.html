@@ -528,7 +528,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04e";
+const HUB_VERSION = "11-04f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -720,7 +720,7 @@ const SCHEDULE = [
 
 // Video/links: any URL works (YouTube, Drive, PDF). Leave url out for plain text.
 // start = the Monday of that week (YYYY-MM-DD). A week only shows once its start date arrives,
-// so you can load next week early and it stays hidden until Monday.
+// Every posted week is visible to everyone, so runners can look ahead.
 const V = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
 // Workouts live in workouts.json next to this page. Coaches post them from the Post Workouts page.
 // Week: {start:"YYYY-MM-DD", days:[{day:"Mon", focus:"Speed" | {JH:"…",HS:"…"}, all:[items], groups:{Distance:[items], …}}]}
@@ -1401,8 +1401,8 @@ try { level = localStorage.getItem("hub-level") || "JH"; } catch(e) {}
 const sortedWeeks = () => [...WORKOUTS].sort((a,b)=>a.start.localeCompare(b.start));
 const startedWeeks = () => sortedWeeks().filter(w => parseD(w.start) <= today);
 const nextWeek = () => sortedWeeks().find(w => parseD(w.start) > today) || null;
-// Everything that's started, plus the next scheduled week (weeks further out stay hidden)
-const visibleWeeks = () => { const n = nextWeek(); return n ? [...startedWeeks(), n] : startedWeeks(); };
+// Every posted week is open to everyone so runners can click ahead.
+const visibleWeeks = () => sortedWeeks();
 const currentWeek = () => { const st = startedWeeks(); const w = st[st.length-1]; return w && (today - parseD(w.start))/864e5 < 7 ? w : null; };
 const weekNum = w => sortedWeeks().findIndex(x=>x.start===w.start)+1;
 const weekLabel = w => "Week of " + parseD(w.start).toLocaleDateString("en-US",{month:"short",day:"numeric"});
@@ -2289,7 +2289,7 @@ async function edSave(){
   const next = WORKOUTS.filter(w=>w.start!==wk.start && w.start!==ed.editing).concat([wk]).sort((a,b)=>a.start.localeCompare(b.start));
   const live = parseD(wk.start)<=today;
   const label = parseD(wk.start).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  if(await publishWeeks(next, live?`Saved. The week of ${label} is live now.`:`Saved. The week of ${label} goes live that day.`)){ const msg=edMsg; edNew(); edMsg=msg; render(); }
+  if(await publishWeeks(next, live?`Saved. The week of ${label} is up.`:`Saved. The week of ${label} is posted. Runners can already see it.`)){ const msg=edMsg; edNew(); edMsg=msg; render(); }
 }
 async function edDelete(start){
   delAsk = null;
@@ -2554,7 +2554,7 @@ const views = {
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
       ${fmpHTML("w")}
       <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
-      <p class="note">▶ Video buttons open in a new tab. The next scheduled week shows here ahead of time. Weeks after that stay hidden.</p></div>`;
+      <p class="note">▶ Video buttons open in a new tab. Use the arrows to look ahead at any posted week.</p></div>`;
   },
   coaches(){
     if(!canPost) return `${back}<div class="stack"><div><div class="eyebrow">Coaches only</div><h1>Coach Sign-in</h1></div>
@@ -2804,10 +2804,10 @@ const views = {
     if(!ed) edNew();
     const weeks = sortedWeeks();
     const dayOpts = DAYS.filter(d=>!ed.days.some(x=>x.day===d));
-    return `<p class="lede" style="margin:0">Fill in a week and save. It goes live for everyone on its start date. Past and current weeks stay up; future weeks stay hidden until then.</p>
+    return `<p class="lede" style="margin:0">Fill in a week and save. Everyone can see it right away, including future weeks, so runners can look ahead.</p>
       <div class="panel ed-help"><b>How to write it.</b> Same workout for more than one group (like an easy run for Distance and Mid Distance)? Use <b>+ Distance + Mid</b> or another combo button under each day and type it once. One item per line. Start a line with <code>JH:</code> or <code>HS:</code> if it's for one level only; no prefix means both. Paste a YouTube or Drive link at the end of a line and it becomes a ▶ Video button. Leave any group blank to skip it that day. To reschedule a week, open it with <b>Edit</b> and change the start date. To move one day, use <b>Move to</b>.</div>
       ${weeks.length?`<div><h2 style="margin-bottom:10px">Posted weeks</h2><div class="tbl"><table><thead><tr><th>Week</th><th>Status</th><th>Days</th><th></th></tr></thead><tbody>
-        ${weeks.map(w=>`<tr><td><b>Week ${weekNum(w)}</b> · ${esc(weekLabel(w))}</td><td>${parseD(w.start)<=today?`<span class="chip home">Live</span>`:`<span class="chip">Scheduled</span>`}</td>
+        ${weeks.map(w=>`<tr><td><b>Week ${weekNum(w)}</b> · ${esc(weekLabel(w))}</td><td>${parseD(w.start)<=today?`<span class="chip home">Started</span>`:`<span class="chip">Upcoming</span>`}</td>
           <td>${w.days.map(d=>d.day).join(", ")}</td>
           <td class="ed-acts"><button type="button" class="btn sm" onclick="edLoad('${w.start}')">Edit</button><button type="button" class="btn sm" onclick="edDup('${w.start}')">Duplicate</button>
           ${delAsk===w.start?`<button type="button" class="btn sm danger" onclick="edDelete('${w.start}')">Confirm delete</button><button type="button" class="btn sm" onclick="delAsk=null;render()">Cancel</button>`
