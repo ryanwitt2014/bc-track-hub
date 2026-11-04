@@ -460,6 +460,9 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-table .sh-notes{min-width:90px}
 .sh-table .sh-pace{text-align:left;font-size:10px;line-height:1.25;white-space:normal;min-width:120px}.sh-table td.sh-pace b{font-weight:700}
 .sh-table .sh-wide{min-width:110px}
+.cover .cv-days{columns:3 260px;column-gap:18px;margin-top:10px;font-size:11px;color:#111}
+.cv-day{break-inside:avoid;margin:0 0 10px;border-top:2px solid #111;padding-top:4px}.cv-day h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.cv-blk{margin:0 0 5px}.cv-blk ul{margin:1px 0 0;padding-left:14px}.cv-blk li{margin:0}.cv-f{color:#666;font-style:italic}
 .wstars{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .wstar{font:600 14px var(--body);border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);padding:4px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .wstar span{color:var(--gold);font-size:16px;line-height:1}.wstar small{color:var(--muted);font-weight:500}
@@ -484,6 +487,8 @@ a.btn{text-decoration:none;display:inline-block}
   .sheet:last-child{page-break-after:auto;break-after:auto}
   .sh-table{font-size:11px}
   .sh-table td{height:30px}
+  .sheet.dense .sh-table td{height:23px}.sheet.dense .sh-work{font-size:11px}
+  .sheet.dense2 .sh-table td{height:18px;padding:0 3px}.sheet.dense2 .sh-table{font-size:10px}.sheet.dense2 .sh-work{font-size:10.5px}.sheet.dense2 .sh-table td.sh-pace{font-size:9px}
 }
 .hub-week{display:grid;gap:10px}
 .ar-dist{--ar:var(--accent)}.ar-mid{--ar:var(--gold)}.ar-spr{--ar:#b4472b}.ar-fld{--ar:#2f4f8f}
@@ -543,7 +548,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04k";
+const HUB_VERSION = "11-04l";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2130,7 +2135,7 @@ const EV_CAT = {"100":"Sprints","200":"Sprints","400":"Sprints","4x100":"Sprints
   "100H":"Hurdles","110H":"Hurdles","300H":"Hurdles","LJ":"Long Jump","HJ":"High Jump","PV":"Pole Vault","SP":"Shot Put","DT":"Discus"};
 const FIELD_CATS = new Set(["Long Jump","High Jump","Pole Vault","Shot Put","Discus"]);
 const PACE_CATS = new Set(["Distance","Mid Distance"]);
-let sh = {week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
+let sh = {mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
 // Winter conditioning roster: starred kids are the only ones printed on sheets before official practice starts.
 const OFFICIAL_START = "2027-02-15";
 let WINTER = {ids:[]}, wQueue = Promise.resolve(), wMsg = {kind:"",text:""};
@@ -2224,7 +2229,8 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
     return r.map(x=>`<td class="sh-rep"><i>${esc(x)}</i></td>`).join("") + Array.from({length:nAuto-r.length},()=>`<td class="sh-na"></td>`).join(""); };
   const workHead = timed ? Array.from({length:nAuto},(_,i)=>`<th>${i+1}</th>`).join("") : runCols ? `<th class="sh-wide">Distance</th><th class="sh-wide">Pace</th>` : Array.from({length:n},(_,i)=>`<th>${lbl} ${i+1}</th>`).join("");
   const workCells = runCols ? `<td></td><td></td>` : Array.from({length:n},()=>`<td></td>`).join("");
-  return `<section class="sheet">
+  const rows = kids.length + blanks, dense = rows > 22 ? "dense2" : rows > 16 ? "dense" : "";
+  return `<section class="sheet ${dense}">
     <div class="sh-head">
       <div><div class="sh-brand">Benton Central Track &amp; Field · Practice Sheet</div>
         <div class="sh-title">${esc(cat)} · ${lv==="Both"?"HS + JH":lv}${wOn?" · Winter conditioning":""}</div></div>
@@ -2259,6 +2265,45 @@ function buildSheets(){
       });
     });
   });
+  return out.join("");
+}
+
+/* ---- Week packets: cover page with the whole program, then a sheet per group per day ---- */
+const STAFF_MAP = {"Distance":["Distance","Mid Distance"], "Sprints":["Sprints","Hurdles"], "Hurdles":["Hurdles"], "Jumps":["Long Jump","High Jump","Pole Vault"],
+  "Pole Vault":["Pole Vault"], "Throws":["Shot Put","Discus"], "Long Jump":["Long Jump"], "High Jump":["High Jump"], "Shot Put":["Shot Put"], "Discus":["Discus"], "Mid Distance":["Mid Distance"]};
+const staffGroups = s => CATEGORIES.filter(c => String(s.groups||"").split(/,\s*/).some(g => (STAFF_MAP[g.trim()]||[]).includes(c)));
+const staffLv = s => /JH\/HS|HS\/JH/.test(s.role) ? "Both" : /^JH/.test(s.role) ? "JH" : "HS";
+function pickCoach(name){
+  sh.coach = name;
+  const s = name ? STAFF.find(x=>x.name===name) : null;
+  if (s) { const g = staffGroups(s); if (g.length) sh.groups = g; sh.plv = staffLv(s); }
+  else { sh.groups = [...CATEGORIES]; sh.plv = "Both"; }
+  render();
+}
+const restOnly = items => !items.length || items.every(t => /^(\[[^\]]+\]\s*)*Rest\b/i.test(t));
+function coverHTML(w, lvs){
+  const fmt = d => dayDate(w, d.day).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  const who = sh.coach ? `${sh.coach} · ${sh.groups.join(", ")}` : "Full program";
+  const days = w.days.map(d => ({d, blocks: sh.groups.flatMap(cat => lvs.map(lv => ({cat, lv, items: sheetItems(d, cat, lv)}))).filter(b => b.items.length)})).filter(x => x.blocks.length);
+  return `<section class="sheet cover">
+    <div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Week Packet</div><div class="sh-title">${esc(weekLabel(w))}</div></div>
+      <div class="sh-meta"><div><b>${esc(who)}</b></div><div>${lvs.join(" + ")}</div></div></div>
+    ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}</h4>
+      ${blocks.map(b=>{ const f = gFocus(d,b.cat) || focusFor(d,b.lv); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
+        <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`
+      : `<p>Nothing posted for these groups this week.</p>`}
+    <div class="sh-foot">Group sheets follow: ${lvs.join(" then ")}, one page per group per practice day.</div></section>`;
+}
+function buildPacket(){
+  const w = sortedWeeks().find(x=>x.start===sh.week); if (!w) return `<p class="note">Pick a posted week.</p>`;
+  const lvs = sh.plv==="Both" ? ["HS","JH"] : [sh.plv];
+  const out = [coverHTML(w, lvs)];
+  lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
+    const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
+    const date = dayDate(w, d.day);
+    const focus = gFocus(d,cat) || focusFor(d, lv);
+    out.push(sheetHTML({dateLabel: date.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}), dayName: d.day, focus, cat, lv, items, d, date}));
+  })));
   return out.join("");
 }
 
@@ -2710,20 +2755,26 @@ const views = {
   },
   _sheets(){
     const weeks = sortedWeeks();
-    if (!sh.week && weeks.length) { const cur = visibleWeeks(); sh.week = (cur.length ? cur[cur.length-1] : weeks[0]).start; }
+    if (!sh.week && weeks.length) { const cw = currentWeek() || nextWeek() || weeks[weeks.length-1]; sh.week = cw.start; }
     const w = weeks.find(x=>x.start===sh.week);
     const toggleG = g => `sh.groups = sh.groups.includes('${g}') ? sh.groups.filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||sh.groups.includes(c)); render()`;
+    const packet = sh.mode==="packet";
     const controls = `<div class="panel ed no-print">
-        <p style="margin:0">Pick a day and groups, then print. Each group gets its own page with the workout, the kids assigned to it (from <b>Event Assignments</b>), ${"paces for distance and mid,"} and boxes to write splits or marks.</p>
+        <div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["packet","Week packet"]],"(v=>{sh.mode=v;render()})")}</div>
+        ${packet ? `<p style="margin:0">A week packet is a cover page with every workout for the week, then a sheet for each group for each practice day (rest days skipped). Pick <b>Full program</b> for the whole thing, or a coach to print just their groups.</p>
+        <label class="ed-row" for="sh-coach"><span>Packet for</span><select id="sh-coach" onchange="pickCoach(this.value)"><option value="" ${!sh.coach?"selected":""}>Full program (all groups)</option>
+          ${STAFF.filter(s=>s.name).map(s=>`<option value="${esc(s.name)}" ${sh.coach===s.name?"selected":""}>${esc(s.name)} · ${esc(s.groups||s.role)}</option>`).join("")}</select></label>` : ""}
+        <p style="margin:0;${packet?"display:none":""}">Pick a day and groups, then print. Each group gets its own page with the workout, the kids assigned to it (from <b>Event Assignments</b>), ${"paces for distance and mid,"} and boxes to write splits or marks.</p>
         <div class="ed-grid2">
           <label class="ed-row" for="sh-week"><span>Week</span><select id="sh-week" onchange="sh.week=this.value;sh.day='All';render()">
             ${weeks.map(x=>`<option value="${x.start}" ${x.start===sh.week?"selected":""}>${esc(weekLabel(x))}${parseD(x.start)>today?" (upcoming)":""}</option>`).join("")}
             <option value="" ${!w?"selected":""}>Blank sheet (no posted workout)</option></select></label>
-          ${w ? `<label class="ed-row" for="sh-day"><span>Day</span><select id="sh-day" onchange="sh.day=this.value;render()">
+          ${packet ? "" : w ? `<label class="ed-row" for="sh-day"><span>Day</span><select id="sh-day" onchange="sh.day=this.value;render()">
               <option value="All" ${sh.day==="All"?"selected":""}>Whole week</option>${w.days.map(d=>`<option ${sh.day===d.day?"selected":""}>${d.day}</option>`).join("")}</select></label>`
             : `<label class="ed-row" for="sh-date"><span>Date</span><input id="sh-date" type="date" value="${sh.blankDate}" onchange="sh.blankDate=this.value;render()"></label>`}
         </div>
-        <div class="ed-row"><span>Level</span>${segBtns(sh.lv,[["HS","HS"],["JH","JH"],["Both","HS + JH together"]],"(v=>{sh.lv=v;render()})")}</div>
+        ${packet ? `<div class="ed-row"><span>Level</span>${segBtns(sh.plv,[["HS","HS"],["JH","JH"],["Both","HS and JH (separate sheets)"]],"(v=>{sh.plv=v;render()})")}</div>`
+          : `<div class="ed-row"><span>Level</span>${segBtns(sh.lv,[["HS","HS"],["JH","JH"],["Both","HS + JH together"]],"(v=>{sh.lv=v;render()})")}</div>`}
         <div class="ed-row" style="align-items:start"><span>Groups</span><div class="combo-picks">${CATEGORIES.map(g=>`<button type="button" class="pick" aria-pressed="${sh.groups.includes(g)}" onclick="${toggleG(g)}">${g}</button>`).join("")}</div></div>
         <div class="ed-grid2">
           <label class="ed-row" for="sh-cols"><span>Boxes per kid</span><input id="sh-cols" type="number" min="3" max="12" value="${sh.cols}" onchange="sh.cols=+this.value;render()"></label>
@@ -2739,11 +2790,12 @@ const views = {
               <label class="ed-check" for="w-all"><input id="w-all" type="checkbox" ${sh.wall?"checked":""} onchange="sh.wall=this.checked;render()"> Show every athlete, not just the groups picked above</label></div>
               <div class="wstars">${pool.map(a=>`<button type="button" class="wstar" aria-pressed="${isWinter(a)}" onclick="toggleWinter('${a.id}')"><span>${isWinter(a)?"★":"☆"}</span>${esc(a.name)} <small>${a.level} ${a.g}</small></button>`).join("") || `<span class="muted">No athletes in these groups.</span>`}</div>
               <p class="ed-msg ${wMsg.kind}" role="status" style="margin:6px 0 0">${esc(wMsg.text)}</p></div>`; })() : ""}
-        <div class="ed-save"><button type="button" class="btn primary" onclick="window.print()" ${sh.groups.length?"":"disabled"}>Print sheets</button>
+        <div class="ed-save"><button type="button" class="btn primary" onclick="window.print()" ${sh.groups.length?"":"disabled"}>${packet?"Print packet":"Print sheets"}</button>
           <span class="note" style="margin:0">To save a PDF instead, choose <b>Save as PDF</b> as the printer.</span></div>
       </div>`;
-    const sheets = sh.groups.length ? buildSheets() : `<p class="note">Pick at least one group.</p>`;
-    return controls + `<div class="sheets-wrap"><div class="no-print mlabel" style="margin:0">Preview</div>${sheets}</div>`;
+    const sheets = !sh.groups.length ? `<p class="note">Pick at least one group.</p>` : packet ? buildPacket() : buildSheets();
+    const pages = (sheets.match(/<section class="sheet/g)||[]).length;
+    return controls + `<div class="sheets-wrap"><div class="no-print mlabel" style="margin:0">Preview · ${pages} page${pages===1?"":"s"}</div>${sheets}</div>`;
   },
   _import(){
     return `<div class="panel ed imp"><h2>Import sheet results</h2>
