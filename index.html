@@ -528,7 +528,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04d";
+const HUB_VERSION = "11-04e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1604,12 +1604,12 @@ const MD = {
       tech:["Quiet landings, stiff ankles, tall hips","Arms drive front to back","Stop when contacts get loud or sloppy"]},
   ],
   xo: [
-    {when:"January (Jan 7, 14, 21)", who:"All distance runners", wk:"Accelerations, then a flying 20m intro (2 × 30m + 2 × flying 20m) after an easy run", rec:"Full recovery, walk back", repl:"Nothing. Short add-on to an easy day, not a hard session", meet:"No meets", note:"Builds speed with almost no fatigue. Skip it if legs are heavy."},
-    {when:"Early February (Tue Feb 2)", who:"Hybrid 800/1600, and Level A distance runners", wk:"D1: 4 × 200m at 800 pace, then 20 min Easy", rec:"2–3 min between 200s", repl:"Tuesday's Steady run", meet:"No meets", note:"Out of season. Keep it controlled; no one races these."},
-    {when:"Late February (Thu Feb 18)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 150s", meet:"No meets. First official week", note:"Only if the Tuesday tempo went well."},
-    {when:"March (Mar 1, Mar 15)", who:"All distance runners", wk:"Short max-velocity maintenance: 2 × 30m + 2 × flying 20m after the run", rec:"Full", repl:"Nothing. Add-on to an easy day", meet:"Mar 5 meet is 4 days after Mar 1. OK.", note:"Short and sharp. Done before anyone feels tired."},
-    {when:"Late March (Thu Apr 1)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 200s", meet:"Apr 6 meet is 5 days later. OK.", note:"HSR runners only if they've recovered."},
-    {when:"April (Apr 5, Apr 29)", who:"All distance runners", wk:"3 × 30m accelerations or 2 × flying 20m with the strides", rec:"Full", repl:"Nothing. Part of the stride session", meet:"Apr 29 is 2 days before Kouts: keep it to 2 flys.", note:"The 800-pace 200s/300s hybrids already do in April cover the rest."},
+    {ad:"Acceleration, then max velocity", when:"January (Jan 7, 14, 21)", who:"All distance runners", wk:"Accelerations, then a flying 20m intro (2 × 30m + 2 × flying 20m) after an easy run", rec:"Full recovery, walk back", repl:"Nothing. Short add-on to an easy day, not a hard session", meet:"No meets", note:"Builds speed with almost no fatigue. Skip it if legs are heavy."},
+    {ad:"Event-specific endurance", when:"Early February (Tue Feb 2)", who:"Hybrid 800/1600 who already have solid conditioning", wk:"D1: 4 × 200m at 800 pace, then 20 min Easy", rec:"2–3 min between 200s", repl:"Tuesday's Steady run", meet:"No meets", note:"Out of season. Only for runners who've trained consistently all winter. Keep it controlled; no one races these."},
+    {ad:"Event-specific endurance", when:"Late February (Thu Feb 18)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 150s", meet:"No meets. First official week", note:"Only if the Tuesday tempo went well."},
+    {ad:"Maximum velocity", when:"March (Mon Mar 1)", who:"All distance runners", wk:"Short max-velocity maintenance: 2 × 30m + 2 × flying 20m after the run", rec:"Full", repl:"Nothing. Add-on to an easy day", meet:"Mar 5 meet is 4 days later. OK.", note:"Only if recovered from recent racing or hard sessions. Short and sharp."},
+    {ad:"Event-specific endurance", when:"Late March (Thu Apr 1)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 200s", meet:"Apr 6 meet is 5 days later. OK.", note:"HSR runners only if they've recovered."},
+    {ad:"Acceleration / max velocity", when:"April (Apr 5, Apr 29)", who:"All distance runners", wk:"3 × 30m accelerations or 2 × flying 20m with the strides", rec:"Full", repl:"Nothing. Part of the stride session", meet:"Apr 29 is 2 days before Kouts: 2 flys only, full recovery, no lingering fatigue.", note:"The 800-pace 200s/300s hybrids already do in April cover the rest."},
   ],
   rules: [
     ["No-meet week","One acceleration/max-velocity day · one speed-endurance or 800-specific day · easy aerobic running · recovery and strength."],
@@ -1915,6 +1915,7 @@ const gFocus = (d, g) => (d.gfocus && g && d.gfocus[g]) || "";
 // Workout-library codes (A1–E2) and their look
 const CODE_TY = {A:"speed", B:"aero", C:"speed", D:"race", E:"str"};
 const CODE_NAME = {A:"Acceleration / max velocity", B:"Aerobic", C:"Speed endurance", D:"800-specific", E:"Strength / athletic development"};
+const CODE_ADAPT = {A:"Maximum velocity and acceleration", B:"Aerobic development", C:"Speed endurance", D:"Event-specific (800) endurance", E:"Strength, coordination, mechanics"};
 const FOCUS_TY = f => /meet|sectional|regional|state/i.test(f) ? "meet" : /recovery|rest/i.test(f) ? "rec" : /800|sharpen|race/i.test(f) ? "race" : /speed|velocity/i.test(f) ? "speed" : /aerobic|easy/i.test(f) ? "aero" : "";
 const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover"};
 const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
@@ -3052,6 +3053,7 @@ const views = {
         <div class="panel"><h2>Two training groups</h2><dl class="inj-dl">
           <dt>Mid-Distance</dt><dd>Main events are the 400 and 800. Follow the Mid-Distance plan on the Workouts page (Mid Distance group).</dd>
           <dt>Distance</dt><dd>Main events are the 800, 1600, and 3200. Stay on the distance plan and join some speed sessions as optional crossovers.</dd></dl>
+          <p style="margin:10px 0 0"><b>Joining late?</b> Dec 7 – Feb 14 is voluntary conditioning for both programs. A runner who starts later builds up gradually: shorter runs and fewer reps (Level C, then B) for 2–3 weeks before taking on the current week's full workload.</p>
           <p class="note" style="margin:8px 0 0">Coaches set each runner's group on Coaches → Runner Tags ("Mid-distance" = this plan). <b>Find my pace</b> then shows each kid the right plan.</p></div></div>
       <div class="panel"><h2>Phases</h2><div class="tbl"><table><thead><tr><th>Phase</th><th>Dates</th><th>Emphasis</th></tr></thead><tbody>
         ${MD.phases.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div></div>`;
@@ -3102,16 +3104,25 @@ const views = {
       const groups = ["A","B","C","D","E"];
       body = `${tyLegend}${groups.map(g=>`<div><h2 style="margin:6px 0 10px">${g} · ${esc(CODE_NAME[g])}</h2><div class="libgrid">${MD.lib.filter(x=>x.c[0]===g).map(x=>`<div class="panel libcard">
           <h3><span class="wcode ty-${CODE_TY[g]}">${x.c}</span>${esc(x.n)}</h3>
-          <dl><dt>Workout</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>
+          <dl><dt>Adaptation</dt><dd><b>${esc(CODE_ADAPT[g])}</b></dd><dt>Workout</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>
           ${x.prog?`<p style="margin:10px 0 4px"><b>Progression</b></p><ul class="exp">${x.prog.map(s=>`<li>${esc(s)}</li>`).join("")}</ul><p style="margin:8px 0 4px"><b>Technique</b></p><ul class="exp">${x.tech.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:""}
         </div>`).join("")}</div></div>`).join("")}
         <p class="note">Paces for Steady, 400 pace, and 800 pace come from each runner's best race. Tap <b>Find my pace</b> on the Workouts page to see them.</p>`;
     }
     else if (mdtab==="crossover") {
       body = `<p class="lede" style="margin:0">Optional speed sessions for distance runners. Each one <b>replaces</b> part of a day or rides on an easy run. None is an extra hard session. The distance plan stays about 80% Daniels: aerobic base, tempo, intervals, reps, and long runs are untouched.</p>
-        <div class="tbl"><table class="mdtbl"><thead><tr><th>When</th><th>Who</th><th>Workout</th><th>Recovery</th><th>Replaces</th><th>Meets nearby</th><th>Coach notes</th></tr></thead><tbody>
-          ${MD.xo.map(x=>`<tr><td><b>${esc(x.when)}</b></td><td>${esc(x.who)}</td><td>${esc(x.wk)}</td><td>${esc(x.rec)}</td><td>${esc(x.repl)}</td><td>${esc(x.meet)}</td><td>${esc(x.note)}</td></tr>`).join("")}</tbody></table></div>
-        <p class="note">On the Workouts page these show in the Distance group with an <span class="tchip xo">Optional crossover</span> tag.</p>`;
+        <div class="tbl"><table class="mdtbl"><thead><tr><th>When</th><th>Adaptation</th><th>Who</th><th>Workout</th><th>Recovery</th><th>Replaces</th><th>Meets nearby</th><th>Coach notes</th></tr></thead><tbody>
+          ${MD.xo.map(x=>`<tr><td><b>${esc(x.when)}</b></td><td>${esc(x.ad)}</td><td>${esc(x.who)}</td><td>${esc(x.wk)}</td><td>${esc(x.rec)}</td><td>${esc(x.repl)}</td><td>${esc(x.meet)}</td><td>${esc(x.note)}</td></tr>`).join("")}</tbody></table></div>
+        <p class="note">On the Workouts page these show in the Distance group with an <span class="tchip xo">Optional crossover</span> tag.</p>
+        <div class="cols">
+          <div class="panel"><h3>Race pace is not max velocity</h3><div class="tbl"><table><thead><tr><th>Workout</th><th>Primary adaptation</th></tr></thead><tbody>
+            ${[["4 × 200m at 800 pace","Event-specific endurance","race"],["3 × 300m at 800 pace","Event-specific endurance","race"],["3 × flying 20m","Maximum velocity","speed"],["4 × 100m strides","Mechanics and controlled speed","aero"]].map(([w,a,t])=>`<tr><td>${w}</td><td><span class="wcode ty-${t}" style="vertical-align:0">&nbsp;</span>${a}</td></tr>`).join("")}</tbody></table></div>
+            <p class="note" style="margin:8px 0 0">The 200s and 300s in the distance plan build 800 endurance. They don't replace true top-speed work.</p></div>
+          <div class="panel"><h3>Planned max-velocity days for distance runners</h3><p style="margin:0 0 8px">Part of the distance plan, not optional. Low volume, full recovery.</p><ul class="exp">
+            <li><b>Thu Feb 18</b> · 3 × 30m accelerations + 2 × flying 20m (first official week)</li>
+            <li><b>Mon Mar 15</b> · 2 × 30m + 2 × flying 20m after the run, if recovered from Saturday</li>
+            <li><b>Mon Apr 12</b> · 2 × flying 20m after the strides</li></ul>
+            <p class="note" style="margin:8px 0 0">Plus optional touches in January, Feb 25, Mar 1, and April (table above).</p></div></div>`;
     }
     else if (mdtab==="pace") {
       const runners = ATHLETES.filter(a => a.prs["800"]).sort((x,y)=>tSec(x.prs["800"])-tSec(y.prs["800"]));
