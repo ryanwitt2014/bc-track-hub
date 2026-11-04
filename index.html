@@ -453,6 +453,8 @@ a.btn{text-decoration:none;display:inline-block}
   .sh-table td{height:30px}
 }
 .hub-week{display:grid;gap:10px}
+.nw{margin:10px 0 12px;font-size:16px}.nw ul{margin:0 0 6px;padding-left:18px;list-style:disc}.week .nw li{display:list-item;margin:3px 0;font-size:16px}
+.nw-g{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .hub-week h2{font-size:26px}
 /* workouts */
 .days{display:grid;gap:10px}
@@ -502,7 +504,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04b";
+const HUB_VERSION = "11-04c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1868,6 +1870,26 @@ function linePaces(a, text){
   return out;
 }
 let fmp = false;
+function fmpHTML(key){
+  if (fmp !== key) return `<div class="mepick"><button type="button" class="btn primary" onclick="fmp='${key}';render();setTimeout(()=>document.getElementById('fmp-${key}')?.focus(),0)">Find my pace</button></div>`;
+  return `<div class="mepick"><label for="fmp-${key}">Find my pace</label><select id="fmp-${key}" onchange="if(this.value) location.hash='#a-'+this.value"><option value="">Pick your name…</option>
+    ${["HS","JH"].map(l=>`<optgroup label="${l==="HS"?"High School":"Junior High"}">${paceAthletes().map(x=>x.a).filter(a=>a.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("")}</optgroup>`).join("")}</select>
+    <button type="button" class="btn" onclick="fmp=false;render()">Close</button></div>`;
+}
+// Date of a posted day, and the next posted workout day from today on
+function nextWorkout(){
+  for (const w of visibleWeeks()) for (const d of w.days) { const dt = dayDate(w, d.day); if (dt >= today && dayHas(d, wlv==="JH"?"JH":"HS")) return {w, d, dt}; }
+  return null;
+}
+// Lines for the Next workout card: the "as written" version (B/C variants are on each runner's page)
+function nwItems(d){
+  const groups = [];
+  const add = (name, arr) => { const it = (arr||[]).filter(x => { const t = splitTags(x.t).tags; return !t.some(y=>y==="B"||y==="C"); }); if (it.length) groups.push([name, it]); };
+  add("", d.all);
+  (d.combos||[]).forEach(cb => add(comboName(cb), cb.items));
+  CATEGORIES.forEach(c => add(c, (d.groups||{})[c]));
+  return groups;
+}
 // One athlete's version of a week: their level, their event groups, their tags, with paces under each line.
 let awIdx = null;
 function myItems(a, d){
@@ -2325,29 +2347,31 @@ const views = {
         </div>
         <div class="panel week">${(()=>{
           const fmtShort = d => d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
-          const focusTxt = d => typeof d.focus==="string" ? esc(d.focus||"—") : Object.entries(d.focus||{}).map(([l,f])=>`${l}: ${esc(f)}`).join(" · ");
-          const dayList = w => `<ol>${w.days.map(d=>`<li><b>${d.day}</b><span>${focusTxt(d)}</span></li>`).join("")}</ol>`;
-          // The week covering today
-          const cur = currentWeek();
-          if (cur) return `<div class="bar"><h3>This week · ${esc(weekLabel(cur))}</h3><a href="#workouts">Workouts →</a></div>${dayList(cur)}`;
-          // Otherwise preview the next scheduled week (focus only; full workouts open on its start date)
-          const nextW = nextWeek();
-          const startD = nextW ? parseD(nextW.start) : parseD(SEASON_START);
-          const dleft = Math.round((startD - today)/864e5);
-          if (nextW) return `<div class="eyebrow">Coming up</div><h3>${esc(weekLabel(nextW))}</h3>
-              <div class="wk-count">${dleft}<span>${dleft===1?"day away":"days away"}</span></div>${dayList(nextW)}
-              <p class="note" style="margin:6px 0 0"><a href="#hub-week">See the workouts below ↓</a></p>`;
-          if (today < startD) return `<div class="eyebrow">Workouts</div><h3>Week 1 starts ${esc(fmtShort(startD))}</h3>
-              <div class="wk-count">${dleft}<span>${dleft===1?"day away":"days away"}</span></div>
-              <p class="note" style="margin:0">Each week's workouts show up here once they're posted.</p>`;
-          return `<h3>This week</h3><p class="note" style="margin:0">This week's workouts haven't been posted yet.${wk?` <a href="#workouts">See the last posted week →</a>`:""}</p>`;
+          const nx = nextWorkout();
+          if (!nx) {
+            const startD = parseD(SEASON_START), dleft = Math.round((startD - today)/864e5);
+            return today < startD ? `<div class="eyebrow">Next workout</div><h3>Workouts start ${esc(fmtShort(startD))}</h3>
+              <div class="wk-count">${dleft}<span>${dleft===1?"day away":"days away"}</span></div>`
+              : `<div class="eyebrow">Next workout</div><p class="note" style="margin:0">The next workout hasn't been posted yet.</p>`;
+          }
+          const dleft = Math.round((nx.dt - today)/864e5);
+          const when = dleft===0 ? "Today" : dleft===1 ? "Tomorrow" : nx.dt.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+          const lv = wlv==="JH" ? "JH" : "HS";
+          const groups = nwItems(nx.d).map(([n,it])=>[n, forLv(it, lv)]).filter(([,it])=>it.length);
+          return `<div class="bar"><div class="eyebrow">Next workout · ${esc(when)}</div><a href="#workouts">Workouts →</a></div>
+            <h3>${esc(focusFor(nx.d, lv) || "Workout")}</h3>
+            ${dleft>1?`<div class="wk-count">${dleft}<span>days away</span></div>`:""}
+            <div class="nw">${groups.map(([n,it])=>`${groups.length>1&&n?`<div class="nw-g">${esc(n)}</div>`:""}<ul>${it.map(x=>`<li>${itemHTML(x)}</li>`).join("")}</ul>`).join("")}</div>
+            ${fmpHTML("top")}`;
         })()}</div>
       </div>
-      ${(()=>{ const w = currentWeek() || nextWeek(); if (!w) return "";
-        const soon = parseD(w.start) > today;
-        return `<section class="hub-week" id="hub-week"><div class="bar"><div><div class="eyebrow">${soon?"Coming up":"This week"}</div><h2>${esc(weekLabel(w))}</h2></div>
+      ${(()=>{ const nx = nextWorkout(); const w = (nx && nx.w) || currentWeek() || nextWeek(); if (!w) return "";
+        const rest = w.days.filter(d => dayDate(w,d.day) >= today && !(nx && nx.w===w && nx.d===d));
+        if (!rest.length) return "";
+        return `<section class="hub-week" id="hub-week"><div class="bar"><div><div class="eyebrow">Weekly outlook</div><h2>Rest of the ${esc(weekLabel(w).replace(/^Week of/,"week of"))}</h2></div>
           <a class="anet" href="#workouts"><b>Workouts</b> →</a></div>
-          <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div></section>`; })()}
+          ${fmpHTML("week")}
+          <div class="days">${rest.map(d=>dayHTML(d)).join("")}</div></section>`; })()}
       ${(()=>{ const cg = coverageGaps(), hr = hotRecruits(5), rw = recordWatch(5);
         const totalGaps = cg.reduce((a,t)=>a+t.gaps.length,0);
         return `<section class="fires"><div class="fires-head"><div class="eyebrow">What needs attention</div><h2>Fires to Put Out</h2></div>
@@ -2418,11 +2442,7 @@ const views = {
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
       <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
-      <div class="mepick">${fmp
-        ? `<label for="fmp-sel">Find my pace</label><select id="fmp-sel" onchange="if(this.value) location.hash='#a-'+this.value"><option value="">Pick your name…</option>
-            ${["HS","JH"].map(l=>`<optgroup label="${l==="HS"?"High School":"Junior High"}">${paceAthletes().map(x=>x.a).filter(a=>a.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("")}</optgroup>`).join("")}</select>
-            <button type="button" class="btn" onclick="fmp=false;render()">Close</button>`
-        : `<button type="button" class="btn primary" onclick="fmp=true;render();setTimeout(()=>document.getElementById('fmp-sel')?.focus(),0)">Find my pace</button>`}</div>
+      ${fmpHTML("w")}
       <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
       <p class="note">▶ Video buttons open in a new tab. The next scheduled week shows here ahead of time. Weeks after that stay hidden.</p></div>`;
   },
