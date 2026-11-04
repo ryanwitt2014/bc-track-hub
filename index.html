@@ -477,6 +477,12 @@ a.btn{text-decoration:none;display:inline-block}
   .sh-table td{height:30px}
 }
 .hub-week{display:grid;gap:10px}
+.ar-dist{--ar:var(--accent)}.ar-mid{--ar:var(--gold)}.ar-spr{--ar:#b4472b}.ar-fld{--ar:#2f4f8f}
+.hub-week .seg button.ar-dist,.hub-week .seg button.ar-mid,.hub-week .seg button.ar-spr,.hub-week .seg button.ar-fld{box-shadow:inset 0 -3px 0 var(--ar)}
+.outlook .day{border-left:4px solid var(--ar)}
+.fldgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.fld{border-top:4px solid var(--ar);padding:14px 16px}.fld h3{margin:0 0 8px}
+.fday{display:grid;grid-template-columns:40px 1fr;gap:8px;padding:6px 0;border-top:1px dashed var(--line)}.fday b{font-family:var(--mono);font-weight:500;color:var(--muted);font-size:13px;padding-top:2px}
 .nw{margin:10px 0 12px;font-size:16px}.nw ul{margin:0 0 6px;padding-left:18px;list-style:disc}.week .nw li{display:list-item;margin:3px 0;font-size:16px}
 .nw-g{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .hub-week h2{font-size:26px}
@@ -528,7 +534,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04f";
+const HUB_VERSION = "11-04g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1979,6 +1985,40 @@ function linePaces(a, text){
   return out;
 }
 let fmp = false;
+// Hub weekly outlook, one area at a time: Distance · Mid Distance · Sprints · Field (each field event on its own)
+const OUT_AREAS = [["Distance","Distance",["Distance"],"ar-dist"],["Mid Distance","Mid Distance",["Mid Distance"],"ar-mid"],["Sprints","Sprints & Hurdles",["Sprints","Hurdles"],"ar-spr"],["Field","Field",["Long Jump","High Jump","Pole Vault","Shot Put","Discus"],"ar-fld"]];
+let oArea = "Distance", oLv = "HS";
+try { oArea = localStorage.getItem("hub-oarea") || "Distance"; oLv = localStorage.getItem("hub-olv") || "HS"; } catch(e) {}
+const setOut = (k, v) => { if (k==="a") oArea = v; else oLv = v; try { localStorage.setItem(k==="a"?"hub-oarea":"hub-olv", v); } catch(e) {} render(); };
+function groupItems(d, g, lv){
+  const it = [...((d.groups||{})[g]||[])];
+  (d.combos||[]).filter(cb=>cb.groups.includes(g)).forEach(cb=>it.push(...cb.items));
+  return forLv(it, lv);
+}
+function outlookHTML(w, rest){
+  const area = OUT_AREAS.find(a=>a[0]===oArea) || OUT_AREAS[0];
+  const [key, title, groups, cls] = area;
+  const tabs = `<div class="seg" role="group" aria-label="Event area">${OUT_AREAS.map(([k,t,,c])=>`<button type="button" class="${c}" aria-pressed="${oArea===k}" onclick="setOut('a','${k}')">${t}</button>`).join("")}</div>`;
+  const lvT = segBtns(oLv, [["HS","High School"],["JH","Junior High"]], "(v=>setOut('l',v))");
+  const list = arr => `<ul class="mylist">${arr.map(it=>`<li>${itemHTML(it)}</li>`).join("")}</ul>`;
+  const everyone = d => forLv(d.all, oLv);
+  let body;
+  if (key === "Field") {
+    const evs = groups.map(g => ({g, days: rest.map(d=>({d, it:groupItems(d,g,oLv)})).filter(x=>x.it.length)}));
+    body = `<div class="fldgrid">${evs.map(({g,days})=>`<div class="panel fld"><h3>${esc(g)}</h3>
+      ${days.length ? days.map(({d,it})=>`<div class="fday"><b>${d.day}</b><div>${gFocus(d,g)?`<small class="muted">${esc(gFocus(d,g))}</small>`:""}${list(it)}</div></div>`).join("")
+        : `<p class="note" style="margin:0">Nothing posted for the rest of this week.</p>`}</div>`).join("")}</div>`;
+  } else {
+    const days = rest.map(d=>({d, gs: groups.map(g=>[g, groupItems(d,g,oLv)]).filter(x=>x[1].length), ev: everyone(d)})).filter(x=>x.gs.length);
+    body = days.length ? `<div class="days">${days.map(({d,gs,ev})=>{ const f = gFocus(d,groups[0]) || focusFor(d,oLv);
+        return `<div class="day ${cls}"><div class="when">${d.day}<small>${esc(f)}</small></div><div class="evlist">
+          ${ev.length?`<div class="evblock"><div class="evname">Everyone</div>${list(ev)}</div>`:""}
+          ${gs.length>1||ev.length ? gs.map(([g,it])=>`<div class="evblock"><div class="evname">${esc(g)}</div>${list(it)}</div>`).join("") : list(gs[0][1])}</div></div>`; }).join("")}</div>`
+      : `<div class="panel"><p style="margin:0">No ${esc(title)} workouts posted for the rest of this week.</p></div>`;
+  }
+  const paceBtn = key==="Distance" || key==="Mid Distance" ? fmpHTML("week") : "";
+  return `<div class="bar">${tabs}${lvT}</div>${paceBtn}<div class="outlook ${cls}">${body}</div>`;
+}
 function fmpHTML(key){
   if (fmp !== key) return `<div class="mepick"><button type="button" class="btn primary" onclick="fmp='${key}';render();setTimeout(()=>document.getElementById('fmp-${key}')?.focus(),0)">Find my pace</button></div>`;
   return `<div class="mepick"><label for="fmp-${key}">Find my pace</label><select id="fmp-${key}" onchange="if(this.value) location.hash='#a-'+this.value"><option value="">Pick your name…</option>
@@ -2480,8 +2520,7 @@ const views = {
         if (!rest.length) return "";
         return `<section class="hub-week" id="hub-week"><div class="bar"><div><div class="eyebrow">Weekly outlook</div><h2>Rest of the ${esc(weekLabel(w).replace(/^Week of/,"week of"))}</h2></div>
           <a class="anet" href="#workouts"><b>Workouts</b> →</a></div>
-          ${fmpHTML("week")}
-          <div class="days">${rest.map(d=>dayHTML(d)).join("")}</div></section>`; })()}
+          ${outlookHTML(w, rest)}</section>`; })()}
       ${(()=>{ const cg = coverageGaps(), hr = hotRecruits(5), rw = recordWatch(5);
         const totalGaps = cg.reduce((a,t)=>a+t.gaps.length,0);
         return `<section class="fires"><div class="fires-head"><div class="eyebrow">What needs attention</div><h2>Fires to Put Out</h2></div>
