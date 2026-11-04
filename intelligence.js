@@ -487,8 +487,9 @@ function gradeOf(r){
   return GRADE_FILL.get(r.school_id+"|"+nk(r.athlete)) || null;
 }
 const onRoster = name => { const k = nk(name).split(" "); return ATHLETES.some(a=>{ if (a.level!=="HS") return false; const n = nk(a.fullName||a.name).split(" "); return n.join(" ")===k.join(" ") || (n[0]===k[0] && n[n.length-1]===k[k.length-1]); }); };
+let USE_GOALS = false;
 function entrants(ev, g, schoolIds, grad){
-  const bc = bcSchool(), best = new Map();
+  const bc = bcSchool(), best = new Map(), goalKeys = new Set();
   const put = (key, o) => { const cur = best.get(key); if (!cur || better(ev, o.v, cur.v)) best.set(key, o); };
   (IX.all||[]).forEach(r => {
     if (r.event!==ev || r.gender!==g || r.mark_value==null || !schoolIds.includes(r.school_id)) return;
@@ -498,15 +499,23 @@ function entrants(ev, g, schoolIds, grad){
     if (grad && bc && r.school_id===bc.id && !r.relay && !(r.bc_athlete_id ? ATHLETES.some(a=>a.id===r.bc_athlete_id) : onRoster(r.athlete))) return;   // not on this year's roster
     if (r.relay && grad) { const rf = relayFlag(r.school_id, ev, g); if (rf) return; }   // replaced by the coach's adjustment below
     const key = r.relay ? "R|"+r.school_id : r.school_id+"|"+nk(r.athlete);
+    if (USE_GOALS && bc && r.school_id===bc.id && !r.relay) { const a = ATHLETES.find(a=>a.id===r.bc_athlete_id) || null; if (a && a.goals && a.goals[ev]) return; }
     put(key, {v:+r.mark_value, who:r.relay ? "Relay" : r.athlete, school:r.school_id, grade: gr ? (grad ? gr+1 : gr) : null, bc: bc && r.school_id===bc.id, src:"2026"});
   });
   // coach-adjusted relays
   if (grad && /^4x/.test(ev)) (IX.flags||[]).filter(f=>f.status==="relay" && f.athlete_key===nk(relayKey(ev,g)) && schoolIds.includes(f.school_id) && f.adj_mark).forEach(f => {
     const m = parseMark(ev, f.adj_mark); if (m.ok && m.value!=null) put("R|"+f.school_id, {v:m.value, who:"Relay", school:f.school_id, grade:null, bc: bc && f.school_id===bc.id, src:"adjusted", adj:true});
   });
+  // goals: when "Use goals" is on, a kid's goal stands in for their mark (even for events they haven't run)
+  if (USE_GOALS && bc && schoolIds.includes(bc.id) && !/^4x/.test(ev)) ATHLETES.filter(a=>a.level==="HS" && a.g===g && a.goals && a.goals[ev]).forEach(a => {
+    const m = parseMark(ev, a.goals[ev]); if (!m.ok || m.value==null) return;
+    goalKeys.add(bc.id+"|"+nk(a.fullName||a.name));
+    best.set(bc.id+"|"+nk(a.fullName||a.name), {v:m.value, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, src:"goal", goal:true});
+  });
   // our current roster's PRs (covers new kids and marks from meets we didn't import)
   if (bc && schoolIds.includes(bc.id) && !/^4x/.test(ev)) ATHLETES.filter(a=>a.level==="HS" && a.g===g && a.prs && a.prs[ev]).forEach(a => {
     const m = parseMark(ev, a.prs[ev]); if (!m.ok || m.value==null) return;
+    if (goalKeys.has(bc.id+"|"+nk(a.fullName||a.name))) return;
     put(bc.id+"|"+nk(a.fullName||a.name), {v:m.value, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, src:"PR"});
   });
   return [...best.values()].sort((a,b)=> LOWER(ev) ? a.v-b.v : b.v-a.v);
@@ -563,6 +572,7 @@ function bcCandidates(ev, g, m, grad){
   // distance kids in a distance event they haven't run: estimate from their VDOT (Daniels equivalence)
   if (["800","1600","3200"].includes(ev) && typeof athleteVdot==="function" && typeof raceSec==="function") {
     ATHLETES.filter(a=>a.level==="HS" && a.g===g && (a.cats.includes("Distance")||a.cats.includes("Mid Distance")) && !list.some(x=>x.key===a.id || x.key===nk(a.name))).forEach(a => {
+      if (USE_GOALS && a.goals && a.goals[ev]) return;
       const b = athleteVdot(a); const r = b && raceSec(a, b, ev); if (!r || !isFinite(r.s)) return;
       list.push({v:r.s, who:a.name, school:bc.id, grade:a.grade, bc:true, id:a.id, key:a.id, src:"est.", est:true});
     });
@@ -613,13 +623,14 @@ function optimize(m, g, grad, entries, perKid){
   out.sort((a,b)=>evs.indexOf(a.ev)-evs.indexOf(b.ev));
   // lineup per kid
   const kids = {};
-  out.forEach(e => e.field.filter(x=>x.bc && x.who!=="Relay").forEach(x => { const k = x.key||x.id||nk(x.who); (kids[k] = kids[k] || {who:x.who, id:x.id, evs:[], pts:0}); kids[k].evs.push({ev:e.ev, place:x.place, pts:x.pts, est:x.est, v:x.v}); kids[k].pts += x.pts; }));
+  out.forEach(e => e.field.filter(x=>x.bc && x.who!=="Relay").forEach(x => { const k = x.key||x.id||nk(x.who); (kids[k] = kids[k] || {who:x.who, id:x.id, evs:[], pts:0}); kids[k].evs.push({ev:e.ev, place:x.place, pts:x.pts, est:x.est, goal:x.goal, v:x.v}); kids[k].pts += x.pts; }));
   // kids with marks who didn't make the lineup
   const benched = {}; ind.forEach(ev => cand[ev].filter(c=>!c.est && !kids[c.key]).forEach(c => { (benched[c.key] = benched[c.key] || {who:c.who, evs:[]}).evs.push(ev); }));
   return {evs: out, kids: Object.values(kids).sort((a,b)=>b.pts-a.pts), benched: Object.values(benched)};
 }
 function weeksTo(dateStr){ return Math.max(0, Math.round((new Date(dateStr+"T12:00") - today)/ (7*864e5))); }
 // Plain-English plan, built from the numbers
+let USE_GOALS_VIEW = false;
 function briefHTML(m, g, A, O, naiveBC){
   const bcId = A.bc && A.bc.id; if (!bcId) return "";
   const teams = Object.entries(A.team).map(([s,v])=>[+s, v]).sort((a,b)=>b[1]-a[1]);
@@ -657,7 +668,7 @@ function briefHTML(m, g, A, O, naiveBC){
   const lev = l => `<li><b>${esc(evLabel(l.ev))}</b>: ${/^4x/.test(l.ev) ? `our relay moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(sN(l.y.school))}` : `${esc(l.x.who)} ${l.x.est?"(est.) ":""}moves from ${l.x.place}${["st","nd","rd"][l.x.place-1]||"th"} past ${esc(l.y.who)} (${esc(sN(l.y.school))})`} by finding <b>${esc(gapTxt(l.ev, l.gap))}</b>${l.pct>0?` (${l.pct.toFixed(1)}%)`:""}. <b>+${l.gain}</b>${l.swing>l.gain?`, a <b>${l.swing}-point swing</b> vs ${esc(sN(target))}`:""}. <span class="ix-pill ${l.f.k<=1?"ok":l.f.k===2?"new":"err"}">${l.f.tag}</span></li>`;
   return `<div class="panel brief"><div class="bar"><h2>Ways to steal points</h2><button type="button" class="btn sm" onclick="IX.copyBrief()">Copy for Claude</button></div>
     <p style="margin:0 0 6px">${head}</p>
-    <p class="note" style="margin:0 0 10px">${esc(when)}</p>
+    <p class="note" style="margin:0 0 10px">${esc(when)}${USE_GOALS_VIEW ? " This view uses our kids' goal marks." : ""}</p>
     ${O && O.gain>0 ? `<p style="margin:0 0 10px">📋 <b>Lineup:</b> putting kids in their best events (below) is worth <b>+${O.gain%1?O.gain.toFixed(1):O.gain}</b> over everyone running everything they have a mark in.${O.notes.length?" "+O.notes.map(esc).join(" "):""}</p>` : ""}
     ${plan.length ? `<p style="margin:0"><b>${rank>1 ? (sum>=need ? "A path to the win" : "Biggest moves") : "Where to add cushion"}</b>${rank>1 && sum>=need ? ` (together about +${sum%1?sum.toFixed(1):sum} vs ${esc(sN(target))}, enough to pass them)` : ""}:</p><ol class="dash-list">${plan.map(lev).join("")}</ol>` : `<p class="note" style="margin:0">No realistic single pass-ups found. Look at the lineup and open spots.</p>`}
     ${open.length ? `<p style="margin:10px 0 0">🎯 <b>Coverage:</b> nobody from BC in ${open.map(o=>`${esc(evLabel(o.ev))} (${o.spots} open spot${o.spots===1?"":"s"})`).join(", ")}. Any kid who finishes there scores. Worth finding a body.</p>` : ""}
@@ -688,8 +699,13 @@ function dashView(){
   if (!m) return `<div class="panel"><p style="margin:0">No HS meets on the schedule.</p></div>`;
   if (m.gOnly) d.g = m.gOnly;
   const entries = +d.entries || m.entries, perKid = +d.perKid || 3;
-  const O = optimize(m, d.g, d.grad, entries, perKid); O.gain = 0; O.notes = [];
-  const D = analyze(O.evs, m);
+  const nGoals = ATHLETES.filter(a=>a.level==="HS" && a.g===d.g && a.goals && Object.keys(a.goals).some(k=>a.goals[k])).length;
+  USE_GOALS = false; const Onow = optimize(m, d.g, d.grad, entries, perKid), Dnow = analyze(Onow.evs, m);
+  USE_GOALS = true;  const Ogoal = nGoals ? optimize(m, d.g, d.grad, entries, perKid) : null, Dgoal = Ogoal ? analyze(Ogoal.evs, m) : null;
+  USE_GOALS = false;
+  const useG = d.useGoals && Ogoal;
+  const O = useG ? Ogoal : Onow; O.gain = 0; O.notes = [];
+  const D = useG ? Dgoal : Dnow;
   IX.lastBrief = {m, g:d.g, D, O, perKid, entries};
   const sName = id => schoolName(id), bcId = D.bc && D.bc.id;
   const teams = Object.entries(D.team).sort((a,b)=>b[1]-a[1]);
@@ -697,7 +713,7 @@ function dashView(){
     const bcBest = e.field.find(x=>x.bc);
     return `<tr><td><b>${esc(evLabel(e.ev))}</b></td>
       <td class="wrap">${top.map(x=>`<div class="${x.bc?"dash-bc":""}"><span class="mono">${x.place}.</span> ${x.who==="Relay" && d.grad ? (IX.d.radj===e.ev+"|"+x.school ? `<span class="ix-edit"><input id="radj" style="width:80px" placeholder="new time" value="${esc((relayFlag(x.school,e.ev,d.g)||{}).adj_mark||"")}"></span><button type="button" class="btn sm primary" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', document.getElementById('radj').value.trim())">Save</button><button type="button" class="btn sm" onclick="IX.setRelay(${x.school}, '${e.ev}', '${d.g}', '')">Drop relay</button><button type="button" class="btn sm" onclick="IX.d.radj=null;render()">Cancel</button> `
-      : `<button type="button" class="dash-x" title="Adjust this relay" aria-label="Adjust ${esc(sName(x.school))} relay" onclick="IX.d.radj='${e.ev}|${x.school}';render()">✎</button>`) : ""}${!x.bc && x.who!=="Relay" && d.grad ? `<button type="button" class="dash-x" title="Mark ${esc(x.who)} not returning" aria-label="Mark ${esc(x.who)} not returning" onclick="IX.markGone(${x.school}, ${esc(JSON.stringify(x.who))})">✕</button>` : ""}${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.adj?` <span class="ix-pill">adjusted</span>`:""}${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
+      : `<button type="button" class="dash-x" title="Adjust this relay" aria-label="Adjust ${esc(sName(x.school))} relay" onclick="IX.d.radj='${e.ev}|${x.school}';render()">✎</button>`) : ""}${!x.bc && x.who!=="Relay" && d.grad ? `<button type="button" class="dash-x" title="Mark ${esc(x.who)} not returning" aria-label="Mark ${esc(x.who)} not returning" onclick="IX.markGone(${x.school}, ${esc(JSON.stringify(x.who))})">✕</button>` : ""}${esc(x.who)}${x.grade?` <span class="muted">(${x.grade})</span>`:""} · ${esc(sName(x.school))} · <span class="mono">${esc(fmtMark(e.ev, x.v))}</span>${x.adj?` <span class="ix-pill">adjusted</span>`:""}${x.goal?` <span class="ix-pill ok">goal</span>`:""}${x.pts?` <b>${x.pts}</b>`:""}</div>`).join("")}</td>
       <td class="wrap">${bcBest ? `<b>${bcBest.place}${["st","nd","rd"][bcBest.place-1]||"th"}</b> · ${esc(bcBest.who)} <span class="mono">${esc(fmtMark(e.ev, bcBest.v))}</span>` : `<span class="muted">No BC mark</span>`}</td>
       <td class="mono">${e.field.filter(x=>x.bc).reduce((a,x)=>a+x.pts,0)||""}</td></tr>`; };
   return `<div class="panel ed ix"><div class="ix-grid">
@@ -705,17 +721,21 @@ function dashView(){
       <div class="ed-row"><span>Gender</span>${m.gOnly ? `<b>${m.gOnly==="G"?"Girls":"Boys"}</b>` : segBtns(d.g,[["G","Girls"],["B","Boys"]],"(v=>{IX.d.g=v;render()})")}</div>
       <label class="ed-row" for="dk"><span>Individual events per kid</span><input id="dk" type="text" inputmode="numeric" value="${perKid}" oninput="IX.d.perKid=this.value" onchange="render()"></label>
       <label class="ed-row" for="de"><span>Entries per school</span><input id="de" type="text" inputmode="numeric" value="${entries}" oninput="IX.d.entries=this.value" onchange="render()"></label>
+      <label class="ed-check" for="dug"><input id="dug" type="checkbox" ${d.useGoals?"checked":""} ${nGoals?"":"disabled"} onchange="IX.d.useGoals=this.checked;render()"> Use goals: BC kids at their goal marks ${nGoals?`(${nGoals} ${d.g==="G"?"girls":"boys"} have goals)`:"(no goals set yet: add them on Data Log)"}</label>
       <label class="ed-check" for="dg"><input id="dg" type="checkbox" ${d.grad?"checked":""} onchange="IX.d.grad=this.checked;render()"> 2027 view: last year's seniors removed, everyone a grade older</label></div>
       <p class="note" style="margin:0">Teams: ${m.schools.map(s=>esc(sName(s))).join(", ")}${m.missing.length?` · <b>No 2026 data for ${esc(m.missing.join(", "))}</b>`:""} · Scoring ${esc(m.sc.ind.join("-"))}${m.sc.relay&&m.sc.relay.join()!==m.sc.ind.join()?`, relays ${esc(m.sc.relay.join("-"))}`:""}${m.sc.inferred&&m.tmpl&&/assumed/.test(m.sc.basis||"")?" (assumed)":""}.
         Marks are each kid's best from last season, plus our current roster's PRs. BC kids are placed in the events that score the most, up to ${perKid} individual events each (Indiana's limit is 4 including relays; relays are counted separately here, so check with your AD). It's a projection, not a prediction.</p></div>
-    ${briefHTML(m, d.g, D, O)}
+    ${(USE_GOALS_VIEW = !!useG, briefHTML(m, d.g, D, O))}
     <div class="cols">
-      <div class="panel"><h2>Projected team scores</h2><div class="tbl"><table><tbody>${teams.map(([s,v],i)=>`<tr class="${+s===bcId?"dash-bc":""}"><td>${i+1}</td><td><b>${esc(sName(+s))}</b></td><td class="mono">${v%1?v.toFixed(1):v}</td></tr>`).join("")}</tbody></table></div></div>
+      <div class="panel"><h2>Projected team scores</h2><div class="tbl"><table>${Dgoal?`<thead><tr><th></th><th></th><th>Now</th><th>At goals</th></tr></thead>`:""}<tbody>${(()=>{ const f = v => v%1?v.toFixed(1):v;
+        const order = Object.entries((useG?Dgoal:Dnow).team).sort((a,b)=>b[1]-a[1]);
+        return order.map(([s,v],i)=>`<tr class="${+s===bcId?"dash-bc":""}"><td>${i+1}</td><td><b>${esc(sName(+s))}</b></td><td class="mono">${f(Dnow.team[s]||0)}</td>${Dgoal?`<td class="mono">${f(Dgoal.team[s]||0)}${+s===bcId && Dgoal.team[s]!==Dnow.team[s]?` <b class="${Dgoal.team[s]>Dnow.team[s]?"ok":""}">(${Dgoal.team[s]>Dnow.team[s]?"+":""}${f(Dgoal.team[s]-Dnow.team[s])})</b>`:""}</td>`:""}</tr>`).join(""); })()}</tbody></table></div>
+        ${Dgoal ? (()=>{ const r = Object.entries(Dgoal.team).sort((a,b)=>b[1]-a[1]).findIndex(t=>+t[0]===bcId)+1; return `<p class="note" style="margin:8px 0 0">If our kids hit their goals: <b>${r}${["st","nd","rd"][r-1]||"th"}</b>. Opponents stay at last season's marks.</p>`; })() : ""}</div>
       <div class="panel"><h2>Closest points to grab</h2>${D.opps.length ? `<ol class="dash-list">${D.opps.slice(0,8).map(o=>`<li><b>${esc(evLabel(o.ev))}</b>: ${esc(o.x.who)} (${o.x.place}${["st","nd","rd"][o.x.place-1]||"th"}, <span class="mono">${esc(fmtMark(o.ev,o.x.v))}</span>) ${o.gap<1e-6 ? `is <b>tied</b> with ${esc(sName(o.ahead.school))} (lost on misses/tiebreak).` : `is <b>${esc(gapTxt(o.ev,o.gap))}</b> behind ${esc(sName(o.ahead.school))}.`} Passing them is <b>+${o.gain}</b>.</li>`).join("")}</ol>` : `<p class="note" style="margin:0">No close calls found.</p>`}
         ${D.open.length ? `<p style="margin:10px 0 0"><b>Open scoring spots</b> (fewer entrants than places that score): ${D.open.map(o=>`${esc(evLabel(o.ev))} (${o.spots}${o.bcIn?"":", no BC entry"})`).join(" · ")}. An entry there scores just by finishing.</p>` : ""}</div></div>
     <div class="panel"><div class="bar"><h2>Best lineup for this meet</h2><span class="muted">BC ${(()=>{ const t = D.team[D.bc&&D.bc.id]||0; return t%1?t.toFixed(1):t; })()} pts</span></div>
       ${O.kids.length ? `<div class="tbl"><table class="ix-tbl"><thead><tr><th>Athlete</th><th>Events (projected place · pts)</th><th>Pts</th></tr></thead><tbody>
-        ${O.kids.map(k=>`<tr><td><b>${k.id?`<a href="#a-${k.id}">${esc(k.who)}</a>`:esc(k.who)}</b></td><td class="wrap">${k.evs.map(e=>`<span class="lu-ev">${esc(evLabel(e.ev))}${e.est?` <span class="ix-pill new" title="Estimated from their other distance marks">est.</span>`:""} · ${e.place}${["st","nd","rd"][e.place-1]||"th"}${e.pts?` · <b>${e.pts%1?e.pts.toFixed(1):e.pts}</b>`:""}</span>`).join("")}</td><td class="mono">${k.pts%1?k.pts.toFixed(1):k.pts}</td></tr>`).join("")}</tbody></table></div>` : `<p class="note" style="margin:0">No BC marks for this gender yet.</p>`}
+        ${O.kids.map(k=>`<tr><td><b>${k.id?`<a href="#a-${k.id}">${esc(k.who)}</a>`:esc(k.who)}</b></td><td class="wrap">${k.evs.map(e=>`<span class="lu-ev">${esc(evLabel(e.ev))}${e.est?` <span class="ix-pill new" title="Estimated from their other distance marks">est.</span>`:""}${e.goal?` <span class="ix-pill ok" title="Their goal mark">goal</span>`:""} · ${e.place}${["st","nd","rd"][e.place-1]||"th"}${e.pts?` · <b>${e.pts%1?e.pts.toFixed(1):e.pts}</b>`:""}</span>`).join("")}</td><td class="mono">${k.pts%1?k.pts.toFixed(1):k.pts}</td></tr>`).join("")}</tbody></table></div>` : `<p class="note" style="margin:0">No BC marks for this gender yet.</p>`}
       ${O.benched.length ? `<p class="note" style="margin:8px 0 0">Not in the scoring lineup (they don't change the points here, but could run for experience or as relay legs): ${O.benched.map(b=>`${esc(b.who)} (${b.evs.map(evLabel).map(esc).join(", ")})`).join(" · ")}.</p>` : ""}
       <p class="note" style="margin:6px 0 0"><b>est.</b> = a distance kid placed in a race they haven't run, using a time estimated from their other races. Worth a try at a regular-season meet before trusting it.</p></div>
     ${goneHTML()}
