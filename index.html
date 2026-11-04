@@ -216,6 +216,9 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .pbody{margin:6px 0 4px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--bg);border-radius:4px;font-size:14px}
 .pbody table{width:100%;border-collapse:collapse}.pbody td{padding:3px 8px 3px 0;vertical-align:top;border-top:1px solid var(--line)}
 .pbody .mono{font-family:var(--mono);font-size:13px}
+.mypace{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 6px;font-family:var(--mono);font-size:13px;color:var(--accent)}
+.mypace b{font-family:var(--body);font-weight:700;color:var(--fg)}
+.mylist{margin:0;padding-left:18px}.mylist li{margin:2px 0}
 .mepick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600}
 .mepick select{font:15px var(--body);padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--fg);max-width:100%}
 .ed select{font:15px var(--body);width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg);min-width:0}
@@ -499,7 +502,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04a";
+const HUB_VERSION = "11-04b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1410,8 +1413,7 @@ const levelToggle = () => `<div class="seg" role="group" aria-label="Level">
 const itemHTML = it => {
   const {tags, text} = splitTags(it.t);
   const label = tags.map(x=>`<span class="tchip">${esc(TAG_CHIP[x]||x)}</span>`).join("") + esc(text);
-  if (PACE_CTX && !it.url && !it.link && paceKinds(text).length)
-    return `<details class="pbox"><summary>${label}<span class="pbtn">Paces</span></summary><div class="pbody">${paceBody(text, tags)}</div></details>`;
+
   if (it.url) return `${label} <a class="vid" href="${esc(it.url)}" target="_blank" rel="noopener"><i>▶</i>Video</a>`;
   if (it.link) return `<a href="${esc(it.link)}">${label}</a>`;
   return label;
@@ -1420,8 +1422,7 @@ const itemHTML = it => {
 const li = arr => arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
 function blockHTML(name, arr, combo){
   if(!arr || !arr.length) return "";
-  PACE_CTX = /Distance/.test(name);
-  if (PACE_CTX && meAth()) { arr = arr.filter(it => tagsFit(splitTags(it.t).tags, meAth())); if(!arr.length) return ""; }
+
   const cls = combo ? "evblock combo" : "evblock";
   if(wlv!=="Both"){
     const mine = forLv(arr,wlv);
@@ -1866,7 +1867,35 @@ function linePaces(a, text){
   });
   return out;
 }
-let PACE_CTX = false;   // true while drawing a Distance / Mid Distance block
+let fmp = false;
+// One athlete's version of a week: their level, their event groups, their tags, with paces under each line.
+let awIdx = null;
+function myItems(a, d){
+  const mine = a.cats.filter(c=>d.groups && d.groups[c]);
+  let items = [...(d.all||[])];
+  (d.combos||[]).filter(cb=>cb.groups.some(g=>a.cats.includes(g))).forEach(cb=>items.push(...cb.items));
+  mine.forEach(c=>items.push(...d.groups[c]));
+  return forLv(items, a.level).filter(it=>tagsFit(splitTags(it.t).tags, a));
+}
+function myWeekHTML(a){
+  if(!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
+  const vw = visibleWeeks(); if(!vw.length) return "";
+  const cw = currentWeek(), nw = nextWeek(), home = cw ? vw.indexOf(cw) : (nw ? vw.indexOf(nw) : vw.length-1);
+  const i = awIdx===null ? home : Math.min(Math.max(awIdx,0), vw.length-1), w = vw[i];
+  const days = w.days.map(d=>({d, items:myItems(a,d)})).filter(x=>x.items.length);
+  const t = DTAGS[a.id] || {};
+  const line = it => {
+    const {text} = splitTags(it.t);
+    const ps = /^Warm-up and cool-down/i.test(text) ? [] : linePaces(a, text);
+    return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}</li>`;
+  };
+  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
+      <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
+      <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
+    ${days.length ? `<div class="days">${days.map(({d,items})=>`<div class="day"><div class="when">${d.day}<small>${esc(focusFor(d,a.level))}</small></div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`).join("")}</div>`
+      : `<p class="note" style="margin:0">No workouts posted for this week yet.</p>`}
+    <p class="note" style="margin:8px 0 0">Paces come from your best race, same as the <a href="#paces">Paces</a> page. Effort matters more than hitting the exact number.</p></div>`;
+}   // "Find my pace" picker open on the Workouts page
 function paceBody(text, tags){
   const a = meAth();
   if (a) {
@@ -2389,15 +2418,11 @@ const views = {
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
       <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
-      ${wlv!=="JH" ? `<label class="mepick" for="mepick">HS distance: show my plan
-        <select id="mepick" onchange="setPlan(this.value)"><option value="">Everyone (all versions)</option>${tagAthletes().map(a=>`<option value="${a.id}" ${a.id===me?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label>` : ""}
-      ${(()=>{ const a = meAth(); if(!a) return `<p class="note" style="margin:0">Tap any distance line marked <span class="pbtn" style="margin:0">Paces</span> to see paces from the <a href="#paces">Paces</a> page.</p>`;
-        const t = DTAGS[a.id] || {};
-        return `<div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${esc(a.name)}'s plan</b>
-          ${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}
-          · lines for other groups are hidden. Tap a line marked <span class="pbtn" style="margin:0">Paces</span> for your paces.
-          ${!t.lv||!t.path?`<br><span class="muted">Your coach hasn't set your ${!t.lv&&!t.path?"level and group":!t.lv?"level":"group"} yet, so you'll see every version of those lines.</span>`:""}
-          <a href="#workouts" onclick="setPlan('');return false">Show everyone</a></p></div>`; })()}
+      <div class="mepick">${fmp
+        ? `<label for="fmp-sel">Find my pace</label><select id="fmp-sel" onchange="if(this.value) location.hash='#a-'+this.value"><option value="">Pick your name…</option>
+            ${["HS","JH"].map(l=>`<optgroup label="${l==="HS"?"High School":"Junior High"}">${paceAthletes().map(x=>x.a).filter(a=>a.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("")}</optgroup>`).join("")}</select>
+            <button type="button" class="btn" onclick="fmp=false;render()">Close</button>`
+        : `<button type="button" class="btn primary" onclick="fmp=true;render();setTimeout(()=>document.getElementById('fmp-sel')?.focus(),0)">Find my pace</button>`}</div>
       <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
       <p class="note">▶ Video buttons open in a new tab. The next scheduled week shows here ahead of time. Weeks after that stay hidden.</p></div>`;
   },
@@ -3068,7 +3093,8 @@ const views = {
         return `<div class="panel"><div class="bar"><h2>Training paces</h2><span class="muted">VDOT ${b.V.toFixed(1)} · from ${esc(evn(b.k))} ${esc(b.mk)}</span></div>
           <div class="prgrid">${[["Easy","/mi",`${p.easy[0]}–${p.easy[1]}`],["Tempo","/mi",p.tempo],["Tempo","/400",p.tempo400],["Interval","/400",p.int400],["Interval","/800",p.int800],["Rep","/200",p.rep200],["Rep","/400",p.rep400]]
             .map(([l,u,v])=>`<div class="pr"><div class="ev">${l} ${u}</div><div class="mk">${v}</div></div>`).join("")}</div>
-          <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+`<a href="#workouts" onclick="setPlan('${a.id}')"><b>My workouts →</b></a> · `; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
+          <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+``; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
+      ${myWeekHTML(a)}
       <div><h2 style="margin-bottom:10px">Workout log</h2>
         ${a.log.length?`<div class="tbl"><table><thead><tr><th>Date</th><th>Workout</th><th>Splits / marks</th><th>Notes</th></tr></thead><tbody>
           ${a.log.map(l=>`<tr><td class="mono">${esc(l.d)}</td><td>${esc(l.w)}</td><td class="split">${esc(splitsText(l))||"—"}</td><td>${esc(l.n)}</td></tr>`).join("")}</tbody></table></div>`
@@ -3103,7 +3129,7 @@ function render(){
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
 }
 let lastHash = location.hash;
-window.addEventListener("hashchange", () => { if(location.hash!==lastHash){ lastHash=location.hash; window.scrollTo(0,0); lk={id:null,msg:{kind:"",text:""}}; } render(); });
+window.addEventListener("hashchange", () => { if(location.hash!==lastHash){ lastHash=location.hash; awIdx=null; fmp=false; window.scrollTo(0,0); lk={id:null,msg:{kind:"",text:""}}; } render(); });
 render();
 async function loadAll(){
   if (!SB) return;
