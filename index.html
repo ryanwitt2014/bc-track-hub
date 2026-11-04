@@ -551,7 +551,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04m";
+const HUB_VERSION = "11-04n";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2815,10 +2815,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["recruit","Recruiting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : views._post();
+    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
   },
   _warmEdit(){
@@ -3754,5 +3754,6 @@ if (SB) {
   }
 }
 </script>
+<script src="intelligence.js?v=11-04n"></script>
 </body>
 </html>

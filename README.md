@@ -83,3 +83,16 @@ delete from public.coaches where email = 'coach@benton.k12.in.us';
 - **Backups:** don't count on the free plan for backups. To save a copy any time, go to **Table Editor → hub_data → Export to CSV**. Doing that once a month during the season is plenty.
 - **Free plan:** Supabase pauses a free project after about a week with no activity. During the season that won't happen; if it does, open the project in Supabase and click **Restore**.
 - **The anon key in `config.js` is meant to be public.** The database rules in `setup.sql` are what stop anyone who isn't on the coaches list from saving.
+
+## Scouting (coaches only)
+
+Opponent results for scouting live in four coach-only tables: `schools`, `meets`, `import_batches`, `results`.
+Nobody who isn't signed in as a coach can read them.
+
+1. One-time setup: in Supabase, open **SQL Editor**, paste `supabase/migrations/001_scouting.sql`, and click **Run**. It's safe to run again.
+2. On the Hub: **Coaches → Scouting → Import results**. Fill in the meet, then upload a CSV or paste rows
+   (template: `supabase/templates/scouting-results-template.csv`). Check the preview, then save.
+3. Re-importing the same results is safe: rows already in the system are skipped.
+4. Fix a typo on the **Results** tab (the original import row is kept). Same school under two names? **Schools → Merge**.
+
+The code for this lives in `intelligence.js`.
