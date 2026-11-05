@@ -817,6 +817,16 @@ SP.coachTab = function(){
 /* ---------- Workouts page: every sprint day shows under Sprints / Hurdles / Long Jump / High Jump / Pole Vault (display only, never saved into the posted weeks) ---------- */
 const plain = r => r.wu ? "Standard sprint warm-up: 12–15 min" : r.str ? `Weight room: ${STR[r.str].n} (30–35 min)${r.mod?" · "+STR_MOD[r.mod]:""}` : `${r.x}${r.p?": "+r.p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+")":""}`;
 const SG = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
+function printLine(r){
+  if (r.wu) return "Standard sprint warm-up (12–15 min): easy movement → dynamic mobility → A-skips / ankling / dribbles → build-ups → event prep";
+  if (r.str) { const s = STR[r.str]; return `Weight room · ${s.n} (30–35 min): ${s.ex.map(e=>e[0]+" "+e[1]).join(" · ")}. ${r.mod?STR_MOD[r.mod]+" ":""}${s.note}`; }
+  let p = r.p || "", m, q;
+  if ((m = r.x.match(/flying (\d+)m/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:reps?)?(.*)$/))) p = `${q[1]}×flying ${m[1]}m${q[2]}`;
+  else if ((m = r.x.match(/^Timed (\d+)m starts/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:attempts?)?(.*)$/))) p = `${q[1]}×${m[1]}m${q[2]}`;
+  return `${r.x}${p?": "+p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+" only)":""}${r.cut?" · H/J may skip":""}${r.n?" · "+r.n:""}`;
+}
+// Packets/sheets: true when a sprint day is not a practice (home day, rest, meet) so no group sheet prints for it
+SP.printSkip = function(start, dn){ const wi = SP_WEEKS.findIndex(x=>x.start===start); if (wi<0) return false; const i = dayInfo(wi, dn); return !!i && !isCoach(i); };
 const tplLines = T => [
   ...(T.pre ? ["Warm-up: " + T.pre] : []),
   ...(T.choose ? ["Choose ONE: " + T.choose.map(([n,p])=>`${n} (${p})`).join(" · ")] : []),
@@ -828,7 +838,8 @@ SP.weeksWith = function(list){
   const extra = SP_WEEKS.filter(w => !have.has(w.start)).map(w => ({start:w.start, days:[], spOnly:true}));
   return extra.length ? (list||[]).concat(extra).sort((a,b)=>a.start.localeCompare(b.start)) : list;
 };
-SP.inject = function(w){
+SP.inject = function(w, opt){
+  const P = !!(opt && opt.print);
   if (!w || !w.start) return w;
   const wi = SP_WEEKS.findIndex(x => x.start===w.start); if (wi<0) return w;
   const copy = Object.assign({}, w, {days:(w.days||[]).map(d=>Object.assign({}, d, {groups:Object.assign({}, d.groups||{}), combos:[...(d.combos||[])], gfocus:Object.assign({}, d.gfocus||{})}))});
@@ -837,13 +848,19 @@ SP.inject = function(w){
     let d = copy.days.find(x=>x.day===dn);
     if (!d) { d = {day:dn, focus:"", all:[], groups:{}, combos:[], gfocus:{}}; copy.days.push(d); }
     const L = lab(i), F = dayFacts(i);
-    const head = i.k==="rest" ? {t:"Rest · Full rest", lv:"HS"} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoach(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:"HS"};
+    const head = P ? {t: i.k==="rest" ? "Rest" : isCoach(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:"HS"} : i.k==="rest" ? {t:"Rest · Full rest", lv:"HS"} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoach(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:"HS"};
     let items = [head];
     if (i.cnote) items.push({t:"Coach note: " + i.cnote, lv:"HS"});
     if (isCoach(i)) {
       const env = i.forceIn ? "in" : SP.env, rows = env==="in" ? (i.sess.in||i.sess.out) : i.sess.out;
       items.push({t:(env==="in" ? "Indoor plan (hallway/gym)" : "Outdoor plan (track)") + (i.forceIn ? ": moved indoors today" : ""), lv:"HS"});
-      items = items.concat(rows.filter(r=>!r.tech).map(r => ({t: plain(r), lv:"HS"})));
+      items = items.concat(rows.filter(r=>!r.tech).map(r => ({t: P ? printLine(r) : plain(r), lv:"HS"})));
+      if (P) {
+        const other = env==="in" ? i.sess.out : i.sess.in;
+        if (other && !i.forceIn) items.push({t:"Indoor version (hallway/gym): " + other.filter(r=>!r.wu && !r.tech && !r.str).map(r=>`${r.x} ${r.p}`.trim()).join("; ") + ". Indoor accelerations 10–20m only with traction, a clear lane and stopping room.", lv:"HS"});
+        if (rows.some(r=>r.tech)) items.push({t:"Event technique (15–20 min): see each group's technique lines.", lv:"HS"});
+        items.push({t:"Coaching: full recovery between max reps (2–3 min short accelerations, 4–6 min flying). Reduce volume for beginners and anyone returning from injury.", lv:"HS"});
+      }
       items.push({t:"400/800 hybrids (S3): follow the Mid Distance workout today unless your coach assigned this session.", lv:"HS"});
       if (rows.some(r=>r.tech)) {
         const m = i.w.mo, add = (g, arr) => { d.groups[g] = (d.groups[g]||[]).concat(arr.map(t=>({t, lv:"HS"}))); };
@@ -853,6 +870,8 @@ SP.inject = function(w){
         add("High Jump", (JUMPS["High Jump"].mo[m]||[]).map(x=>"Technique: " + x));
         add("Pole Vault", (JUMPS["Pole Vault"].mo[m]||[]).map(x=>"Technique (qualified supervision): " + x));
       }
+    } else if (isInd(i) && P) {
+      items.push({t:"400/800 hybrids (S3): Mid Distance workout instead.", lv:"HS"});
     } else if (isInd(i)) {
       const T = IND[i.tpl];
       items.push({t:`Goal: ${F.obj} · Equipment: ${F.equip}`, lv:"HS"});
@@ -865,9 +884,10 @@ SP.inject = function(w){
       const add = (g, k) => { d.groups[g] = (d.groups[g]||[]).concat([{t: IND_MODS[k], lv:"HS"}]); };
       add("Sprints","S1"); add("Sprints","S2"); add("Hurdles","H"); ["Long Jump","High Jump","Pole Vault"].forEach(g=>add(g,"J"));
     } else if (i.k==="meet") items.push({t:"Meet day: follow your coach's meet-day plan. No extra workout.", lv:"HS"});
+    else if (P) items = [{t:"Rest: no assigned workout. Optional comfortable walk." + (i.note?" " + i.note:""), lv:"HS"}];
     else items.push({t:"No assigned workout. Optional comfortable walk or normal daily activity." + (i.note?" " + i.note:""), lv:"HS"});
     d.combos.push({groups:SG, name:"Sprints · Hurdles · Jumps", items});
-    SG.forEach(g => { if (!d.gfocus[g]) d.gfocus[g] = L[0]; });
+    SG.forEach(g => { if (!d.gfocus[g]) d.gfocus[g] = P ? `${L[0]}: ${dayTitle(i)}` : L[0]; });
     if (d.focus && typeof d.focus==="object") { if (!d.focus.HS) d.focus = Object.assign({}, d.focus, {HS: dayTitle(i)}); }
     else if (!d.focus) d.focus = {HS: dayTitle(i), JH: ""};
   });

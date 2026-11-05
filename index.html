@@ -2383,7 +2383,10 @@ function sheetRaw(d, cat, lv){
   return lv==="Both" ? raw : forLv(raw, lv);
 }
 const REP_RX = /\d\s*×\s*(flying\s+)?\d+\s*(m|min|sec)\b/;
-const isRepLine = t => { const x = splitTags(t).text; return REP_RX.test(x) && !/^(E[12]\b|Strength|Warm-up|Drills|Athletic development|Weight room|Optional|Dynamic|Check-in|Hip-stability)/i.test(x); };
+const isRepLine = t => { const x = splitTags(t).text; return REP_RX.test(x) && !/^(E[12]\b|Strength|Warm-up|Drills|Athletic development|Weight room|Optional|Dynamic|Check-in|Hip-stability|Indoor version|Outdoor version)/i.test(x); };
+// Sheets and packets include the Sprints/Hurdles/Jumps plan (sprints.js) for the week, built for print
+const printWeeks = () => window.SP && SP.weeksWith ? SP.weeksWith(sortedWeeks()) : sortedWeeks();
+const printWeek = w => w && window.SP && SP.inject ? SP.inject(w, {print:true}) : w;
 function kidPace(a, d, cat, lv){
   const seen = new Set(), out = [];
   sheetRaw(d, cat, lv).filter(it => sheetFit(splitTags(it.t).tags, a) && !splitTags(it.t).tags.includes("Crossover")).forEach(it => {
@@ -2514,7 +2517,7 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
   </section>`;
 }
 function buildSheets(){
-  const weeks = sortedWeeks(); const w = weeks.find(x=>x.start===sh.week);
+  const weeks = printWeeks(); const w = printWeek(weeks.find(x=>x.start===sh.week));
   const out = [];
   const days = !w ? [null] : (sh.day==="All" ? w.days : w.days.filter(d=>d.day===sh.day));
   days.forEach(d=>{
@@ -2547,23 +2550,31 @@ const restOnly = items => !items.length || items.every(t => /^(\[[^\]]+\]\s*)*Re
 function coverHTML(w, lvs){
   const fmt = d => dayDate(w, d.day).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
   const who = sh.coach ? `${sh.coach} · ${sh.groups.join(", ")}` : "Full program";
-  const days = w.days.map(d => ({d, blocks: sh.groups.flatMap(cat => lvs.map(lv => ({cat, lv, items: sheetItems(d, cat, lv)}))).filter(b => b.items.length)})).filter(x => x.blocks.length);
+  // Shared blocks (everyone, combined groups) print once per day; then each group's own lines.
+  const its = (arr, lv) => forLv(arr, lv).map(it => it.t);
+  const days = w.days.map(d => ({d, blocks: lvs.flatMap(lv => [
+      {cat:"Everyone", lv, items: its(d.all, lv)},
+      ...(d.combos||[]).filter(cb => cb.groups.some(g => sh.groups.includes(g))).map(cb => ({cat: comboName(cb), lv, items: its(cb.items, lv), combo:true})),
+      ...sh.groups.map(cat => ({cat, lv, items: its((d.groups||{})[cat], lv)}))]).filter(b => b.items.length)})).filter(x => x.blocks.length);
   return `<section class="sheet cover">
     <div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Week Packet</div><div class="sh-title">${esc(weekLabel(w))}</div></div>
       <div class="sh-meta"><div><b>${esc(who)}</b></div><div>${lvs.join(" + ")}</div></div></div>
     ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}${lvs.length===1 && sessOf(d,lvs[0]) ? ` · ${esc((SESS_K[sessOf(d,lvs[0]).kind]||[""])[0])}` : ""}</h4>
-      ${blocks.map(b=>{ const f = gFocus(d,b.cat,b.lv) || focusFor(d,b.lv); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
+      ${blocks.map(b=>{ const f = b.combo || b.cat==="Everyone" ? "" : (gFocus(d,b.cat,b.lv) || focusFor(d,b.lv)); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
         <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`
       : `<p>Nothing posted for these groups this week.</p>`}
     <div class="sh-foot">Group sheets follow: ${lvs.join(" then ")}, one page per group per practice day.</div></section>`;
 }
 function buildPacket(){
-  const w = sortedWeeks().find(x=>x.start===sh.week); if (!w) return `<p class="note">Pick a posted week.</p>`;
+  const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
+  const w = printWeek(w0);
   const lvs = sh.plv==="Both" ? ["HS","JH"] : [sh.plv];
   const out = [coverHTML(w, lvs)];
   lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
     const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
     const ss = sessOf(d, lv); if (ss && ["indep","break","rest","meet"].includes(ss.kind)) return;   // not a practice: on the cover page only
+    const od = (w0.days||[]).find(x=>x.day===d.day);
+    if (lv==="HS" && window.SP && SP.printSkip && SP.printSkip(w.start, d.day) && !sheetItems(od, cat, lv).length) return;   // sprint home day: cover page only
     const date = dayDate(w, d.day);
     const focus = gFocus(d,cat,lv) || focusFor(d, lv);
     out.push(sheetHTML({dateLabel: date.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}), dayName: d.day, focus, cat, lv, items, d, date}));
@@ -3169,9 +3180,9 @@ const views = {
       </div>`;
   },
   _sheets(){
-    const weeks = sortedWeeks();
+    const weeks = printWeeks();
     if (!sh.week && weeks.length) { const cw = currentWeek() || nextWeek() || weeks[weeks.length-1]; sh.week = cw.start; }
-    const w = weeks.find(x=>x.start===sh.week);
+    const w = printWeek(weeks.find(x=>x.start===sh.week));
     const toggleG = g => `sh.groups = sh.groups.includes('${g}') ? sh.groups.filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||sh.groups.includes(c)); render()`;
     const packet = sh.mode==="packet";
     const controls = `<div class="panel ed no-print">
@@ -4122,6 +4133,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05b"></script>
+<script src="sprints.js?v=11-05c"></script>
 </body>
 </html>
