@@ -218,7 +218,7 @@ const DRILLS = {
 const CATS_ORDER = ["Warm-up & mechanics","Acceleration","Max velocity","Power","Speed endurance","Hurdles","Jumps"];
 
 /* ---------- standard warm-up ---------- */
-const WARMUP = [
+const WARMUP_HS = [
   ["Easy movement + activation","2–3 min","Jog, skips, side shuffles, carioca, leg swings."],
   ["Dynamic mobility","3 min","Walking lunge with reach, hip openers/closers, inchworm, world's greatest stretch. No long static holds before sprinting."],
   ["Coordination drills","4–5 min","A-march → A-skip, ankling, dribbles (ankle → calf → knee). Pick one or two cues for the day."],
@@ -227,7 +227,7 @@ const WARMUP = [
 ];
 
 /* ---------- pathways ---------- */
-const BLOCKS = [
+const BLOCKS_HS = [
   {mo:"December", t:"Acceleration fundamentals", items:["Falling starts","Standing starts","Three-point starts","Projection angles","First-step placement"]},
   {mo:"January", t:"Block mechanics", items:["Individual block settings (write them down)","Set position","Front/rear pedal push","First three steps","Slow-motion video analysis"]},
   {mo:"February", t:"Explosive execution", items:["Timed 10m/20m block starts","Consistent setup","Drive phase","Transition toward upright running"]},
@@ -239,13 +239,13 @@ const SCORECARD = [
   ["First-step placement","First steps land under/behind the hips, low and fast, no reaching."],
   ["Progressive rise","Body rises gradually over the drive phase, no popping up."],
 ];
-const HURDLES = [
+const HURDLES_HS = [
   {mo:"December", items:["Lead-leg drills","Trail-leg drills","Hurdle mobility","Walking clearance","Controlled single-hurdle drills"]},
   {mo:"January", items:["Short approaches","Single-hurdle attacks","Reduced-height rhythm drills","Progressive three-step patterns where appropriate"]},
   {mo:"February", items:["Starts to the first hurdle","Two-to-four hurdle sequences","Rhythm consistency","Increased approach speed"]},
   {mo:"March–May", items:["Competition-height progression","Race-specific spacing","Full approach rhythm","100/110H and 300H race preparation"]},
 ];
-const JUMPS = {
+const JUMPS_HS = {
   "Long Jump":{focus:["Approach consistency","Acceleration","Penultimate step","Takeoff mechanics","Landing technique"], drills:["ljapp","ljpen","ljpop"],
     mo:{dec:["Approach check-mark runs ×4 (outdoors) or 6–8 step rhythm runs (indoors)","Penultimate step drill 2×4"], jan:["Short-approach pop-ups ×4–6 (pit only)","Penultimate step drill 2×4"], feb:["Mid-approach jumps ×4–6 with check-mark","Landing drill into the pit ×4"]}},
   "High Jump":{focus:["Curved approach","Approach rhythm","Takeoff mechanics","Bar clearance","Indoor technical alternatives (curve runs, takeoff drills, no bar without a pit)"], drills:["hjcurve","hjscissor"],
@@ -253,12 +253,12 @@ const JUMPS = {
   "Pole Vault":{focus:["Pole carry","Approach rhythm","Plant mechanics","Takeoff preparation","Technical work only under qualified supervision with proper facilities and equipment"], drills:["pvcarry","pvplant"],
     mo:{dec:["Pole carry runs ×4–6","Walking plants 2×5"], jan:["Jogging plants 2×5","Pole carry runs at approach rhythm ×4"], feb:["Short-run plants into the pit ×4 (qualified coach, pit set)","Carry runs ×3"]}},
 };
-const HURDLE_TECH = {
+const HURDLE_TECH_HS = {
   dec:[["Lead-leg drill","2×5 each leg","hlead"],["Trail-leg drill","2×5 each leg","htrail"],["Walkovers","2×5 hurdles","hmob"],["Walking clearance","4–6","hwalk"]],
   jan:[["Lead/trail-leg drills","2×5 each leg","hlead"],["Single-hurdle attacks","4","hsingle"],["Rhythm at reduced height","3 × 2–3 hurdles (if space)","hrhythm"]],
   feb:[["Start to first hurdle","3–4","hstart"],["2–4 hurdle sequences","3","hrhythm"],["Lead/trail-leg drills","1×5 each leg","hlead"]],
 };
-const SPRINT_TECH = {
+const SPRINT_TECH_HS = {
   dec:[["Start positions: falling → standing → three-point","5–8 min","three"],["One cue: first-step placement","",""]],
   jan:[["Block setup + set position + first 3 steps","8–10 min","block"],["Film 1–2 starts (slow-motion)","",""]],
   feb:[["Timed 10m block starts (if not timed today)","2–3","block"],["Drive phase → upright transition","",""]],
@@ -321,7 +321,7 @@ Object.assign(IND, {
 });
 const IND_KIND = {RA:"rec", RB:"rec", RC:"rec", GFA:"gf", GFB:"gf", TA:"opt"};
 // Standard independent days
-const DEF = {
+const DEF_HS = {
   Mon:{k:"rec", tpl:"RC", extra:"Optional: a 10–15 min comfortable walk.", total:"12–30 min", obj:"Maintain mobility, reduce stiffness, and get ready for Tuesday's max sprint work.", avoid:"No demanding leg strength work, hard running, or jumping today."},
   Wed:{k:"rec", tpl:"RA", alts:["RC"], total:"12–30 min", obj:"Comfortable movement between coach-led sessions. Don't add fatigue; Thursday is power and technique.", altNote:"Short on time? Do Recovery C instead."},
   Fri:{k:"rec", tpl:"RB", alts:["RA","RC"], total:"15–30 min", obj:"Easy movement after Thursday's session and general fitness, without extra fatigue.", avoid:"No recovery run is required."},
@@ -329,7 +329,7 @@ const DEF = {
   Sun:{k:"rest"},
 };
 // Group modifications on independent days (S3 is handled separately: it follows the Mid-Distance plan)
-const IND_MODS = {
+const IND_MODS_HS = {
   S1:"100/200: mostly walking, mobility and core. Easy aerobic work is optional. No required mileage. Freshness for Tuesday's speed comes first.",
   S2:"200/400: walking, mobility and core. Optional 15–25 min easy cycling. Experienced athletes may occasionally jog 10–15 min conversational. Never add your own speed-endurance workouts.",
   H:"Hurdlers: mobility, trunk stability, easy walking or cycling. Low-intensity hurdle mobility (walkovers) only if you have equipment, space, and have been taught it. No high-speed hurdle clearances on your own.",
@@ -337,7 +337,7 @@ const IND_MODS = {
 };
 const LABELS = {gsc:["General Strength & Conditioning","lb-gsc"], speed:["Coach-Led Speed","lb-speed"], power:["Coach-Led Power/Technique","lb-power"], rec:["Independent Recovery","lb-rec"], gf:["Independent General Fitness","lb-gf"], opt:["Optional Conditioning","lb-opt"], rest:["Rest","lb-rest"], meet:["Meet Day","lb-meet"], closed:["School Closed · Home Session","lb-opt"]};
 
-const SP_WEEKS = [
+const SP_WEEKS_HS = [
  {n:1, start:"2026-11-30", focus:"General strength & conditioning", st:"vol", mo:"dec", note:"Dec 1–6: general strength and conditioning only. No sprint-specific training (blocks, timed sprints, sprint technique, hurdle or jump work) until Tue Dec 8: the limited-contact period for sport-specific training starts the week of Dec 7.",
   days:{Mon:{k:"none"},
     Tue:{k:"gsc", lift:"GA1", title:"General Strength A1: Movement Foundation", dur:"45–60 min", obj:"Learn the weight room: safety, equipment, and the squat, hinge, lunge, push and brace.",
@@ -402,15 +402,198 @@ const SP_WEEKS = [
        in:[WU,row("Accelerations","4×10–15m",{d:"accel",r:R.acc,i:"max"}),row("Controlled power","2×3 med-ball throws",{d:"medball",r:R.bj,i:"max"}),row("Technical drills","3 passes",{d:"dribble",r:R.drill,i:"tech"})]},
   thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),TECH,{str:"feb",mod:"mod",n:"Avoid excessive fatigue."}], in:null}},
 ];
-const ST = {vol:["Coach-led Tue/Thu are voluntary / out-of-season. Home days are always optional.","sp-banner"], break:["Holiday: no practices. Everything this week is optional; family and travel come first. Missed sprint sessions are never made up.","sp-banner brk"], off:["Official practice season (confirm the IHSAA start date). Your coach may post practice on more days.","sp-banner off"]};
+const ST_HS = {vol:["Coach-led Tue/Thu are voluntary / out-of-season. Home days are always optional.","sp-banner"], break:["Holiday: no practices. Everything this week is optional; family and travel come first. Missed sprint sessions are never made up.","sp-banner brk"], off:["Official practice season (confirm the IHSAA start date). Your coach may post practice on more days.","sp-banner off"]};
 const INT = {max:["Max","max"], near:["Fast, relaxed",""], cf:["Controlled fast",""], "9095":["~90–95%",""], tech:["Technical","tech"]};
-const DUR = {Tue:"60–75 min", Thu:"75–90 min"};
+const DUR_HS = {Tue:"60–75 min", Thu:"75–90 min"};
 const DAYN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+/* ======================= JUNIOR HIGH (grades 6–8) =======================
+   Same week structure, drill names and philosophy as HS, with JH workloads, levels and progressions.
+   Rows may carry jl:[2,3] (Level 2+) or jl:[3] (Level 3 only). {lift:"JA"} = a shared JH lift table from the main page (LIFTS). */
+const LEVELS_JH = {
+  1:{n:"Level 1 · Foundation", typ:"Typically newer 6th/7th graders", focus:["General athletic movement","Coordination","Running posture","Basic acceleration","Safe landing","Introductory hurdle mobility","Event exploration"]},
+  2:{n:"Level 2 · Development", typ:"Typically experienced 7th/8th graders", focus:["Consistent acceleration mechanics","Controlled sprint technique","Introductory starting positions","Maximum-velocity development","Hurdle rhythm","Jump approaches","Supervised introductory strength"]},
+  3:{n:"Level 3 · Advanced", typ:"Experienced, physically prepared athletes who show the movement competency", focus:["More precise acceleration mechanics","Introductory block starts","Timed sprinting","Event-specific technical progression","Individualized sprint volume","Preparation for high school training"]},
+};
+const WARMUP_JH = [
+  ["Easy movement","2–3 min","Jog, skips, shuffles, carioca, follow-the-leader."],
+  ["Dynamic mobility","2–3 min","Leg swings, walking lunges, arm circles, inchworms."],
+  ["A-march + basic skipping","2 min","A-march 2×10m, skips 2×15m. One cue for the day: tall and quick."],
+  ["Ankling","1 min","2×10m, quiet quick feet."],
+  ["Build-ups","1–2 min","2×20–30m at 70% then 80%. Indoors 2×10m easy, or skip them if stopping room is short."],
+  ["Coordination game","1–2 min","Reaction starts (coach claps or drops a ball), mirror drill, or partner tag in a small box. Short and fun."],
+];
+const WU_TIME = {HS:"12–15 min", JH:"8–12 min"};
+const DUR_JH = {Tue:"45–65 min", Thu:"45–65 min"};
+const ST_JH = {vol:["Coach-led Tue/Thu assume they're permitted under junior high rules and district policy (confirm with the AD; high school IHSAA rules aren't assumed). Home days are always optional.","sp-banner"],
+  break:["Holiday: no required practices. Everything this week is optional; family and travel come first. Missed sessions are never made up.","sp-banner brk"],
+  off:["Preseason (confirm the junior high practice start date). Your coach may post practice on more days.","sp-banner off"]};
+const BLOCKS_JH = [
+  {mo:"December", t:"Posture + first steps", items:["Wall drives","Falling starts","Standing starts","Push the ground back, low first steps"]},
+  {mo:"January", t:"Starting positions", items:["Standing starts (everyone)","Three-point starts (Level 2+)","Block setup introduction (Level 3 only)"]},
+  {mo:"February", t:"Consistency", items:["The same start every rep","First 3 steps low and fast","Timed 10m for athletes ready for testing"]},
+  {mo:"March–May", t:"Race starts", items:["Starter commands","Block starts in races for Level 3 (Level 2 when ready)","Standing starts are fine for Level 1"]},
+];
+const HURDLES_JH = [
+  {mo:"December", items:["Hurdle mobility","Walking lead/trail-leg drills","Single-hurdle introduction"]},
+  {mo:"January", items:["Controlled approaches","One- and two-hurdle drills","Reduced-height rhythm"]},
+  {mo:"February", items:["Two-to-four hurdle sequences where safe","More consistent approaches","Progressive rhythm"]},
+  {mo:"March–May", items:["Age-appropriate competition heights and spacing","Race-specific technique","Starts to the first hurdle","Three-step rhythm where appropriate"]},
+];
+const HURDLE_TECH_JH = {
+  dec:[["Hurdle mobility walkovers","2 × 4 hurdles","hmob"],["Walking lead-leg drill","2 × 4 each leg","hlead"],["Walking trail-leg drill","2 × 4 each leg","htrail"],["Single-hurdle introduction (low split-bar)","3–4","hwalk"]],
+  jan:[["Controlled approach into one hurdle","4","hsingle"],["One- and two-hurdle drills","3","hrhythm"],["Reduced-height rhythm","2–3 passes","hrhythm"]],
+  feb:[["2–4 hurdle sequences where safe","3","hrhythm"],["Consistent approach to hurdle 1","3","hstart"],["Lead/trail-leg drills","1 × 4 each leg","hlead"]],
+};
+const SPRINT_TECH_JH = {
+  dec:[["Posture + arm action: wall drives, A-march","5 min","wall"],["Falling → standing start positions","5 min","fall"]],
+  jan:[["Standing starts; three-point starts for Level 2+","5–8 min","three"],["Block setup introduction (Level 3 only)","5 min","block"]],
+  feb:[["Start consistency + first three steps","5–8 min","three"],["Upright running: dribbles or low wickets","2–3 passes","wicket"]],
+};
+const JUMPS_JH = {
+  "Long Jump":{starter:true, focus:["Safe landing first","Short, consistent approach","Takeoff off one foot, run through the board","Event exploration: everyone tries it"], drills:["ljpen","ljpop"],
+    mo:{dec:["Standing long jumps into sand or onto a mat ×4 (landing practice)","Skips for distance 2 × 15m"], jan:["Short-approach (4–6 step) pop-ups ×4 (pit only)","Penultimate rhythm drill 2 × 3"], feb:["Short-to-mid approach jumps ×4 (pit only)","Approach consistency runs ×3"]}},
+  "High Jump":{starter:true, focus:["Curved approach (J-curve)","Takeoff off the outside foot, knee drive up","Bar clearance at low heights","No high jump without a pit"], drills:["hjcurve","hjscissor"],
+    mo:{dec:["J-curve runs ×4","Scissor jumps at a low bungee ×4 (pit only)"], jan:["Curve into takeoff, no bar ×4","Short-approach scissors / back-overs at low heights ×4 (pit only)"], feb:["Short approach at modest heights ×4–6 (pit only)","Approach rhythm runs ×3"]}},
+};
+const IND_MODS_JH = {
+  S1:"Sprinters: play, walk, or bike. No extra running needed. Stay fresh for Tuesday.",
+  S2:"400 runners: easy biking or walking is plenty. No extra hard runs on your own.",
+  H:"Hurdlers: mobility and balance. Walkovers only if you have a safe hurdle setup and were taught them. No hurdling at speed on your own.",
+  J:"Jumpers: balance and core. No jumping for height or distance on your own.",
+};
+Object.assign(IND, {
+  JRC:{n:"Mobility · 10 minutes", dur:"10–15 min", rpe:"1–2/10 · very easy", equip:"None", obj:"Loosen up and feel good for Tuesday.",
+    steps:[["Cat-cow","8 reps","On hands and knees: round your back, then let it sag."],["World's greatest stretch","3 each side","Big lunge, elbow toward the front foot, then reach that arm to the sky."],["Ankle rocks","8 each side","Half-kneeling, push the front knee over the toes, heel down."],["Leg swings","8 each way, each leg","Hold a wall, smooth swings."],["Calf stretch","20–30 s each side","Hands on a wall, back heel down."],["Relaxed breathing","1 min","In through the nose for 4, out for 6."]], end:"Should feel easy. If something hurts, skip it and tell your coach."},
+  JEA:{n:"Easy Activity", dur:"15–25 min", rpe:"2–3/10 · easy", equip:"None", obj:"Move for fun between practices.",
+    choose:[["Walk with family, friends, or the dog","15–25 min"],["Easy bike ride (where it's safe)","15–25 min"],["Shoot hoops, play catch, or a backyard game","15–25 min"]], end:"Pick ONE. Nothing hard today."},
+  JRA:{n:"Recovery · Walk + Stretch", dur:"15–20 min", rpe:"1–2/10 · very easy", equip:"None", obj:"Easy movement after Thursday's practice.",
+    steps:[["Easy walk","10–15 min","Chat-level pace."],["Ankle circles","10 each direction, each ankle",""],["Bodyweight squats","8","Slow and smooth."],["Hip-flexor stretch","20–30 s each side","Half-kneeling, squeeze the glute of the down knee."],["Calf stretch","20–30 s each side",""]], end:"You should finish feeling better than when you started."},
+  JGF:{n:"Optional Fitness or Play", dur:"15–25 min", rpe:"3–4/10 · comfortable", equip:"None", obj:"Optional: something active you enjoy.",
+    choose:[["Play outside: tag, soccer, basketball, frisbee","15–25 min"],["Bike ride, hike, or swim","15–25 min"],["Mini circuit ×2: 8 squats, 6 lunges each leg, 6 push-ups, 10 glute bridges, 20 s plank","10–15 min"]], end:"Pick ONE, or rest if you're tired or sore."},
+  JTA:{n:"Optional · Drills at Home", dur:"10–15 min", rpe:"2–3/10 · low", equip:"None. A safe, non-slip spot.", obj:"Keep the drills you know. No practice this week.",
+    steps:[["A-march","2 × 10m","Tall, knee up, toe up."],["Wall drives","2 × 4 each leg","Lean into the wall, straight line, drive one knee up."],["Dribble marching","2 × 10m","Step over the ankle, step down."],["Skips","2 × 15m","Bouncy and relaxed."],["Easy walk cooldown","3 min",""]], end:"No max sprinting, no jumping for distance, no block starts."},
+  JW1E:{n:"Optional · Easy Activity, Mobility, or Play", dur:"10–20 min", rpe:"1–3/10 · easy", equip:"None", obj:"Optional. Move a little, have fun.",
+    choose:[["Easy walk or bike","10–20 min"],["Mobility · 10 minutes (Mon routine)","10–15 min"],["Recreational play: shoot hoops, catch, tag","10–20 min"]], end:"Totally optional. No need to report anything."},
+});
+const DEF_JH = {
+  Mon:{k:"rec", tpl:"JRC", total:"10–15 min", obj:"Independent recovery and mobility. Get ready for Tuesday."},
+  Wed:{k:"rec", tpl:"JEA", alts:["JRC"], total:"15–25 min", obj:"Independent easy activity between practices."},
+  Fri:{k:"rec", tpl:"JRA", alts:["JRC"], total:"15–20 min", obj:"Independent recovery after Thursday."},
+  Sat:{k:"gf", tpl:"JGF", alts:["rest"], total:"15–25 min", obj:"Optional general fitness or recreational activity.", altNote:"Or rest."},
+  Sun:{k:"rest"},
+};
+const RJ = {acc:"1–2 min, walk back", fly:"3–4 min", fall:"1 min", bj:"60 s", wall:"30 s", drill:"walk back", full:"Full recovery (3–4 min)"};
+const WUJ = {x:"JH warm-up", p:"8–12 min", wu:true};
+const TECHJ = {tech:true, x:"Event technique", p:"10–15 min"};
+const HJTJ = {tech:true, x:"Introductory hurdle / jump movement", p:"10–15 min"};
+const COOL = {x:"Cooldown","p":"3–5 min", i:"tech", n:"Easy walk, calf and hip-flexor stretch."};
+const JLIFT = (code, p) => ({lift:code, x:"Basic strength", p: p || "15–20 min"});
+const SP_WEEKS_JH = [
+ {n:1, start:"2026-11-30", focus:"General movement & strength", st:"vol", mo:"dec", note:"Dec 1–6: general movement and strength only. No sprint, hurdle, or jump instruction until the week of Dec 7 (assuming permitted under junior high rules and approved by the athletic department).",
+  days:{Mon:{k:"none"},
+    Tue:{k:"gsc", lift:"JGA1", title:"General Movement + Strength A1", dur:"35–45 min", obj:"Learn to move well: squat, hinge, lunge, push, brace and balance.", equip:"Workout clothes and shoes, water. Dowels and mats are provided.",
+      blocks:[["warm","Warm-up","5–8 min","5 minutes of easy movement, then dynamic mobility and basic coordination (skips, shuffles, simple partner games)."],
+              ["str","JH General Strength A1 · Movement Circuit","20–25 min",""],
+              ["cool","Easy mobility","5 min","Easy walk, then calf, hip-flexor and hamstring stretches."]]},
+    Wed:{k:"opt", tpl:"JW1E", total:"10–20 min", obj:"Optional easy activity, mobility, or recreational play."},
+    Thu:{k:"gsc", lift:"JGA2", title:"General Movement + Strength A2", dur:"35–45 min", obj:"Balance, stability and general strength, then easy movement.", equip:"Workout clothes and shoes, water. Light bands and mats are provided.",
+      blocks:[["warm","Warm-up","5–8 min","General movement: easy jog or march, skips, arm circles, leg swings, walking lunges."],
+              ["str","JH General Strength A2 · Movement Circuit","20–25 min",""],
+              ["cond","Easy movement","5–10 min","Comfortable walking or recreational movement."],
+              ["cool","Cooldown","3–5 min","Easy stretching."]]},
+    Fri:{k:"opt", tpl:"JW1E", total:"10–20 min", obj:"Optional easy activity, mobility, or recreational play."},
+    Sat:{k:"opt", tpl:"JW1E", total:"10–20 min", obj:"Optional easy activity, mobility, or recreational play."}}},
+ {n:2, start:"2026-12-07", focus:"Acceleration foundations", st:"vol", mo:"dec",
+  tue:{out:[WUJ,row("Wall drives","2×4 each leg",{d:"wall",r:RJ.wall,i:"tech"}),row("Falling starts","3×10m",{d:"fall",r:RJ.fall,i:"near"}),row("Standing accelerations","3×15m",{d:"stand",r:RJ.acc,i:"near"}),row("Simple coordination games","5–8 min",{d:"coord",i:"tech"}),COOL],
+       in:[WUJ,row("Wall drives","2×4 each leg",{d:"wall",r:RJ.wall,i:"tech"}),row("Falling starts","3×5m",{d:"fall",r:RJ.fall,i:"near"}),row("Standing accelerations","3×10m",{d:"stand",r:RJ.acc,i:"near",n:"Only with traction, a clear lane and stopping room."}),row("Dribble marching","2×10m",{d:"dribble",i:"tech"}),COOL]},
+  thu:{out:[WUJ,row("Short accelerations","2–3 × 10–15m",{d:"stand",r:RJ.acc,i:"near"}),HJTJ,JLIFT("JA"),COOL], in:null}},
+ {n:3, start:"2026-12-14", focus:"First-step mechanics", st:"vol", mo:"dec",
+  tue:{out:[WUJ,row("Falling starts","3×10m",{d:"fall",r:RJ.fall,i:"max"}),row("Accelerations","3×20m",{d:"accel",r:RJ.full,i:"near",cut:true}),COOL],
+       in:[WUJ,row("Falling starts","3×5m",{d:"fall",r:RJ.fall,i:"max"}),row("Accelerations","3×10–15m if safe",{d:"accel",r:RJ.acc,i:"near",cut:true}),COOL]},
+  thu:{out:[WUJ,row("Coordination drills","5 min",{d:"dribble",i:"tech"}),row("Short starts","3×10m",{d:"stand",r:RJ.acc,i:"max"}),TECHJ,JLIFT("JA"),COOL], in:null}},
+ {n:4, start:"2026-12-21", focus:"Holiday: on your own", st:"break", mo:"dec",
+  days:{Tue:{k:"opt", tpl:"JTA", alts:["JRC"], total:"10–15 min", obj:"Optional, low-volume movement if you want it. No required practices."}, Thu:{k:"rec", tpl:"JRC", total:"10–15 min", obj:"Christmas Eve: mobility only if you want it."}, Fri:{k:"rest", note:"Christmas Day."}}},
+ {n:5, start:"2026-12-28", focus:"Holiday recovery", st:"break", mo:"dec",
+  days:{Tue:{k:"opt", tpl:"JTA", alts:["JRC"], total:"10–15 min", obj:"Optional general movement."}, Thu:{k:"opt", tpl:"JGF", alts:["rest"], total:"15–25 min", obj:"New Year's Eve: optional play or fitness."}, Fri:{k:"rest", note:"New Year's Day."}}},
+ {n:6, start:"2027-01-04", focus:"Acceleration assessment", st:"vol", mo:"jan", test:true,
+  tue:{out:[WUJ,row("Accelerations","3×15–20m",{d:"accel",r:RJ.acc,i:"max"}),row("Timed 10m","1–2 tries, optional",{d:"stand",r:RJ.acc,i:"max",jl:[2,3],n:"Only for athletes ready for testing."}),COOL],
+       in:[WUJ,row("Accelerations","3–4×10m if safe",{d:"accel",r:RJ.acc,i:"max"}),COOL]},
+  thu:{out:[WUJ,row("Coordination drills","5 min",{d:"coord",i:"tech"}),HJTJ,JLIFT("JB"),COOL], in:null}},
+ {n:7, start:"2027-01-11", focus:"Starting positions", st:"vol", mo:"jan",
+  tue:{out:[WUJ,row("Standing starts","3×10m",{d:"stand",r:RJ.acc,i:"max"}),row("Three-point starts","3×20m",{d:"three",r:RJ.acc,i:"max",jl:[2,3]}),COOL],
+       in:[WUJ,row("Starts","3×5m",{d:"stand",r:RJ.acc,i:"max"}),row("Accelerations","3×10m",{d:"accel",r:RJ.acc,i:"near"}),COOL]},
+  thu:{out:[WUJ,row("Block setup introduction","10 min",{d:"block",i:"tech",jl:[3]}),TECHJ,JLIFT("JB"),COOL], in:null}},
+ {n:8, start:"2027-01-18", focus:"Acceleration + upright running", st:"vol", mo:"jan",
+  tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Flying 10m","2 reps",{d:"fly10",r:RJ.fly,i:"max",jl:[2,3],cut:true,n:"Gradual build-up, full recovery. Prepared athletes only."}),COOL],
+       in:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Coordination + low wickets","2–3 passes",{d:"wicket",i:"tech"}),COOL]},
+  thu:{out:[WUJ,HJTJ,JLIFT("JB"),COOL], in:null}},
+ {n:9, start:"2027-01-25", focus:"Progress assessment", st:"vol", mo:"jan", test:true,
+  tue:{out:[WUJ,row("Timed 10m","2–3 attempts",{d:"stand",r:RJ.acc,i:"max",n:"Same setup as Week 6."}),row("Accelerations","2×20m",{d:"accel",r:RJ.acc,i:"near"}),COOL],
+       in:[WUJ,row("Timed 10m","2–3 attempts if safe",{d:"stand",r:RJ.acc,i:"max",n:"Indoor time: keep separate from outdoor times."}),COOL]},
+  thu:{out:[WUJ,row("Technical review","10 min",{i:"tech",n:"Look back at starts and arm action; one thing to keep, one thing to fix."}),row("Event exploration","10–15 min",{d:"coord",i:"tech",n:"Try an event you haven't done yet."}),JLIFT("JB"),COOL], in:null}},
+ {n:10, start:"2027-02-01", focus:"Speed development", st:"vol", mo:"feb",
+  tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Flying 10m","2 reps",{d:"fly10",r:RJ.fly,i:"max",jl:[2,3],cut:true}),COOL],
+       in:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Wicket / dribble drills","2–3 passes",{d:"wicket",i:"tech"}),COOL]},
+  thu:{out:[WUJ,TECHJ,row("Low-volume explosive jumps","2×3 broad jumps",{d:"broad",r:RJ.bj,i:"max"}),JLIFT("JB"),COOL], in:null}},
+ {n:11, start:"2027-02-08", focus:"Speed + event skills", st:"vol", mo:"feb",
+  tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Controlled fast runs","2×40–60m",{d:"sefast",r:RJ.full,i:"cf",jl:[2,3],cut:true}),COOL],
+       in:[WUJ,row("Short accelerations","3×10m",{d:"accel",r:RJ.acc,i:"near"}),row("Mechanics + coordination","5–8 min",{d:"dribble",i:"tech"}),COOL]},
+  thu:{out:[WUJ,HJTJ,JLIFT("JB"),COOL], in:null}},
+ {n:12, start:"2027-02-15", focus:"Technical consolidation", st:"vol", mo:"feb",
+  tue:{out:[WUJ,row("Accelerations","2×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Flying 10m","2 reps",{d:"fly10",r:RJ.fly,i:"max",jl:[2,3],cut:true}),COOL],
+       in:[WUJ,row("Accelerations","3×10m",{d:"accel",r:RJ.acc,i:"near"}),row("Technical drills","5–8 min",{d:"dribble",i:"tech"}),COOL]},
+  thu:{out:[WUJ,row("Event skill review","15 min",{i:"tech"}),TECHJ,JLIFT("JL","10–15 min"),COOL], in:null}},
+ {n:13, start:"2027-02-22", focus:"Preseason transition", st:"vol", mo:"feb",
+  tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Controlled runs","2×40–60m",{d:"sefast",r:RJ.full,i:"cf",jl:[2,3],cut:true}),COOL],
+       in:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Mechanics","5–8 min",{d:"dribble",i:"tech"}),COOL]},
+  thu:{out:[WUJ,TECHJ,JLIFT("JM"),COOL], in:null}},
+];
+// JH dose/notes on the shared drills (same names as high school)
+const JH_DRILL = {
+  wall:{n:"Wall drives", dose:"2 × 4–5 each leg", note:"Posture and coordination.", safe:"Sturdy wall, dry floor, hands at shoulder height."},
+  fall:{dose:"3 × 5–10m", note:"Controlled forward projection.", safe:"Clear lane and 10m+ of stopping room."},
+  stand:{dose:"3–4 × 10–20m", note:"Focus on pushing mechanics.", safe:"Indoors: 5–15m only, with traction and stopping room."},
+  three:{dose:"2–3 × 10–15m", note:"Introduce when the athlete is ready (usually Level 2+).", safe:"Hands on a clean, dry surface."},
+  block:{dose:"2–3 low-volume technical starts", note:"Level 3 only, after the start fundamentals look solid.", safe:"Blocks on a surface that holds them; coach checks every setup."},
+  wicket:{dose:"2–3 passes", note:"Low height, athlete-appropriate spacing (start short and widen).", safe:"Flat mini-hurdles that tip over; never stacked or rigid."},
+  dribble:{dose:"2–3 passes", note:"Coordination and rhythm.", safe:"Clear lane."},
+  broad:{dose:"2 × 3", note:"Explosive movement and controlled, quiet landings.", safe:"Mats or turf; stick every landing."},
+  pogo:{dose:"1–2 × 8 contacts", note:"Low-volume introduction. Emphasize control.", safe:"Not on concrete."},
+  medball:{dose:"2 × 3–5", note:"Light equipment (1–2 kg).", safe:"Throw to a wall or open space; partners stand aside."},
+  accel:{dose:"2–3 × 15–20m (indoors 5–15m)", note:"Patient rise, relaxed.", safe:"Indoors only with verified space and traction."},
+  fly10:{dose:"2 reps, full recovery", note:"Level 2+ (prepared athletes), outdoors with a gradual build-up.", safe:"Outdoors only with a build-up and a long slowing zone."},
+  sefast:{dose:"2 × 40–60m", note:"Level 2+, controlled fast, full recovery.", safe:"Outdoor track only."},
+  amarch:{dose:"2 × 10m march, 2 × 15m skip", note:"", safe:"Clear lane."},
+  ankling:{dose:"2 × 10m", note:"", safe:""}, buildup:{dose:"2 × 20–30m (indoors 2 × 10m easy)", note:"", safe:"Gradual stop."},
+  hmob:{dose:"2 × 4 hurdles", note:"", safe:"Low hurdles."}, hlead:{dose:"2 × 4 each leg", note:"Walking first.", safe:"Split-bar hurdle, low."}, htrail:{dose:"2 × 4 each leg", note:"Walking first.", safe:"Split-bar hurdle, low."},
+  hwalk:{dose:"3–4", note:"", safe:"Split-bar hurdle at the lowest height."}, hsingle:{dose:"3–4", note:"Controlled approach.", safe:"Reduced height."}, hrhythm:{dose:"2–3 passes", note:"Start with 1–2 hurdles.", safe:"Indoors only with safe approach, spacing and stopping room."},
+  hstart:{dose:"3", note:"Age-appropriate height and marks.", safe:"Outdoors."},
+  ljpen:{dose:"2 × 3", note:"", safe:""}, ljpop:{dose:"4 jumps", note:"Short approach (4–6 steps).", safe:"Sand pit only. No landings on a hard floor."},
+  hjcurve:{dose:"4 runs", note:"", safe:""}, hjscissor:{dose:"4 jumps", note:"Low bungee only.", safe:"Never without a pit."},
+};
+const JH_NO = new Set(["fly20","pvcarry","pvplant","tjbound","tjhsj"]);   // not used in junior high (no pole vault in JH)
+DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", desc:"Short, fun reaction and coordination games: reaction starts to a clap or ball drop, partner mirror, small-box tag, ladder or line hops.",
+  why:"Coordination, reaction and enjoyment. Great for junior high and as a warm-up finisher.", setup:"Cones, a ball, a small marked box. Indoors: short lanes only.", dose:"5–8 min",
+  cues:["React fast, stay in control","Tall posture","Have fun"], errs:["Turning it into conditioning","Long sprints indoors"], prog:["Reaction starts into a 10m acceleration (outdoors)"], reg:["Walk-through versions"]};
+
+/* ---------- level switching: every view reads these, so HS/JH is one toggle ---------- */
+const PLAN = {
+  HS:{weeks:SP_WEEKS_HS, def:DEF_HS, mods:IND_MODS_HS, ht:HURDLE_TECH_HS, jumps:JUMPS_HS, st:SPRINT_TECH_HS, wu:WARMUP_HS, dur:DUR_HS, stat:ST_HS, hurdles:HURDLES_HS, blocks:BLOCKS_HS, sg:["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"]},
+  JH:{weeks:SP_WEEKS_JH, def:DEF_JH, mods:IND_MODS_JH, ht:HURDLE_TECH_JH, jumps:JUMPS_JH, st:SPRINT_TECH_JH, wu:WARMUP_JH, dur:DUR_JH, stat:ST_JH, hurdles:HURDLES_JH, blocks:BLOCKS_JH, sg:["Sprints","Hurdles","Long Jump","High Jump"]},
+};
+let SP_WEEKS, DEF, IND_MODS, HURDLE_TECH, JUMPS, SPRINT_TECH, WARMUP, DUR, ST, HURDLES, BLOCKS, SG_LV, CUR_LV = "HS";
+function useLv(lv){ const P = PLAN[lv] || PLAN.HS; CUR_LV = PLAN[lv] ? lv : "HS";
+  SP_WEEKS = P.weeks; DEF = P.def; IND_MODS = P.mods; HURDLE_TECH = P.ht; JUMPS = P.jumps; SPRINT_TECH = P.st; WARMUP = P.wu; DUR = P.dur; ST = P.stat; HURDLES = P.hurdles; BLOCKS = P.blocks; SG_LV = P.sg; }
+useLv("HS");
+function withLv(lv, fn){ const keep = CUR_LV; useLv(lv); try { return fn(); } finally { useLv(keep); } }
+
 
 /* ---------- state ---------- */
-const SP = window.SP = {tab:"cal", sel:null, edits:{}, edraft:null, ewi:null, etab:"groups", emsg:{kind:"",text:""}, wi:null, env:"out", g:"All", me:"", groups:{}, draft:null, msg:{kind:"",text:""}, gq:"", gshow:"all"};
+const SP = window.SP = {lv:"HS", jl:"All", tab:"cal", sel:null, edits:{}, edraft:null, ewi:null, etab:"groups", emsg:{kind:"",text:""}, wi:null, env:"out", g:"All", me:"", groups:{}, draft:null, msg:{kind:"",text:""}, gq:"", gshow:"all"};
 try { const e = localStorage.getItem("sp-env"); if (e==="in"||e==="out") SP.env = e; } catch(e){}
 try { SP.me = localStorage.getItem("sp-me") || ""; } catch(e){}
+try { const l = localStorage.getItem("sp-lv"); if (l==="JH"||l==="HS") SP.lv = l; } catch(e){}
+useLv(SP.lv);
 
 /* ---------- helpers ---------- */
 const addDays = (s,n) => { const d = parseD(s); d.setDate(d.getDate()+n); return d; };
@@ -423,10 +606,15 @@ function curWeekIdx(){
   if (t < parseD(SP_WEEKS[0].start)) return 0;
   return SP_WEEKS.length-1;
 }
-const hsAthletes = () => ATHLETES.filter(a => a.level==="HS");
+const hsAthletes = () => ATHLETES.filter(a => a.level===CUR_LV);   // athletes at the level being viewed
 // Suggested groups from current events (coaches confirm on Coaches → Sprints)
+// JH level suggestion (coaches confirm): 6th → L1, 7th → L2 with track marks else L1, 8th → L2. Level 3 is a coach call.
+function suggestJl(a){ const tr = Object.keys(a.prs||{}).some(k=>!k.startsWith("XC")); return a.grade<=6 ? 1 : a.grade===7 ? (tr ? 2 : 1) : 2; }
 function suggest(a){
-  if (a.level!=="HS") return null;
+  if (a.level==="JH") { const s = suggestHS(a); return s ? Object.assign(s, {jl: suggestJl(a)}) : null; }
+  return suggestHS(a);
+}
+function suggestHS(a){
   const c = a.cats||[], ev = new Set([...Object.keys(a.prs||{}), ...(a.events||[])]);
   const sp = c.includes("Sprints"), mid = c.includes("Mid Distance") || ev.has("800"), dist = c.includes("Distance");
   const long = ev.has("400") || ev.has("400 split");
@@ -442,7 +630,11 @@ function suggest(a){
   return {p, s, sug:true};
 }
 const groupOf = a => SP.groups[a.id] || suggest(a);
-const jumpEvents = a => ["Long Jump","High Jump","Pole Vault"].filter(x => (a.cats||[]).includes(x));
+const jumpEvents = a => Object.keys(JUMPS).filter(x => (a.cats||[]).includes(x));
+const jlOf = a => { const g = a && groupOf(a); return g ? (g.jl || suggestJl(a)) : null; };
+// JH level filter: rows marked jl:[2,3] show only for those levels (a picked athlete's level wins over the filter).
+const levelOK = r => { if (CUR_LV!=="JH" || !r.jl) return true; const a = meA(); const L = a && a.level==="JH" ? jlOf(a) : (SP.jl==="All" ? null : +SP.jl); return !L || r.jl.includes(L); };
+const jlChip = r => r.jl ? `<span class="sp-int tech">${r.jl.length===1 ? "Level "+r.jl[0]+" only" : "Level "+r.jl[0]+"+"}</span>` : "";
 const meA = () => SP.me ? ATHLETES.find(a=>a.id===SP.me) : null;
 // Which group's rows to show for a filter key. S3 on the sprint plan follows S2 rows; H and J follow S1 for group-only rows.
 const rowFor = (r, g) => !r.g || g==="All" || r.g.includes(g) || (g==="S3" && r.g.includes("S2")) || ((g==="H"||g==="J") && r.g.includes("S1"));
@@ -459,7 +651,7 @@ function techBlocks(mo, env, g, a){
       const J = JUMPS[e]; if (!J) return;
       let items = (J.mo[mo]||[]).map(x=>[x,"",""]);
       if (env==="in") items = items.map(([x])=>[x + (/pit|jumps|back-overs|landing|bounding|hop-step/i.test(x) ? " · indoors: approach + takeoff drills only" : ""),"",""]);
-      out.push(["Jumpers · " + e + (e==="Pole Vault" ? " (qualified supervision only)" : ""), items]);
+      out.push(["Jumpers · " + e + (e==="Pole Vault" ? " (qualified supervision only)" : "") + (J.starter ? " (starter progression)" : ""), items]);
     });
   }
   const outOnly = d => env==="in" && d && DRILLS[d] && DRILLS[d].env==="out" ? ` <span class="sp-cut">Outdoors only. Indoors: ${d==="hstart" ? "single-hurdle attacks from 3–5 steps" : "technical drills instead"}.</span>` : "";
@@ -477,12 +669,13 @@ function strBlock(r){
 }
 function rowsHTML(rows, mo, env, g, a){
   const isHJ = g==="H" || g==="J" || (a && groupOf(a) && ["H","J"].includes(groupOf(a).p));
-  return `<table class="sp-rows"><tbody>${rows.filter(r=>r.tech||r.str||r.wu||rowFor(r,g)).map(r=>{
-    if (r.wu) return `<tr><td class="nm" colspan="3"><a href="#sprints" onclick="SP.tab='warm';render();return false">Standard warm-up</a> <span class="mono">12–15 min</span><span class="sub">Easy movement, dynamic mobility, A-skips / ankling / dribbles, build-ups, event prep.</span></td></tr>`;
+  return `<table class="sp-rows"><tbody>${rows.filter(r=>r.tech||r.str||r.lift||r.wu||(rowFor(r,g) && levelOK(r))).map(r=>{
+    if (r.wu) return `<tr><td class="nm" colspan="3"><a href="#sprints" onclick="SP.tab='warm';render();return false">${CUR_LV==="JH"?"JH warm-up":"Standard warm-up"}</a> <span class="mono">${WU_TIME[CUR_LV]}</span><span class="sub">${CUR_LV==="JH" ? "Easy movement, dynamic mobility, A-march + skipping, ankling, build-ups, a short coordination game." : "Easy movement, dynamic mobility, A-skips / ankling / dribbles, build-ups, event prep."}</span></td></tr>`;
     if (r.str) return `<tr><td colspan="3">${strBlock(r)}</td></tr>`;
+    if (r.lift) return `<tr><td colspan="3"><span class="nm">${esc(r.x)}: ${esc((typeof LIFTS!=="undefined" && LIFTS[r.lift] ? LIFTS[r.lift].name : r.lift))}</span> <span class="mono">${esc(r.p)}</span>${typeof liftHTML==="function" ? liftHTML(r.lift) : ""}</td></tr>`;
     if (r.tech) return `<tr><td colspan="3"><span class="nm">${esc(r.x)}</span> <span class="mono">${esc(r.p)}</span>${techBlocks(mo, env, g, a)}</td></tr>`;
     const it = INT[r.i];
-    return `<tr><td class="nm">${drillLink(r.d, r.x)}${r.g?` ${r.g.map(chip).join("")}`:""}${it?`<span class="sp-int ${it[1]}">${esc(it[0])}</span>`:""}${r.n?`<span class="sub">${esc(r.n)}</span>`:""}${r.cut && (isHJ || g==="All")?`<span class="sp-cut">H/J: skip this set on days with a full hurdle or jump technical session.</span>`:""}</td>
+    return `<tr><td class="nm">${drillLink(r.d, r.x)}${r.g?` ${r.g.map(chip).join("")}`:""}${it?`<span class="sp-int ${it[1]}">${esc(it[0])}</span>`:""}${jlChip(r)}${r.n?`<span class="sub">${esc(r.n)}</span>`:""}${r.cut && (isHJ || g==="All")?`<span class="sp-cut">H/J: skip this set on days with a full hurdle or jump technical session.</span>`:""}</td>
       <td class="rx">${esc(r.p)}</td><td class="rest">${r.r?esc(r.r):""}</td></tr>`; }).join("")}</tbody></table>`;
 }
 /* ---------- one day: plan + coach changes ---------- */
@@ -518,7 +711,7 @@ const isCoachLed = i => isCoach(i) || isGsc(i);
 const isInd = i => i && !!i.tpl && !isCoach(i);
 function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? i.w.focus : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
 function dayFacts(i){
-  if (isGsc(i)) return {dur: i.dur, rpe:"Light to moderate (RPE 4–6/10). Technique first, never to failure.", equip:"Workout clothes and shoes, water. Dumbbells, mats and benches are provided.", obj: i.obj};
+  if (isGsc(i)) return {dur: i.dur, rpe: CUR_LV==="JH" ? "Easy to moderate (RPE 3–5/10). Technique and confidence, never to failure." : "Light to moderate (RPE 4–6/10). Technique first, never to failure.", equip: i.equip || "Workout clothes and shoes, water. Dumbbells, mats and benches are provided.", obj: i.obj};
   if (isCoach(i)) { const od = i.movedFrom ? locate(i.movedFrom).dn : i.dn; return {dur: DUR[od] || "60–90 min", rpe:"Max effort on each sprint with full rest. The session shouldn't leave you exhausted.", equip: od==="Thu" ? "Running shoes, water, workout clothes for the weight room" : "Running shoes, water, layers for outdoors", obj: i.w.focus}; }
   if (isInd(i)) { const T = IND[i.tpl]; return {dur: i.total || T.dur, rpe: T.rpe, equip: T.equip, obj: i.obj || T.obj}; }
   if (i.k==="meet") return {dur:"Meet day", rpe:"Race effort", equip:"Uniform, spikes, water", obj:"Compete. No extra workout."};
@@ -556,6 +749,7 @@ function stepsHTML(T, ds, checklist){
     ${T.end ? `<p class="note" style="margin:4px 0 0"><b>${esc(T.end)}</b></p>` : ""}`;
 }
 function doneHTML(ds){
+  if (CUR_LV==="JH") return "";   // JH: no completion reporting for voluntary activities
   const v = store.get("sp-done-"+ds) || "";
   return `<div class="sp-done"><span class="muted" style="font-size:13px">How did it go?</span>${[["done","Completed as written"],["alt","Did an alternative"],["rest","Rested"],["skip","Skipped"]].map(([k,l])=>`<button type="button" class="btn sm" aria-pressed="${v===k}" onclick="SP.done('${ds}','${v===k?"":k}')">${l}</button>`).join("")}
     <span class="note" style="width:100%;margin:0">Saved on this phone. Home days are voluntary, never required.</span></div>`;
@@ -566,13 +760,13 @@ function dayCard(i){
   let body = "";
   if (isGsc(i)) {
     const nm = {warm:"Warm-up", intro:"Weight-room intro", str:"Strength", cond:"Conditioning", cool:"Cool-down"};
-    body = `<div class="sp-banner">General strength &amp; conditioning only. Sprint-specific training starts Tue Dec 8.</div>
+    body = `<div class="sp-banner">${CUR_LV==="JH" ? "General movement &amp; strength only. Speed work starts the week of Dec 7." : "General strength &amp; conditioning only. Sprint-specific training starts Tue Dec 8."}</div>
       ${i.blocks.map(([k,x,p,n]) => `<div class="sp-tech"><h4>${esc(nm[k])}</h4><p style="margin:0"><b>${esc(x.replace(/^Weight room: /,""))}</b> <span class="mono">${esc(p)}</span></p>${n?`<p class="note" style="margin:2px 0 0">${esc(n)}</p>`:""}${k==="str" && typeof liftHTML==="function" ? liftHTML(i.lift).replace("<details class=\"lift\">","<details class=\"lift\" open>") : ""}</div>`).join("")}
-      <p class="note" style="margin:0">Light resistance, technique first, never to failure. Anything hurts? Stop and tell your coach or athletic trainer. Coach-led and voluntary; follows the AD's reading of IHSAA out-of-season conditioning rules.</p>`;
+      <p class="note" style="margin:0">Light resistance, technique first, never to failure. Anything hurts? Stop and tell your coach or athletic trainer. ${CUR_LV==="JH" ? "Assumes it's permitted under junior high rules and district policy, approved by the athletic department." : "Coach-led and voluntary; follows the AD's reading of IHSAA out-of-season conditioning rules."}</p>`;
   } else if (isCoach(i)) {
     const env = i.forceIn ? "in" : SP.env, S = i.sess, rows = env==="in" ? (S.in || S.out) : S.out;
     body = `${i.forceIn ? `<div class="sp-banner">Moved indoors today (weather or facility).</div>` : ""}
-      <p class="sp-pre"><b>${env==="in" ? "Indoor: hallway / gym" : "Outdoor: track"}</b>${env==="in" && !S.in ? " · same plan either way; keep starts to 10–20m indoors" : ""}</p>
+      <p class="sp-pre"><b>${env==="in" ? "Indoor: hallway / gym" : "Outdoor: track"}</b>${env==="in" && !S.in ? ` · same plan either way; keep starts to ${CUR_LV==="JH"?"5–15m":"10–20m"} indoors` : ""}</p>
       ${rowsHTML(rows, i.w.mo, env, SP.g, a)}
       <details class="sp-tech"><summary><b>Safety + recovery</b></summary><ul>
         <li>Full recovery between max reps: 2–3 min for short accelerations, 4–6 min for flying sprints.</li>
@@ -606,13 +800,14 @@ SP.print = function(wi, day){
   const one = (env) => { const rows = env==="in" ? (S.in||S.out) : S.out;
     return `<h2>${env==="in"?"Indoor (hallway / gym)":"Outdoor (track)"}</h2><table><tr><th>Block</th><th>Prescription</th><th>Rest</th><th>Groups / notes</th></tr>
     ${rows.map(r=>{
-      if (r.wu) return `<tr><td><b>Standard warm-up</b></td><td>12–15 min</td><td></td><td>${WARMUP.map(x=>esc(x[0])).join(" → ")}</td></tr>`;
+      if (r.wu) return `<tr><td><b>${CUR_LV==="JH"?"JH warm-up":"Standard warm-up"}</b></td><td>${WU_TIME[CUR_LV]}</td><td></td><td>${WARMUP.map(x=>esc(x[0])).join(" → ")}</td></tr>`;
+      if (r.lift) { const L = (typeof LIFTS!=="undefined" && LIFTS[r.lift]) || {name:r.lift, ex:[]}; return `<tr><td><b>${esc(r.x)}</b> · ${esc(L.name)}</td><td>${esc(r.p)}</td><td>${esc(L.rest||"30–60 sec")}</td><td>${L.ex.map(e=>esc(e[0]+" "+e[1])).join("; ")}</td></tr>`; }
       if (r.str) { const s = STR[r.str]; return `<tr><td><b>Strength</b> · ${esc(s.n)}</td><td>30–35 min</td><td></td><td>${s.ex.map(e=>esc(e[0]+" "+e[1])).join("; ")}${r.mod?". "+esc(STR_MOD[r.mod]):""}</td></tr>`; }
       if (r.tech) return `<tr><td><b>${esc(r.x)}</b></td><td>${esc(r.p)}</td><td></td><td>S1/S2: ${esc((SPRINT_TECH[w.mo]||[]).map(x=>x[0]).join("; "))}<br>H: ${esc((HURDLE_TECH[w.mo]||[]).map(x=>x[0]+" "+x[1]).join("; "))}<br>J: ${esc(Object.entries(JUMPS).map(([k,J])=>k+": "+(J.mo[w.mo]||[]).join(", ")).join(" | "))}</td></tr>`;
-      return `<tr><td><b>${esc(r.x)}</b>${r.i&&INT[r.i]?` (${esc(INT[r.i][0])})`:""}</td><td>${esc(r.p)}</td><td>${esc(r.r||"")}</td><td>${r.g?esc(r.g.join("/")):"All"}${r.cut?" · H/J may skip":""}${r.n?" · "+esc(r.n):""}</td></tr>`; }).join("")}</table>`; };
+      return `<tr><td><b>${esc(r.x)}</b>${r.i&&INT[r.i]?` (${esc(INT[r.i][0])})`:""}</td><td>${esc(r.p)}</td><td>${esc(r.r||"")}</td><td>${r.g?esc(r.g.join("/")):"All"}${r.jl?" · Level "+r.jl[0]+(r.jl.length>1?"+":" only"):""}${r.cut?" · H/J may skip":""}${r.n?" · "+esc(r.n):""}</td></tr>`; }).join("")}</table>`; };
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Session plan · ${esc(day)} ${esc(fmt(addDays(w.start, DAYN.indexOf(day))))}</title>
     <style>body{font:13px/1.4 system-ui,sans-serif;margin:24px;color:#111}h1{font-size:20px;margin:0}h2{font-size:15px;margin:16px 0 6px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eee}.n{margin-top:12px;font-size:12px}</style></head><body>
-    <h1>BC Sprints, Hurdles &amp; Jumps · Week ${w.n} · ${esc(day)} ${esc(fmt(addDays(w.start, DAYN.indexOf(day))))}</h1>
+    <h1>BC ${CUR_LV==="JH"?"Junior High ":""}Sprints, Hurdles &amp; Jumps · Week ${w.n} · ${esc(day)} ${esc(fmt(addDays(w.start, DAYN.indexOf(day))))}</h1>
     <div>Focus: <b>${esc(w.focus)}</b> · ${esc(DUR[day]||"")}</div>
     ${one("out")}${S.in?one("in"):""}
     <div class="n"><b>Every session:</b> full recovery between max reps (2–3 min short accelerations, 4–6 min flying). Indoor accelerations 10–20m only with traction, clear lanes and stopping room, and coach approval. No indoor flying sprints unless the approach, timed zone and stopping area are verified. If sprinting isn't safe, swap for technical drills, controlled power and strength. Reduce volume for beginners, returning-from-injury athletes, and anyone doing a full hurdle/jump session. S3 hybrids follow the Mid-Distance plan unless assigned this session.</div>
@@ -634,7 +829,8 @@ function calendarView(){
   const tIso = iso(today);
   const meBar = `<div class="sp-me"><label for="sp-me" class="muted" style="font-size:14px">Find my workout:</label>
     <select id="sp-me" onchange="SP.setMe(this.value)"><option value="">Pick your name</option>${hs.map(x=>`<option value="${x.id}" ${SP.me===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select>
-    ${a && ag ? `<span>${chip(ag.p)}${(ag.s||[]).map(chip).join("")}</span>` : ""}</div>`;
+    ${a && ag ? `<span>${chip(ag.p)}${(ag.s||[]).map(chip).join("")}${a.level==="JH"?` <span class="sp-grp">L${jlOf(a)}</span>`:""}</span>` : ""}</div>`;
+  const jlBar = CUR_LV==="JH" ? `<div class="filters" role="group" aria-label="Level">${[["All","All levels"],["1","Level 1"],["2","Level 2"],["3","Level 3"]].map(([k,l])=>`<button type="button" aria-pressed="${String(SP.jl)===k}" onclick="SP.jl='${k}';render()">${l}</button>`).join("")}${a && a.level==="JH" ? `<span class="muted" style="font-size:13px;align-self:center">${esc(a.name.split(" ")[0])} is Level ${jlOf(a)}</span>` : ""}</div>` : "";
   const strip = DAYN.map(dn => { const i = dayInfo(wi, dn), ds = dateIso(w, dn);
     return `<button type="button" class="sp-dbtn ${i ? lab(i)[1] : "lb-none"} ${ds===tIso?"today":""}" aria-pressed="${ds===SP.sel}" ${i?"":"disabled"} onclick="SP.sel='${ds}';render()">
       <b>${dn}</b><span>${parseD(ds).getDate()}</span><small>${i ? esc(lab(i)[0].replace("General Strength & Conditioning","Strength").replace("Independent ","").replace("Coach-Led ","").replace("Optional Conditioning","Optional")) : "—"}</small></button>`; }).join("");
@@ -643,6 +839,7 @@ function calendarView(){
     <div class="bar" style="justify-content:flex-start">
       <div class="seg" role="group" aria-label="Indoor or outdoor">${[["out","Outdoor"],["in","Indoor"]].map(([k,l])=>`<button type="button" aria-pressed="${SP.env===k}" onclick="SP.setEnv('${k}')">${l}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Group">${["All",...GKEYS].map(g=>`<button type="button" aria-pressed="${SP.g===g}" onclick="SP.g='${g}';render()">${g==="All"?"All groups":g}</button>`).join("")}</div></div>
+    ${jlBar}
     <div class="weekpick" style="justify-content:flex-start"><button type="button" aria-label="Previous week" ${wi===0?"disabled":""} onclick="SP.week(-1)">‹</button>
       <b>Wk ${w.n} · ${fmt(parseD(w.start < PROGRAM_START ? PROGRAM_START : w.start))}–${addDays(w.start,6).getDate()}</b>
       <button type="button" aria-label="Next week" ${wi===SP_WEEKS.length-1?"disabled":""} onclick="SP.week(1)">›</button>
@@ -655,21 +852,34 @@ function calendarView(){
 function drillCard(id){
   const D = DRILLS[id];
   const ul = a => `<ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
-  return `<div class="panel sp-drill" id="dr-${id}" style="${SP.drill===id?"box-shadow:0 0 0 2px var(--gold)":""}"><h3>${esc(D.n)}<span class="sp-env">${D.env==="out"?"Outdoor":D.env==="in"?"Indoor":"Indoor + outdoor"}</span></h3>
+  return `<div class="panel sp-drill" id="dr-${id}" style="${SP.drill===id?"box-shadow:0 0 0 2px var(--gold)":""}"><h3>${esc(CUR_LV==="JH" && JH_DRILL[id] && JH_DRILL[id].n ? JH_DRILL[id].n + " (" + D.n + ")" : D.n)}<span class="sp-env">${D.env==="out"?"Outdoor":D.env==="in"?"Indoor":"Indoor + outdoor"}</span></h3>
     <p style="margin:0">${esc(D.desc)}</p><dl>
-    <dt>Purpose</dt><dd>${esc(D.why)}</dd><dt>Setup</dt><dd>${esc(D.setup)}</dd><dt>Sets / reps</dt><dd class="mono">${esc(D.dose)}</dd>
+    <dt>Purpose</dt><dd>${esc(D.why)}</dd><dt>Setup</dt><dd>${esc(D.setup)}</dd><dt>Sets / reps</dt><dd class="mono">${esc(D.dose)}${CUR_LV==="JH" && JH_DRILL[id] ? ` <span class="muted">(high school)</span>` : ""}</dd>
+    ${CUR_LV==="JH" && JH_DRILL[id] ? `<dt>Junior high</dt><dd><b class="mono">${esc(JH_DRILL[id].dose)}</b>${JH_DRILL[id].note?` · ${esc(JH_DRILL[id].note)}`:""}</dd>` : ""}
     <dt>Cues</dt><dd>${ul(D.cues)}</dd><dt>Mistakes</dt><dd>${ul(D.errs)}</dd><dt>Progress</dt><dd>${ul(D.prog)}</dd><dt>Regress</dt><dd>${ul(D.reg)}</dd>
+    ${CUR_LV==="JH" && JH_DRILL[id] && JH_DRILL[id].safe ? `<dt>Safety</dt><dd>${esc(JH_DRILL[id].safe)}</dd>` : ""}
     ${D.url?`<dt>Video</dt><dd><a href="${esc(D.url)}" target="_blank" rel="noopener">▶ Watch</a></dd>`:""}</dl></div>`;
 }
 function drillsView(){
   const cats = CATS_ORDER.filter(c => Object.values(DRILLS).some(d=>d.cat===c));
   SP.dcat = SP.dcat || "All";
-  const ids = Object.keys(DRILLS).filter(id => SP.dcat==="All" || DRILLS[id].cat===SP.dcat);
+  const ids = Object.keys(DRILLS).filter(id => (SP.dcat==="All" || DRILLS[id].cat===SP.dcat) && !(CUR_LV==="JH" && JH_NO.has(id)) && !(CUR_LV==="JH" && /^(Pole vault|PV)/i.test(DRILLS[id].n)));
   return `<div class="filters" role="group" aria-label="Drill type">${["All",...cats].map(c=>`<button type="button" aria-pressed="${SP.dcat===c}" onclick="SP.dcat='${c}';render()">${c}</button>`).join("")}</div>
     <div class="sp-drills">${ids.map(drillCard).join("")}</div>
     <p class="note">Video links can be added to any drill (the <code>url</code> field in sprints.js) once we pick the clips we like.</p>`;
 }
+function philViewJH(){
+  const wk = [["Mon","Independent recovery / mobility","10–15 min"],["Tue","<b>Coach-led speed development</b>","45–65 min"],["Wed","Independent easy activity","15–25 min"],["Thu","<b>Coach-led speed, event technique &amp; strength</b>","45–65 min"],["Fri","Independent recovery","15–20 min"],["Sat","Optional general fitness or recreational play","15–25 min"],["Sun","Full rest","—"]];
+  return `<div class="panel"><h2>Junior high: one 6th–12th grade system</h2><p style="margin:0">Same coaching approach as high school (80% Tony Holler / Feed the Cats, 20% Jack Daniels-inspired individual progression), sized for junior high. Not the high school workouts with fewer reps: the same fundamentals with different workloads, technical expectations and progression rates.</p>
+      <ul class="exp" style="margin:8px 0 0"><li>Make speed fun, and build confidence and positive competition</li><li>Teach sprint mechanics, acceleration and coordination</li><li>Explosive movement skills with low fatigue</li><li>Try lots of events. Build habits that carry into high school</li></ul></div>
+    <div class="panel"><h2>Three levels</h2><p style="margin:0 0 8px">Athletes move up on technique, readiness and coach judgment, not age or race times. Coaches set each athlete's level on Coaches → Sprints.</p>
+      <div class="cols">${[1,2,3].map(n=>`<div><h3 style="margin:0">${esc(LEVELS_JH[n].n)}</h3><div class="muted" style="font-size:13px">${esc(LEVELS_JH[n].typ)}</div><ul class="exp" style="margin:6px 0 0">${LEVELS_JH[n].focus.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>`).join("")}</div></div>
+    <div class="cols"><div class="panel"><h2>The week</h2><div class="tbl"><table><tbody>${wk.map(([d,x,m])=>`<tr><td><b>${d}</b></td><td>${x}</td><td class="mono">${m}</td></tr>`).join("")}</tbody></table></div>
+        <p class="note" style="margin:8px 0 0">Starts Tue Dec 1 with general movement + strength (Dec 1 and Dec 3, 35–45 min). Speed work starts the week of Dec 7. Dec 22–24 is a reduced optional week and Dec 29–31 is holiday recovery: no required sessions. Coach-led sessions assume they're permitted under junior high rules and district policy (high school IHSAA rules aren't assumed; confirm with the AD). Voluntary days are optional, with no completion reporting.</p></div>
+      <div class="panel"><h2>Indoor rules</h2><ul class="exp"><li>Hallway/gym space is about 40–60m <b>including</b> slowing down</li><li>Junior high indoor accelerations start at 5–15m, only with traction, clear lanes and stopping room</li><li>Never force longer sprints indoors. No max sprinting in unsafe hallways</li><li>Every coach-led day has an outdoor and indoor version with the same goal</li></ul></div></div>`;
+}
 function philView(){
+  if (CUR_LV==="JH") return philViewJH();
   return `<div class="panel"><h2>Our philosophy</h2>
       <p style="margin:0 0 8px">About <b>80% Tony Holler (Feed the Cats)</b> and <b>20% Jack Daniels</b>-style individual progression and planning. That's a blend of coaching ideas, not an 80/20 easy/hard split.</p>
       <div class="cols"><div><h3 style="margin:0 0 6px">Feed the cats</h3><ul class="exp"><li>Max velocity and acceleration come first</li><li>Sprint fast while fresh, early in the session</li><li>Time sprints whenever we can</li><li>Full recovery between max reps</li><li>No conditioning for conditioning's sake</li><li>Competition is a big part of training</li></ul></div>
@@ -691,13 +901,13 @@ function philView(){
       <div class="panel"><h2>Indoor rules</h2><ul class="exp"><li>Hallway/gym space is about 40–60m <b>including</b> slowing down</li><li>Indoor accelerations start at 10–20m, only with traction, clear lanes, stopping room and coach approval</li><li>No indoor flying sprints unless the approach, timed zone and stopping area are verified safe</li><li>If sprinting isn't safe: technical drills, controlled power, strength</li></ul></div></div>`;
 }
 function warmView(){
-  return `<div class="panel"><h2>Standard warm-up · 12–15 min</h2><div class="tbl"><table><thead><tr><th>Part</th><th>Time</th><th>What</th></tr></thead><tbody>
+  return `<div class="panel"><h2>${CUR_LV==="JH" ? "Junior high warm-up · 8–12 min" : "Standard warm-up · 12–15 min"}</h2><div class="tbl"><table><thead><tr><th>Part</th><th>Time</th><th>What</th></tr></thead><tbody>
     ${WARMUP.map(([a,b,c])=>`<tr><td><b>${esc(a)}</b></td><td class="mono">${esc(b)}</td><td>${esc(c)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="note" style="margin:8px 0 0">Form drills take 8–12 minutes and focus on one or two meaningful cues. Avoid long static stretching before max sprinting.</p></div>
-    <div class="sp-drills">${["amarch","ankling","dribble","buildup"].map(drillCard).join("")}</div>`;
+    <p class="note" style="margin:8px 0 0">${CUR_LV==="JH" ? "Keep it short and fun. Avoid long, exhausting warm-ups." : "Form drills take 8–12 minutes and focus on one or two meaningful cues. Avoid long static stretching before max sprinting."}</p></div>
+    <div class="sp-drills">${(CUR_LV==="JH" ? ["amarch","ankling","buildup","coord"] : ["amarch","ankling","dribble","buildup"]).map(drillCard).join("")}</div>`;
 }
 function blocksView(){
-  return `<div class="panel"><h2>Starting-block pathway</h2><p style="margin:0">Four stages, one per phase of the season. Starts happen early in the session when athletes are fresh.</p></div>
+  return `<div class="panel"><h2>${CUR_LV==="JH" ? "Starting-position pathway (junior high)" : "Starting-block pathway"}</h2><p style="margin:0">${CUR_LV==="JH" ? "Junior high builds the foundations: posture, falling and standing starts, then three-point starts. Blocks are for Level 3 only, after the fundamentals look solid. High school picks up from here." : "Four stages, one per phase of the season. Starts happen early in the session when athletes are fresh."}</p></div>
     <div class="cols">${BLOCKS.map((b,i)=>`<div class="panel sp-stage"><div class="mlabel" style="margin:0">Stage ${i+1} · ${esc(b.mo)}</div><h3 style="margin:2px 0 6px">${esc(b.t)}</h3><ul class="exp" style="margin:0">${b.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>
     <div class="panel"><h2>Block Start Scorecard</h2><p style="margin:0 0 8px">Coaches rate each item 1–5 from live viewing or video, with a video link and notes. Recording scores comes with the Speed &amp; Power profiles (next update).</p>
       <div class="tbl"><table><thead><tr><th>Item</th><th>What a 5 looks like</th></tr></thead><tbody>${SCORECARD.map(([a,b])=>`<tr><td><b>${esc(a)}</b></td><td>${esc(b)}</td></tr>`).join("")}</tbody></table></div>
@@ -707,18 +917,21 @@ function blocksView(){
 function hurdleView(){
   return `<div class="panel"><h2>Hurdle development</h2><p style="margin:0">We're planning to buy about four <a href="https://www.everythingtrackandfield.com/First-Place-Split-Bar-Training-Hurdle/" target="_blank" rel="noopener">First Place Split Bar Training Hurdles</a> for confidence, attacking mechanics, first-hurdle execution and rhythm. Conventional hurdles stay in use for competition-specific work.</p></div>
     <div class="cols">${HURDLES.map(h=>`<div class="panel sp-stage"><div class="mlabel" style="margin:0">${esc(h.mo)}</div><ul class="exp" style="margin:6px 0 0">${h.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>
+    ${CUR_LV==="JH" ? `<div class="panel"><h2>Junior high hurdles</h2><ul class="exp" style="margin:0"><li>Split-bar hurdles teach confidence, lead and trail legs, moving forward over the hurdle, rhythm and the first-hurdle approach.</li><li>They're technical aids, not a substitute for practice over regulation hurdles in the spring.</li><li>Indoors: one or two hurdles only, with safe approach, spacing and stopping room.</li></ul></div>` : ""}
     <div class="cols"><div class="panel"><h2>Example technical session</h2><ol class="exp"><li>Warm-up</li><li>Lead/trail-leg drills: 2×5 each leg</li><li>Single-hurdle attacks: 4 reps</li><li>Rhythm: 3 × 2–3 hurdles if space permits</li><li>Short video feedback</li><li>Strength or mobility as scheduled</li></ol></div>
       <div class="panel"><h2>Rules</h2><ul class="exp"><li>Indoors, start with one or two hurdles. Add more only when approach, spacing, clearance and stopping room are safe.</li><li>Hurdle reps count as high-intensity work. Never add a full hurdle session on top of a full max-sprint session.</li></ul></div></div>
     <div class="sp-drills">${["hlead","htrail","hmob","hwalk","hsingle","hrhythm","hstart"].map(drillCard).join("")}</div>`;
 }
 function jumpsView(){
-  return `<div class="panel"><h2>Jump development</h2><p style="margin:0">Jumpers share the acceleration and max-velocity work, with sprint volume adjusted for jumping days. Event work below follows the calendar month.</p></div>
+  return `<div class="panel"><h2>Jump development${CUR_LV==="JH" ? " · junior high" : ""}</h2><p style="margin:0">${CUR_LV==="JH" ? "Starter progressions for long jump and high jump, beginner-friendly with safe landings first. The full junior high jump section is still to be added." : "Jumpers share the acceleration and max-velocity work, with sprint volume adjusted for jumping days. Event work below follows the calendar month."}</p></div>
     <div class="cols">${Object.entries(JUMPS).map(([e,J])=>`<div class="panel"><h2>${esc(e)}</h2><ul class="exp" style="margin:0">${J.focus.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
       ${["dec","jan","feb"].map(m=>`<div class="mlabel">${({dec:"December",jan:"January",feb:"February"})[m]}</div><ul class="exp" style="margin:4px 0 0">${J.mo[m].map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`).join("")}
       <p class="note" style="margin:8px 0 0">Drills: ${J.drills.map(d=>drillLink(d, DRILLS[d].n)).join(" · ")}</p></div>`).join("")}</div>
-    <p class="note">Pole vault technical sessions require qualified supervision and proper facilities and equipment. No high jump or pole vault landings without a pit.</p>`;
+    <p class="note">${CUR_LV==="JH" ? "No high jump landings without a pit. No long jump takeoffs onto a hard floor." : "Pole vault technical sessions require qualified supervision and proper facilities and equipment. No high jump or pole vault landings without a pit."}</p>`;
 }
 function strengthView(){
+  if (CUR_LV==="JH") return `<div class="panel"><h2>Junior high strength</h2><p style="margin:0">Supervised, bodyweight and light loads, technique and confidence first. Never to failure, no max lifting. These are the same JH lifts the junior high distance group uses, so it's one system.</p></div>
+    <div class="cols">${[["JGA1","Tue Dec 1"],["JGA2","Thu Dec 3"],["JA","December Thursdays (15–20 min)"],["JB","January–February Thursdays"],["JL","Feb 18 (light)"],["JM","Feb 25 on (maintenance)"]].map(([c,w])=>`<div class="panel"><div class="mlabel" style="margin:0">${esc(w)}</div><h3 style="margin:2px 0 6px">${esc(LIFTS[c] ? LIFTS[c].name : c)}</h3>${typeof liftHTML==="function" ? liftHTML(c).replace('<details class="lift">','<details class="lift" open>') : ""}</div>`).join("")}</div>`;
   return `<div class="panel"><h2>Thursday weight room · 30–35 min</h2><p style="margin:0">Supervised and individualized. Never to failure. Exercise menu: trap-bar deadlift or squat variation, dumbbell bench, Romanian deadlift, rows or pull-ups, split squats, core stabilization, med-ball power.</p></div>
     <div class="cols">${["dec","jan","feb","spring"].map(k=>{ const S = STR[k]; return `<div class="panel"><h2>${esc(S.n)}</h2><div class="tbl" style="border:0"><table><tbody>${S.ex.map(([n,p])=>`<tr><td>${esc(n)}</td><td class="mono">${esc(p)}</td></tr>`).join("")}</tbody></table></div><p class="note" style="margin:6px 0 0">${esc(S.note)}</p></div>`; }).join("")}</div>`;
 }
@@ -727,14 +940,15 @@ function groupsView(){
   const anySug = hsAthletes().some(a => !SP.groups[a.id] && suggest(a));
   return `${anySug ? `<p class="note" style="margin:0">${canPost ? `Some groups are <i>suggested</i> from last season's events until a coach saves them on <a href="#coaches" onclick="ctab='sgroups'">Coaches → Sprints</a>.` : "Groups are still being finalized by the coaches."}</p>` : ""}
     <div class="cols">${[...GKEYS,"MD"].filter(k=>by[k]).map(k=>`<div class="panel"><h2>${chip(k)} ${esc(GROUPS[k].n)}</h2><p class="note" style="margin:0 0 6px">${esc(GROUPS[k].ev)}</p>
-      <ul class="exp" style="margin:0">${by[k].sort((x,y)=>(x[2]===y[2]?0:x[2]==="p"?-1:1) || x[0].name.localeCompare(y[0].name)).map(([a,g,t])=>`<li>${t==="p"?`<b>${esc(a.name)}</b>`:`${esc(a.name)} <span class="muted" style="font-size:12px">(secondary)</span>`}${canPost&&g.sug?` <span class="sp-sug">suggested</span>`:""}</li>`).join("")}</ul></div>`).join("")}</div>`;
+      <ul class="exp" style="margin:0">${by[k].sort((x,y)=>(x[2]===y[2]?0:x[2]==="p"?-1:1) || x[0].name.localeCompare(y[0].name)).map(([a,g,t])=>`<li>${a.level==="JH"?`<span class="sp-grp">L${g.jl||suggestJl(a)}</span> `:""}${t==="p"?`<b>${esc(a.name)}</b>`:`${esc(a.name)} <span class="muted" style="font-size:12px">(secondary)</span>`}${canPost&&g.sug?` <span class="sp-sug">suggested</span>`:""}</li>`).join("")}</ul></div>`).join("")}</div>`;
 }
 
 const TABS = [["cal","Today & Week"],["phil","Philosophy"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
 views.sprints = function(){
   const body = SP.tab==="phil" ? philView() : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
-  return `${back}<div class="stack"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · High school · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
-      <p class="lede" style="margin:6px 0 0">Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher.</p></div>
+  return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · ${CUR_LV==="JH" ? "Junior high (grades 6–8)" : "High school"} · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
+      <p class="lede" style="margin:6px 0 0">${CUR_LV==="JH" ? "Learn to run fast and have fun doing it. Same fundamentals as high school, sized for junior high." : "Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher."}</p></div>
+      <div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div></div>
     <div class="seg mdtabs" role="group" aria-label="Section">${TABS.map(([k,l])=>`<button type="button" aria-pressed="${SP.tab===k}" onclick="SP.tab='${k}';render()">${l}</button>`).join("")}</div>
     ${body}</div>`;
 };
@@ -742,7 +956,8 @@ SP.week = d => { const L = locate(SP.sel||defaultSel()); const w = SP_WEEKS[Math
 SP.tick = (k,v) => { store.set(k, v ? "1" : null); };
 SP.done = (ds,v) => { store.set("sp-done-"+ds, v || null); render(); };
 SP.setEnv = e => { SP.env = e; try { localStorage.setItem("sp-env", e); } catch(x){} render(); };
-SP.setMe = id => { SP.me = id; try { localStorage.setItem("sp-me", id); } catch(x){} const a = meA(), g = a && groupOf(a); SP.g = g && g.p!=="MD" ? g.p : "All"; render(); };
+SP.setMe = id => { SP.me = id; try { localStorage.setItem("sp-me", id); } catch(x){} const a = meA(), g = a && groupOf(a); if (a && a.level!==CUR_LV) { SP.lv = a.level; useLv(a.level); } SP.g = g && g.p!=="MD" ? g.p : "All"; render(); };
+SP.setLv = lv => { SP.lv = lv; useLv(lv); try { localStorage.setItem("sp-lv", lv); } catch(x){} const a = meA(); if (a && a.level!==lv) SP.me = ""; SP.g = "All"; SP.jl = "All"; SP.draft = null; render(); };
 
 /* ---------- coach editor: Coaches → Sprints ---------- */
 SP.editor = function(){
@@ -752,13 +967,15 @@ SP.editor = function(){
     .filter(a => !SP.gq || a.name.toLowerCase().includes(SP.gq.toLowerCase()))
     .sort((x,y)=>x.g.localeCompare(y.g) || x.name.localeCompare(y.name));
   const cur = a => D[a.id] || suggest(a) || {p:"", s:[]};
-  return `<p class="lede" style="margin:0">Give each high school sprinter, hurdler and jumper one <b>primary group</b> and any <b>secondary events</b>. Suggestions come from last season's events: check them, change what's off, and save. Groups show publicly on the Sprints page (no notes here).</p>
-    <div class="bar" style="justify-content:flex-start">${segBtns(SP.gshow,[["all","Sprint/hurdle/jump kids"],["unset","Not saved yet"],["every","Every HS athlete"]],"(v=>{SP.gshow=v;render()})")}
+  return `<div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div>
+    <p class="lede" style="margin:0">Give each ${CUR_LV==="JH" ? "junior high" : "high school"} sprinter, hurdler and jumper one <b>primary group</b>${CUR_LV==="JH" ? ", a <b>level</b> (1 Foundation, 2 Development, 3 Advanced: by readiness and technique, not grade or times)," : ""} and any <b>secondary events</b>. Suggestions come from last season's events: check them, change what's off, and save. Groups show publicly on the Sprints page (no notes here).</p>
+    <div class="bar" style="justify-content:flex-start">${segBtns(SP.gshow,[["all","Sprint/hurdle/jump kids"],["unset","Not saved yet"],["every",CUR_LV==="JH"?"Every JH athlete":"Every HS athlete"]],"(v=>{SP.gshow=v;render()})")}
       <input id="sp-gsearch" class="search" type="search" placeholder="Search name" value="${esc(SP.gq)}" oninput="SP.gq=this.value;render();const e=document.getElementById('sp-gsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></div>
-    <div class="tbl sp-ged"><table><thead><tr><th>Athlete</th><th>Primary</th><th>Secondary</th><th>S3 follows</th><th></th></tr></thead><tbody>
+    <div class="tbl sp-ged"><table><thead><tr><th>Athlete</th><th>Primary</th>${CUR_LV==="JH"?"<th>Level</th>":""}<th>Secondary</th><th>S3 follows</th><th></th></tr></thead><tbody>
     ${list.map(a=>{ const c = cur(a), saved = !!D[a.id];
       return `<tr><td class="nm"><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${a.g==="B"?"Boys":"Girls"} · ${a.grade} · ${esc((a.cats||[]).join(", ")||"no events yet")}</div></td>
         <td><select aria-label="Primary group for ${esc(a.name)}" onchange="SP.setG('${a.id}','p',this.value)"><option value="">None</option>${[...GKEYS,"MD"].map(k=>`<option value="${k}" ${c.p===k?"selected":""}>${k==="MD"?"Dist/Mid program":k+" · "+GROUPS[k].n}</option>`).join("")}</select></td>
+        ${CUR_LV==="JH" ? `<td><select aria-label="Level for ${esc(a.name)}" onchange="SP.setG('${a.id}','jl',this.value)">${[1,2,3].map(n=>`<option value="${n}" ${(c.jl||suggestJl(a))===n?"selected":""}>L${n} · ${["Foundation","Development","Advanced"][n-1]}</option>`).join("")}</select></td>` : ""}
         <td>${GKEYS.filter(k=>k!==c.p).map(k=>`<label class="ed-check" style="margin-right:6px"><input type="checkbox" ${(c.s||[]).includes(k)?"checked":""} onchange="SP.setG('${a.id}','s:${k}',this.checked)"> ${k}</label>`).join("")}</td>
         <td>${c.p==="S3"?`<select aria-label="S3 plan for ${esc(a.name)}" onchange="SP.setG('${a.id}','s3',this.value)"><option value="mid" ${(c.s3||"mid")==="mid"?"selected":""}>Mid-Distance plan</option><option value="sprint" ${c.s3==="sprint"?"selected":""}>Sprint plan</option></select>`:`<span class="muted">—</span>`}</td>
         <td>${saved?"":`<span class="sp-sug">suggested</span>`}</td></tr>`; }).join("")}
@@ -772,13 +989,14 @@ SP.setG = function(id, k, v){
   const t = Object.assign({}, D[id] || suggest(a) || {p:"", s:[]}); delete t.sug; t.s = [...(t.s||[])];
   if (k==="p") { t.p = v; t.s = t.s.filter(x=>x!==v); if (v!=="S3") delete t.s3; }
   else if (k==="s3") t.s3 = v;
+  else if (k==="jl") t.jl = +v;
   else if (k.startsWith("s:")) { const g = k.slice(2); t.s = v ? [...new Set([...t.s, g])] : t.s.filter(x=>x!==g); }
-  if (!t.p && !t.s.length) delete D[id]; else D[id] = t;
+  if (!t.p && !t.s.length && !t.jl) delete D[id]; else D[id] = t;
   SP.msg = {kind:"",text:""}; render();
 };
 SP.saveGroups = async function(acceptAll){
   const next = JSON.parse(JSON.stringify(SP.draft || SP.groups));
-  if (acceptAll) hsAthletes().forEach(a => { if (!next[a.id]) { const s = suggest(a); if (s) next[a.id] = {p:s.p, s:s.s}; } });
+  if (acceptAll) hsAthletes().forEach(a => { if (!next[a.id]) { const s = suggest(a); if (s) next[a.id] = Object.assign({p:s.p, s:s.s}, s.jl ? {jl:s.jl} : {}); } });
   const err = await publishFiles({"sgroups.json": JSON.stringify(next)});
   if (err) SP.msg = {kind:"err", text:err};
   else { SP.groups = next; SP.draft = JSON.parse(JSON.stringify(next)); SP.msg = {kind:"ok", text:`Saved ${Object.keys(next).length} athletes' groups.`}; }
@@ -843,18 +1061,21 @@ SP.coachTab = function(){
 };
 
 /* ---------- Workouts page: every sprint day shows under Sprints / Hurdles / Long Jump / High Jump / Pole Vault (display only, never saved into the posted weeks) ---------- */
-const plain = r => r.wu ? "Standard sprint warm-up: 12–15 min" : r.str ? `Weight room (${STR[r.str].n}, 30–35 min${r.mod?"; "+STR_MOD[r.mod].replace(/\.$/,"").replace(/:/g," ·"):""}): ${STR[r.str].ex.map(e=>e[0]+" "+e[1]).join(", ")}` : `${r.x}${r.p?": "+r.p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+")":""}`;
+const jlTag = r => r.jl ? ` [${r.jl.length===1 ? "Level "+r.jl[0]+" only" : "Level "+r.jl[0]+"+"}]` : "";
+const liftLine = r => { const L = typeof LIFTS!=="undefined" && LIFTS[r.lift]; return L ? `${r.x || L.name}${r.p?" ("+r.p+")":""}: ${(L.rows||L.ex||[]).map(e=>Array.isArray(e)?e.slice(0,2).join(" "):e).join(", ")}` : (r.x || r.lift); };
+const plain = r => r.wu ? `Standard ${CUR_LV==="JH"?"junior high":"sprint"} warm-up: ${WU_TIME[CUR_LV]}` : r.lift ? liftLine(r) : r.str ? `Weight room (${STR[r.str].n}, 30–35 min${r.mod?"; "+STR_MOD[r.mod].replace(/\.$/,"").replace(/:/g," ·"):""}): ${STR[r.str].ex.map(e=>e[0]+" "+e[1]).join(", ")}` : `${r.x}${r.p?": "+r.p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+")":""}${jlTag(r)}`;
 const SG = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
 function printLine(r){
-  if (r.wu) return "Standard sprint warm-up (12–15 min): easy movement → dynamic mobility → A-skips / ankling / dribbles → build-ups → event prep";
+  if (r.wu) return CUR_LV==="JH" ? "Junior high warm-up (8–12 min): easy movement → dynamic mobility → A-march / skips / ankling → build-ups → coordination game" : "Standard sprint warm-up (12–15 min): easy movement → dynamic mobility → A-skips / ankling / dribbles → build-ups → event prep";
+  if (r.lift) return liftLine(r) + ". Technique first, never to failure.";
   if (r.str) { const s = STR[r.str]; return `Weight room · ${s.n} (30–35 min): ${s.ex.map(e=>e[0]+" "+e[1]).join(" · ")}. Rest 60–90 s on the first two lifts, 30–45 s on the rest. ${r.mod?STR_MOD[r.mod]+" ":""}${s.note}`; }
   let p = r.p || "", m, q;
   if ((m = r.x.match(/flying (\d+)m/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:reps?)?(.*)$/))) p = `${q[1]}×flying ${m[1]}m${q[2]}`;
   else if ((m = r.x.match(/^Timed (\d+)m starts/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:attempts?)?(.*)$/))) p = `${q[1]}×${m[1]}m${q[2]}`;
-  return `${r.x}${p?": "+p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+" only)":""}${r.cut?" · H/J may skip":""}${r.n?" · "+r.n:""}`;
+  return `${r.x}${p?": "+p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+" only)":""}${r.cut?" · H/J may skip":""}${jlTag(r)}${r.n?" · "+r.n:""}`;
 }
 // Packets/sheets: true when a sprint day is not a practice (home day, rest, meet) so no group sheet prints for it
-SP.printSkip = function(start, dn){ const wi = SP_WEEKS.findIndex(x=>x.start===start); if (wi<0) return false; const i = dayInfo(wi, dn); return !!i && !isCoachLed(i); };
+SP.printSkip = function(start, dn, lv){ return withLv(lv==="JH" ? "JH" : "HS", () => { const wi = SP_WEEKS.findIndex(x=>x.start===start); if (wi<0) return false; const i = dayInfo(wi, dn); return !!i && !isCoachLed(i); }); };
 const tplLines = T => [
   ...(T.pre ? ["Warm-up: " + T.pre] : []),
   ...(T.choose ? ["Choose ONE: " + T.choose.map(([n,p])=>`${n} (${p})`).join(" · ")] : []),
@@ -863,66 +1084,69 @@ const tplLines = T => [
   ...(T.rest ? [T.rest] : []), ...(T.end ? [T.end] : [])];
 SP.weeksWith = function(list){
   const have = new Set((list||[]).map(w=>w.start));
-  const extra = SP_WEEKS.filter(w => !have.has(w.start)).map(w => ({start:w.start, days:[], spOnly:true}));
+  const extra = [...new Set([...SP_WEEKS_HS, ...SP_WEEKS_JH].map(w=>w.start))].filter(s => !have.has(s)).map(start=>({start})).map(w => ({start:w.start, days:[], spOnly:true}));
   return extra.length ? (list||[]).concat(extra).sort((a,b)=>a.start.localeCompare(b.start)) : list;
 };
 SP.inject = function(w, opt){
   const P = !!(opt && opt.print);
   if (!w || !w.start) return w;
-  const wi = SP_WEEKS.findIndex(x => x.start===w.start); if (wi<0) return w;
   const copy = Object.assign({}, w, {days:(w.days||[]).map(d=>Object.assign({}, d, {groups:Object.assign({}, d.groups||{}), combos:[...(d.combos||[])], gfocus:Object.assign({}, d.gfocus||{})}))});
+  ["HS","JH"].forEach(LV => withLv(LV, () => {
+  const wi = SP_WEEKS.findIndex(x => x.start===w.start); if (wi<0) return;
+  const SG = SG_LV, JHL = LV==="JH";
   DAYN.forEach(dn => {
     const i = dayInfo(wi, dn); if (!i) return;
     let d = copy.days.find(x=>x.day===dn);
     if (!d) { d = {day:dn, focus:"", all:[], groups:{}, combos:[], gfocus:{}}; copy.days.push(d); }
     const L = lab(i), F = dayFacts(i);
-    const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:"HS"} : i.k==="rest" ? {t:"Rest · Full rest", lv:"HS"} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:"HS"};
+    const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:LV} : i.k==="rest" ? {t:"Rest · Full rest", lv:LV} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:LV};
     let items = [head];
-    if (i.cnote) items.push({t:"Coach note: " + i.cnote, lv:"HS"});
+    if (i.cnote) items.push({t:"Coach note: " + i.cnote, lv:LV});
     if (isGsc(i)) {
-      items.push({t:"General strength & conditioning only. Sprint-specific training starts Tue Dec 8.", lv:"HS"});
-      i.blocks.forEach(([k,x,p,n]) => items.push({t: k==="warm" ? `Warm-up (${p}): ${n}` : k==="cool" ? `Cool-down (${p}): ${n}` : k==="str" ? `${x} (${p})` : `${x} (${p}): ${n}`, lv:"HS"}));
-      items.push({t:"400/800 hybrids (S3): follow the Mid Distance plan today.", lv:"HS"});
+      items.push({t:JHL ? "General movement & strength only: technique and confidence, no sprint, hurdle or jump instruction yet. Voluntary days are optional with no reporting." : "General strength & conditioning only. Sprint-specific training starts Tue Dec 8.", lv:LV});
+      i.blocks.forEach(([k,x,p,n]) => items.push({t: k==="warm" ? `Warm-up (${p}): ${n}` : k==="cool" ? `Cool-down (${p}): ${n}` : k==="str" ? `${x} (${p})` : `${x} (${p}): ${n}`, lv:LV}));
+      if (!JHL) items.push({t:"400/800 hybrids (S3): follow the Mid Distance plan today.", lv:LV});
     } else if (isCoach(i)) {
       const env = i.forceIn ? "in" : SP.env, rows = env==="in" ? (i.sess.in||i.sess.out) : i.sess.out;
-      items.push({t:(env==="in" ? "Indoor plan (hallway/gym)" : "Outdoor plan (track)") + (i.forceIn ? ": moved indoors today" : ""), lv:"HS"});
-      items = items.concat(rows.filter(r=>!r.tech).map(r => ({t: P ? printLine(r) : plain(r), lv:"HS"})));
+      items.push({t:(env==="in" ? "Indoor plan (hallway/gym)" : "Outdoor plan (track)") + (i.forceIn ? ": moved indoors today" : ""), lv:LV});
+      items = items.concat(rows.filter(r=>!r.tech).filter(r=>!JHL || !SP.jl || SP.jl==="All" || P || levelOK(r)).map(r => ({t: P ? printLine(r) : plain(r), lv:LV})));
       if (P) {
         const other = env==="in" ? i.sess.out : i.sess.in;
-        if (other && !i.forceIn) items.push({t:"Indoor version (hallway/gym): " + other.filter(r=>!r.wu && !r.tech && !r.str).map(r=>`${r.x} ${r.p}`.trim()).join("; ") + ". Indoor accelerations 10–20m only with traction, a clear lane and stopping room.", lv:"HS"});
-        if (rows.some(r=>r.tech)) items.push({t:"Event technique (15–20 min): see each group's technique lines.", lv:"HS"});
-        items.push({t:"Coaching: full recovery between max reps (2–3 min short accelerations, 4–6 min flying). Reduce volume for beginners and anyone returning from injury.", lv:"HS"});
+        if (other && !i.forceIn) items.push({t:"Indoor version (hallway/gym): " + other.filter(r=>!r.wu && !r.tech && !r.str && !r.lift).map(r=>`${r.x} ${r.p||""}`.trim() + jlTag(r)).join("; ") + ". " + (JHL ? "Junior high indoor accelerations 5–15m" : "Indoor accelerations 10–20m") + " only with traction, a clear lane and stopping room.", lv:LV});
+        if (rows.some(r=>r.tech)) items.push({t:"Event technique (15–20 min): see each group's technique lines.", lv:LV});
+        items.push({t: JHL ? "Coaching: full recovery between reps, keep it fun and fast. Level 1 does the base plan; rows tagged Level 2+/3 are for those athletes only. Cut volume for anyone tired, new or returning from injury." : "Coaching: full recovery between max reps (2–3 min short accelerations, 4–6 min flying). Reduce volume for beginners and anyone returning from injury.", lv:LV});
       }
-      items.push({t:"400/800 hybrids (S3): follow the Mid Distance workout today unless your coach assigned this session.", lv:"HS"});
+      if (!JHL) items.push({t:"400/800 hybrids (S3): follow the Mid Distance workout today unless your coach assigned this session.", lv:LV});
       if (rows.some(r=>r.tech)) {
-        const m = i.w.mo, add = (g, arr) => { d.groups[g] = (d.groups[g]||[]).concat(arr.map(t=>({t, lv:"HS"}))); };
+        const m = i.w.mo, add = (g, arr) => { d.groups[g] = (d.groups[g]||[]).concat(arr.map(t=>({t, lv:LV}))); };
         add("Sprints", (SPRINT_TECH[m]||[]).filter(x=>x[0]).map(x=>"Technique: " + x[0] + (x[1]?" · "+x[1]:"")));
         add("Hurdles", (HURDLE_TECH[m]||[]).map(x=>"Technique: " + x[0] + " · " + x[1]));
-        add("Long Jump", (JUMPS["Long Jump"].mo[m]||[]).map(x=>"Technique: " + x));
-        add("High Jump", (JUMPS["High Jump"].mo[m]||[]).map(x=>"Technique: " + x));
-        add("Pole Vault", (JUMPS["Pole Vault"].mo[m]||[]).map(x=>"Technique (qualified supervision): " + x));
+        add("Long Jump", (JUMPS["Long Jump"].mo[m]||[]).map(x=>(JHL ? "Starter progression: " : "Technique: ") + x));
+        add("High Jump", (JUMPS["High Jump"].mo[m]||[]).map(x=>(JHL ? "Starter progression: " : "Technique: ") + x));
+        if (JUMPS["Pole Vault"]) add("Pole Vault", (JUMPS["Pole Vault"].mo[m]||[]).map(x=>"Technique (qualified supervision): " + x));
       }
     } else if (isInd(i) && P) {
-      items.push({t:"400/800 hybrids (S3): Mid Distance workout instead.", lv:"HS"});
+      if (!JHL) items.push({t:"400/800 hybrids (S3): Mid Distance workout instead.", lv:LV});
     } else if (isInd(i)) {
       const T = IND[i.tpl];
-      items.push({t:`Goal: ${F.obj} · Equipment: ${F.equip}`, lv:"HS"});
-      items = items.concat(tplLines(T).map(t=>({t, lv:"HS"})));
-      if (i.extra) items.push({t:i.extra, lv:"HS"});
-      if (i.avoid) items.push({t:i.avoid, lv:"HS"});
-      if ((i.alts||[]).length) items.push({t:"Alternatives: " + i.alts.map(k=>k==="rest"?"complete rest":IND[k].n).join(" · ") + (i.altNote?". "+i.altNote:""), lv:"HS"});
-      items.push({t:"400/800 hybrids (S3): do today's Mid Distance workout instead of this.", lv:"HS"});
-      items.push({t:"Voluntary. Stop if anything hurts and tell your coach or athletic trainer.", lv:"HS"});
-      const add = (g, k) => { d.groups[g] = (d.groups[g]||[]).concat([{t: IND_MODS[k], lv:"HS"}]); };
-      add("Sprints","S1"); add("Sprints","S2"); add("Hurdles","H"); ["Long Jump","High Jump","Pole Vault"].forEach(g=>add(g,"J"));
-    } else if (i.k==="meet") items.push({t:"Meet day: follow your coach's meet-day plan. No extra workout.", lv:"HS"});
-    else if (P) items = [{t:"Rest: no assigned workout. Optional comfortable walk." + (i.note?" " + i.note:""), lv:"HS"}];
-    else items.push({t:"No assigned workout. Optional comfortable walk or normal daily activity." + (i.note?" " + i.note:""), lv:"HS"});
+      items.push({t:`Goal: ${F.obj} · Equipment: ${F.equip}`, lv:LV});
+      items = items.concat(tplLines(T).map(t=>({t, lv:LV})));
+      if (i.extra) items.push({t:i.extra, lv:LV});
+      if (i.avoid) items.push({t:i.avoid, lv:LV});
+      if ((i.alts||[]).length) items.push({t:"Alternatives: " + i.alts.map(k=>k==="rest"?"complete rest":IND[k].n).join(" · ") + (i.altNote?". "+i.altNote:""), lv:LV});
+      if (!JHL) items.push({t:"400/800 hybrids (S3): do today's Mid Distance workout instead of this.", lv:LV});
+      items.push({t:"Voluntary. Stop if anything hurts and tell your coach or athletic trainer.", lv:LV});
+      const add = (g, k) => { d.groups[g] = (d.groups[g]||[]).concat([{t: IND_MODS[k], lv:LV}]); };
+      add("Sprints","S1"); add("Sprints","S2"); add("Hurdles","H"); SG.filter(g=>g!=="Sprints"&&g!=="Hurdles").forEach(g=>add(g,"J"));
+    } else if (i.k==="meet") items.push({t:"Meet day: follow your coach's meet-day plan. No extra workout.", lv:LV});
+    else if (P) items = [{t:"Rest: no assigned workout. Optional comfortable walk." + (i.note?" " + i.note:""), lv:LV}];
+    else items.push({t:"No assigned workout. Optional comfortable walk or normal daily activity." + (i.note?" " + i.note:""), lv:LV});
     d.combos.push({groups:SG, name:"Sprints · Hurdles · Jumps", items});
     SG.forEach(g => { if (!d.gfocus[g]) d.gfocus[g] = P ? `${L[0]}: ${dayTitle(i)}` : L[0]; });
-    if (d.focus && typeof d.focus==="object") { if (!d.focus.HS) d.focus = Object.assign({}, d.focus, {HS: dayTitle(i)}); }
-    else if (!d.focus) d.focus = {HS: dayTitle(i), JH: ""};
+    if (d.focus && typeof d.focus==="object") { if (!d.focus[LV]) d.focus = Object.assign({}, d.focus, {[LV]: dayTitle(i)}); }
+    else if (!d.focus) d.focus = {HS: "", JH: "", [LV]: dayTitle(i)};
   });
+  }));
   copy.days.sort((a,b)=>DAYN.indexOf(a.day)-DAYN.indexOf(b.day));
   return copy;
 };
@@ -937,6 +1161,7 @@ if (!SECTIONS.some(s=>s.id==="sprints")) {
   const i = SECTIONS.findIndex(s=>s.id==="middistance");
   SECTIONS.splice(i+1, 0, {id:"sprints", g:"train", name:"Sprints, Hurdles & Jumps", blurb:"Sprint, hurdle and jump program: winter calendar (indoor/outdoor), drills, block starts, strength"});
 }
+SP.withLv = withLv; SP.dayInfo = dayInfo; SP.dayTitle = dayTitle; SP.dayFacts = dayFacts; SP.weeksOf = lv => withLv(lv, () => SP_WEEKS);
 SP.weeks = SP_WEEKS; SP.drills = DRILLS; SP.suggest = suggest; SP.groupOf = groupOf;
 render();
 })();

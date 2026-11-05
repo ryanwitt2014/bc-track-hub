@@ -11,7 +11,7 @@ About 30 minutes, start to finish.
 |---|---|
 | `index.html` | The whole site |
 | `config.js` | Your Supabase address and key (you fill this in) |
-| `sprints.js` | Sprints, Hurdles & Jumps program: Dec 1 – Feb 28, all 7 days (coach-led Tue/Thu with indoor/outdoor, fully written home days), drill library, block/hurdle/jump pathways, strength. Group assignments save to `sgroups`, coach day changes (closures, meets, moves) to `sprint_edits`. Spring weeks get added to `SP_WEEKS` in the same shape. |
+| `sprints.js` | Sprints, Hurdles & Jumps program, high school and junior high (grades 6–8, Levels 1–3; HS/JH toggle; `useLv` swaps the data set): Dec 1 – Feb 28, all 7 days (coach-led Tue/Thu with indoor/outdoor, fully written home days), drill library, block/hurdle/jump pathways, strength. Group assignments save to `sgroups`, coach day changes (closures, meets, moves) to `sprint_edits`. Spring weeks get added to `SP_WEEKS` in the same shape. |
 | `supabase/setup.sql` | Creates the database tables and security rules, adds you as a coach, and copies over the event assignments you already saved |
 
 ---
