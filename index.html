@@ -138,6 +138,7 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-boxes{display:flex;gap:12px}
 .su-box{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .su-box.ro{cursor:default}.su-box.ro input{cursor:default;opacity:1}
+.su-wint{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}.su-flag{border:1px solid #b4472b;color:#b4472b;background:transparent;cursor:pointer;font:600 12px var(--body)}
 .su-box input{width:20px;height:20px;accent-color:var(--accent);margin:0;cursor:pointer}
 .new-chip{background:var(--gold);color:var(--gold-ink);justify-self:start}
 @media (max-width:620px){.su-row{grid-template-columns:minmax(0,1fr) auto}.su-boxes{grid-column:1/-1}}
@@ -2458,14 +2459,31 @@ const PACE_CATS = new Set(["Distance","Mid Distance"]);
 let sh = {mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
 // Winter conditioning roster: starred kids are the only ones printed on sheets before official practice starts.
 const OFFICIAL_START = "2027-02-15";
-let WINTER = {ids:[]}, wQueue = Promise.resolve(), wMsg = {kind:"",text:""};
-const isWinter = a => WINTER.ids.includes(a.id);
-function winterOn(date){ if (sh.winter==="on") return true; if (sh.winter==="off") return false; return !!date && date < parseD(OFFICIAL_START); }
-function toggleWinter(id){
-  const next = {ids: isWinter({id}) ? WINTER.ids.filter(x=>x!==id) : [...WINTER.ids, id]};
-  WINTER = next; wMsg = {kind:"",text:"Saving…"}; render();
-  wQueue = wQueue.then(async()=>{ try { await saveKey("winter", WINTER); wMsg = {kind:"ok", text:`Saved · ${WINTER.ids.length} starred`}; } catch(e){ wMsg = {kind:"err", text:saveErr(e)}; } render(); });
+// WINTER = {ids:[starred], maybe:{id:note} (can do some sessions), follow:{id:note} (coach should reach out), done:[applied coach decisions]}
+let WINTER = {ids:[], maybe:{}, follow:{}, done:[]}, wQueue = Promise.resolve(), wMsg = {kind:"",text:""};
+const isWinter = a => WINTER.ids.includes(a.id) || !!WINTER.maybe[a.id];
+const isWinterMaybe = a => !WINTER.ids.includes(a.id) && !!WINTER.maybe[a.id];
+// Coach decisions made in chat, applied once (they become permanent the next time the winter roster is saved; un-starring later sticks).
+const WINTER_DECISIONS = [{key:"2026-11-05-form", star:["hs-maya-morales"], maybe:{"hs-elizabeth-widmer":"Can do some sessions; mornings work best"}, follow:{"hs-kayden-wade":"Said no to winter conditioning without a reason. Check in."}}];
+function applyWinterDecisions(){
+  WINTER.maybe = WINTER.maybe || {}; WINTER.follow = WINTER.follow || {}; WINTER.done = WINTER.done || [];
+  WINTER_DECISIONS.forEach(d => { if (WINTER.done.includes(d.key)) return;
+    (d.star||[]).forEach(id => { if (!WINTER.ids.includes(id)) WINTER.ids.push(id); delete WINTER.maybe[id]; });
+    Object.assign(WINTER.maybe, d.maybe||{}); Object.assign(WINTER.follow, d.follow||{}); WINTER.done.push(d.key); });
 }
+applyWinterDecisions();
+function saveWinter(okText){ wMsg = {kind:"",text:"Saving…"}; render();
+  wQueue = wQueue.then(async()=>{ try { await saveKey("winter", WINTER); wMsg = {kind:"ok", text: okText || `Saved · ${WINTER.ids.length} starred, ${Object.keys(WINTER.maybe).length} maybe`}; } catch(e){ wMsg = {kind:"err", text:saveErr(e)}; } render(); }); }
+// Star cycle: ☆ not doing it → ★ doing winter conditioning → ◐ maybe / some sessions → ☆
+function cycleWinter(id){
+  if (WINTER.ids.includes(id)) { WINTER.ids = WINTER.ids.filter(x=>x!==id); WINTER.maybe[id] = WINTER.maybe[id] || "Some sessions"; }
+  else if (WINTER.maybe[id]) delete WINTER.maybe[id];
+  else WINTER.ids = [...WINTER.ids, id];
+  saveWinter();
+}
+function toggleFollow(id){ if (WINTER.follow[id]) delete WINTER.follow[id]; else WINTER.follow[id] = "Follow up"; saveWinter("Saved."); }
+function winterOn(date){ if (sh.winter==="on") return true; if (sh.winter==="off") return false; return !!date && date < parseD(OFFICIAL_START); }
+function toggleWinter(id){ cycleWinter(id); }
 // Who goes on a group's sheet: kids assigned to an event in that group on the Event Assignments board.
 // If a team has no assignments saved yet, fall back to the athlete's event groups.
 function groupRoster(lv, cat){
@@ -2622,7 +2640,7 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
       ${field || runCols || timed ? "" : `<tr class="sh-dist"><th colspan="${3 + (withPace?1:0) + (withLast?1:0)}" style="text-align:right">Rep distance →</th>${Array.from({length:n},()=>`<th></th>`).join("")}<th></th></tr>`}
       <tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${withPace?`<th class="sh-pace">Target pace</th>`:""}${withLast?`<th class="sh-last">Last time</th>`:""}
         ${workHead}<th class="sh-notes">Notes</th></tr></thead>
-      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)} <span class="sh-g">${a.g}${lv==="Both"?" "+a.level:""}</span>${tagNote(a)}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}${lastCell(a)}
+      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)} <span class="sh-g">${a.g}${lv==="Both"?" "+a.level:""}</span>${tagNote(a)}${wOn && isWinterMaybe(a) ? ` <span class="sh-g">(maybe)</span>` : ""}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}${lastCell(a)}
         ${timed ? autoCells(a) : workCells}<td></td></tr>`).join("")}
         ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${withPace?"<td></td>":""}${withLast?"<td></td>":""}${timed ? Array.from({length:nAuto},()=>`<td></td>`).join("") : workCells}<td></td></tr>`).join("")}
       </tbody></table>
@@ -2909,7 +2927,7 @@ function ifParse(){
   ifx.msg = {kind: bad ? "err" : "ok", text: `${out.length - bad} matched to the roster${bad ? `, ${bad} not found (they'll be listed so you can add them)` : ""}. Check below, then save.`};
   render();
 }
-function ifStar(ids){ if (!canPost) return; const next = {ids:[...new Set([...WINTER.ids, ...ids])]}; WINTER = next; render();
+function ifStar(ids){ if (!canPost) return; WINTER = Object.assign({}, WINTER, {ids:[...new Set([...WINTER.ids, ...ids])]}); render();
   wQueue = wQueue.then(async()=>{ try { await saveKey("winter", next); ifx.msg = {kind:"ok", text:`Starred ${ids.length} for winter conditioning (${next.ids.length} total). They'll be on the winter practice sheets.`}; } catch(e){ ifx.msg = {kind:"err", text:saveErr(e)}; } render(); }); }
 /* ---- Friends named on the interest form -> recruiting list ---- */
 const NICK = {libby:"elizabeth",liz:"elizabeth",lizzie:"elizabeth",beth:"elizabeth",eliza:"elizabeth",ellie:"eleanor",maggie:"margaret",meg:"margaret",maddie:"madison",addie:"addison",abby:"abigail",kate:"katherine",katie:"katherine",kat:"katherine",sam:"samantha",alex:"alexander",ben:"benjamin",will:"william",jake:"jacob",nick:"nicholas",matt:"matthew",mike:"michael",chris:"christopher",tony:"anthony",josh:"joshua",zach:"zachary",dan:"daniel",danny:"daniel",tom:"thomas",jim:"james",jimmy:"james",bella:"isabella",izzy:"isabella",gabby:"gabrielle",mandy:"amanda",becca:"rebecca",tori:"victoria",jenny:"jennifer"};
@@ -3118,6 +3136,7 @@ const views = {
             <small>${r.a.level} ${r.a.g==="B"?"Boys":"Girls"} · Gr ${r.a.grade??"—"}${r.a.cats.length?" · "+esc(r.a.cats.slice(0,2).join(", ")):""}</small></div>
           <span class="su-tag su-${r.s.k}">${esc(r.s.l)}</span>
           <div class="su-boxes">${box(r,"ff","Final Forms")}${box(r,"gf","Google Form")}</div>
+          ${canPost && (isWinter(r.a) || WINTER.follow[r.a.id]) ? `<div class="su-wint">${isWinterMaybe(r.a) ? `<span class="chip">◐ Winter: maybe · ${esc(WINTER.maybe[r.a.id])}</span>` : isWinter(r.a) ? `<span class="chip">★ Winter conditioning</span>` : ""}${WINTER.follow[r.a.id] ? `<button type="button" class="chip su-flag" title="Clear the flag" onclick="toggleFollow('${r.a.id}')">⚑ ${esc(WINTER.follow[r.a.id])}</button>` : ""}</div>` : ""}
           ${canPost && INTEREST[r.a.id] ? ifLine(INTEREST[r.a.id]) : ""}
         </div>`).join("")}</div>`
       :`<p class="note">Nobody matches these filters.</p>`}
@@ -3328,7 +3347,7 @@ const views = {
             pool.sort((x,y)=>x.level.localeCompare(y.level) || x.g.localeCompare(y.g) || x.name.localeCompare(y.name));
             return `<div class="panel" style="padding:12px 14px"><div class="bar"><b>Tap to star kids doing December conditioning</b>
               <label class="ed-check" for="w-all"><input id="w-all" type="checkbox" ${sh.wall?"checked":""} onchange="sh.wall=this.checked;render()"> Show every athlete, not just the groups picked above</label></div>
-              <div class="wstars">${pool.map(a=>`<button type="button" class="wstar" aria-pressed="${isWinter(a)}" onclick="toggleWinter('${a.id}')"><span>${isWinter(a)?"★":"☆"}</span>${esc(a.name)} <small>${a.level} ${a.g}</small></button>`).join("") || `<span class="muted">No athletes in these groups.</span>`}</div>
+              <p class="note" style="margin:0 0 6px">Tap to cycle: ☆ not doing it → ★ doing it → ◐ maybe / some sessions.</p><div class="wstars">${pool.map(a=>`<button type="button" class="wstar" aria-pressed="${isWinter(a)}" title="${esc(WINTER.maybe[a.id]||"")}" onclick="toggleWinter('${a.id}')"><span>${isWinterMaybe(a)?"◐":isWinter(a)?"★":"☆"}</span>${esc(a.name)} <small>${a.level} ${a.g}</small>${WINTER.follow[a.id]?` <small>⚑</small>`:""}</button>`).join("") || `<span class="muted">No athletes in these groups.</span>`}</div>
               <p class="ed-msg ${wMsg.kind}" role="status" style="margin:6px 0 0">${esc(wMsg.text)}</p></div>`; })() : ""}
         <div class="ed-save"><button type="button" class="btn primary" onclick="window.print()" ${sh.groups.length?"":"disabled"}>${packet?"Print packet":"Print sheets"}</button>
           <span class="note" style="margin:0">To save a PDF instead, choose <b>Save as PDF</b> as the printer.</span></div>
@@ -4155,7 +4174,7 @@ async function loadAll(){
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
-  if (byKey.winter && Array.isArray(byKey.winter.ids)) WINTER = {ids: byKey.winter.ids};
+  if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; applyWinterDecisions(); }
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
