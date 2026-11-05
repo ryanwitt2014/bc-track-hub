@@ -130,7 +130,8 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-row:first-child{border-top:0}.su-row.su-out{opacity:.62}
 .su-who{min-width:0;display:grid}.su-who a{color:var(--fg);text-decoration:none}.su-who small{color:var(--muted);font-size:12px}
 .su-form{grid-column:1/-1;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}.su-form b{color:var(--fg)}
-.if-tbl td{vertical-align:top}.if-tbl textarea{width:100%;font:12px var(--mono)}
+.if-tbl td{vertical-align:top}
+.rec-missing{background:var(--gold-soft);border:1px solid var(--gold);border-radius:6px;padding:10px 12px;margin-top:8px}.rec-missing select{max-width:100%;font-size:13px}.if-tbl textarea{width:100%;font:12px var(--mono)}
 .su-tag{font-size:12px;font-weight:700;border-radius:3px;padding:2px 8px;white-space:nowrap;background:var(--chip)}
 .su-tag.su-new{background:var(--gold);color:var(--gold-ink)}.su-tag.su-rec{background:var(--accent);color:var(--accent-ink)}
 .su-tag.su-xc{background:var(--gold-soft);border:1px solid var(--gold)}
@@ -568,7 +569,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05e";
+const HUB_VERSION = "11-05f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2759,6 +2760,44 @@ function ifParse(){
 }
 function ifStar(ids){ if (!canPost) return; const next = {ids:[...new Set([...WINTER.ids, ...ids])]}; WINTER = next; render();
   wQueue = wQueue.then(async()=>{ try { await saveKey("winter", next); ifx.msg = {kind:"ok", text:`Starred ${ids.length} for winter conditioning (${next.ids.length} total). They'll be on the winter practice sheets.`}; } catch(e){ ifx.msg = {kind:"err", text:saveErr(e)}; } render(); }); }
+/* ---- Friends named on the interest form -> recruiting list ---- */
+const NICK = {libby:"elizabeth",liz:"elizabeth",lizzie:"elizabeth",beth:"elizabeth",eliza:"elizabeth",ellie:"eleanor",maggie:"margaret",meg:"margaret",maddie:"madison",addie:"addison",abby:"abigail",kate:"katherine",katie:"katherine",kat:"katherine",sam:"samantha",alex:"alexander",ben:"benjamin",will:"william",jake:"jacob",nick:"nicholas",matt:"matthew",mike:"michael",chris:"christopher",tony:"anthony",josh:"joshua",zach:"zachary",dan:"daniel",danny:"daniel",tom:"thomas",jim:"james",jimmy:"james",bella:"isabella",izzy:"isabella",gabby:"gabrielle",mandy:"amanda",becca:"rebecca",tori:"victoria",jenny:"jennifer"};
+const ifRecords = () => Object.entries(INTEREST).filter(([k])=>!k.startsWith("_"));
+function recMatch(name){
+  const L = (INTEREST._links||{})[name];
+  if (L === "none") return null;
+  if (L) return REC.list.find(r=>r.id===L) || null;
+  const p = ifNorm(name).split(" "); if (p.length < 2) return null;
+  const f = p[0], l = p[p.length-1];
+  const cand = REC.list.filter(r => { const n = ifNorm(r.fullName||r.name).split(" "); return n[n.length-1]===l; });
+  return cand.find(r => ifNorm(r.fullName||r.name).split(" ")[0]===f)
+    || cand.find(r => { const rf = ifNorm(r.fullName||r.name).split(" ")[0]; return (NICK[f]||f)===(NICK[rf]||rf); }) || null;
+}
+// Every friend named on the form: who named them, and whether they're a recruit, already on the team, or new to us
+function friendLinks(){
+  const m = new Map();
+  ifRecords().forEach(([,f]) => (f.friends||[]).forEach(n => { const k = n.trim(); if (!k) return; if (!m.has(k)) m.set(k, {name:k, by:[]}); if (!m.get(k).by.includes(f.name)) m.get(k).by.push(f.name); }));
+  return [...m.values()].map(x => ({...x, rec: recMatch(x.name), ath: ifMatch(x.name)}));
+}
+const helpersFor = r => friendLinks().filter(x => x.rec && x.rec.id===r.id).flatMap(x=>x.by);
+async function recLink(name, val){
+  if (!canPost) return;
+  const next = JSON.parse(JSON.stringify(INTEREST)); next._links = Object.assign({}, next._links);
+  if (val) next._links[name] = val; else delete next._links[name];
+  try { await saveKey("interest", next); INTEREST = next; } catch(e){ ifx.msg = {kind:"err", text:saveErr(e)}; }
+  render();
+}
+function friendsHTML(){
+  const fl = friendLinks(); if (!fl.length) return "";
+  const linked = fl.filter(x=>x.rec), team = fl.filter(x=>!x.rec && x.ath), missing = fl.filter(x=>!x.rec && !x.ath);
+  const by = x => `<span class="muted">(${esc(x.by.join(", "))} will help)</span>`;
+  const pick = x => `<select aria-label="Link ${esc(x.name)} to a recruit" onchange="recLink(${esc(JSON.stringify(x.name))}, this.value)"><option value="">Same as someone on the list?</option>${[...REC.list].sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<option value="${r.id}">${esc(r.name)} · ${r.lvl} ${r.grade??""}</option>`).join("")}</select>`;
+  return `<div class="panel"><h2>Friends named on the interest form</h2>
+    ${linked.length ? `<p style="margin:0 0 6px"><b>On the recruiting list</b>, with a teammate helping:</p><ul class="exp">${linked.map(x=>`<li><b>${esc(x.rec.name)}</b>${ifNorm(x.rec.name)!==ifNorm(x.name)?` <span class="muted">(written as "${esc(x.name)}")</span>`:""} ← ${by(x)}${(INTEREST._links||{})[x.name]?` <button type="button" class="btn sm" onclick="recLink(${esc(JSON.stringify(x.name))}, '')">Unlink</button>`:""}</li>`).join("")}</ul>` : ""}
+    ${missing.length ? `<div class="rec-missing"><p style="margin:0 0 6px"><b>⚠️ Not on the recruiting list yet (${missing.length}).</b> Send Claude their grade, boys/girls, and sport so they can be added. If one is already on the list under another name, pick them.</p>
+      <ul class="exp">${missing.map(x=>`<li><b>${esc(x.name)}</b> ${by(x)} ${pick(x)}</li>`).join("")}</ul></div>` : ""}
+    ${team.length ? `<p class="note" style="margin:8px 0 0">Already on the team: ${team.map(x=>esc(x.ath.name)).join(", ")}.</p>` : ""}</div>`;
+}
 async function ifSave(){
   if (!canPost || !ifx.rows) return;
   const nextI = JSON.parse(JSON.stringify(INTEREST)), beforeS = JSON.parse(JSON.stringify(SIGN));
@@ -2776,8 +2815,7 @@ async function ifSave(){
 }
 const ifLine = f => `<div class="su-form"><span>📝 Form ${esc((f.ts||"").split(" ")[0])}</span>${f.grade?`<span>Gr <b>${esc(f.grade)}</b></span>`:""}${f.events&&f.events.length?`<span>Interested in <b>${esc(f.events.join(", "))}</b></span>`:""}${(f.answers||[]).map(([q,v])=>`<span${(q==="Physical on file" && /^no/i.test(v)) || (q==="Winter conditioning" && /^yes/i.test(v)) || (q==="Travel / AAU during track" && /^yes/i.test(v)) ? ' style="color:var(--fg);font-weight:600"' : ""}>${q==="Physical on file" && /^no/i.test(v) ? "⚠️ " : q==="Winter conditioning" && /^yes/i.test(v) ? "❄️ " : q==="Travel / AAU during track" && /^yes/i.test(v) ? "🗓️ " : ""}${esc(q)}: <b>${esc(v)}</b></span>`).join("")}${f.friends&&f.friends.length?`<span>Friends to recruit: <b>${esc(f.friends.join(", "))}</b></span>`:""}</div>`;
 function ifPanel(){
-  const all = Object.entries(INTEREST);
-  const friends = [...new Set(all.flatMap(([,f])=>f.friends||[]))].map(n=>({n, a: ifMatch(n), by: all.filter(([,f])=>(f.friends||[]).includes(n)).map(([,f])=>f.name)})).filter(x=>!x.a);
+  const all = ifRecords();
   const unmatched = all.filter(([k])=>k.startsWith("new:"));
   const ansOf = (f, q) => ((f.answers||[]).find(([x])=>x===q)||[])[1] || "";
   const wantW = all.filter(([k,f])=>!k.startsWith("new:") && /^yes/i.test(ansOf(f,"Winter conditioning")) && !WINTER.ids.includes(k)).map(([k])=>k);
@@ -2793,7 +2831,7 @@ function ifPanel(){
     ${travel.length ? `<p style="margin:10px 0 0">🗓️ <b>Travel / AAU sports during track season</b> (plan around possible conflicts): ${travel.map(esc).join(", ")}</p>` : ""}
     ${noPhys.length ? `<p style="margin:10px 0 0">⚠️ <b>No physical on file:</b> ${noPhys.map(esc).join(", ")}</p>` : ""}
     ${unmatched.length ? `<p style="margin:10px 0 0"><b>Filled out the form, not on the roster:</b> ${unmatched.map(([,f])=>`${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}`).join(" · ")}</p>` : ""}
-    ${friends.length ? `<p style="margin:10px 0 0"><b>Friends named who aren't on the roster</b> (recruiting leads): ${friends.map(x=>`${esc(x.n)} <span class="muted">(from ${esc(x.by.join(", "))})</span>`).join(" · ")}</p>` : ""}
+    <div style="margin-top:10px">${friendsHTML()}</div>
   </details>`;
 }
 /* ---- Sign-up checklist (Final Forms + Google Form) ---- */
@@ -3509,6 +3547,7 @@ const views = {
           <optgroup label="Athletes">${[...ATHLETES].sort((a,b)=>a.name.localeCompare(b.name)).map(a=>`<option value="${a.id}" ${a.id===me?"selected":""}>${esc(a.name)}</option>`).join("")}</optgroup></select></label>
         <p class="note" style="margin:0">${me?"Saved on this device, so you only pick it once.":"Pick it once and it's remembered on this device."}</p></div>
       ${talk?views._talk():""}
+      ${canPost ? friendsHTML() : ""}
       <div class="rstats">${stat(REC.list.length,"On the list")}${stat(all.filter(h=>!["none","closed","joined"].includes(h.k)).length,"Contacted")}${stat(all.filter(h=>h.k==="hot"||h.k==="warm").length,"Warm or hot")}${stat(all.filter(h=>h.k==="joined").length,"Joined")}</div>
       ${top.length?`<div class="panel"><h2>Top recruiters</h2><ol class="toprec">${top.map(([n,x])=>`<li><b>${esc(n)}</b><span>${joinedBy[n]?`${joinedBy[n]} joined · `:""}${x.y} warm/hot · ${x.n} talk${x.n===1?"":"s"}</span></li>`).join("")}</ol></div>`:""}
       <div class="bar" style="justify-content:flex-start">
@@ -3523,7 +3562,7 @@ const views = {
         ${rows.map(({r,h,cs})=>{ const last = cs[cs.length-1]; const by = [...new Set(cs.filter(c=>!c.self).map(c=>c.by))];
           return `<tr class="${r.status==="closed"?"dim":""}"><td><b>${esc(r.name)}</b><div class="muted">${r.lvl} ${r.g==="B"?"Boys":"Girls"}${recGr(r)?" · "+recGr(r):""}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""}</div></td>
             <td>${meter(h)}</td>
-            <td>${by.length?by.map(b=>`<span class="chip">${esc(b)}</span>`).join(""):`<span class="muted">Nobody yet</span>`}</td>
+            <td>${by.length?by.map(b=>`<span class="chip">${esc(b)}</span>`).join(""):(helpersFor(r).length?"":`<span class="muted">Nobody yet</span>`)}${helpersFor(r).map(b=>`<span class="chip home" title="Named them on the interest form">🤝 ${esc(b)} will help</span>`).join("")}</td>
             <td>${last?(last.self?`<span class="resp sc-warm">${esc(SELF_BY)}</span>`:`${esc(last.by)} · ${scaleTag(last)}`)+`<div class="muted">${shortD(last.d)}</div>`:"—"}</td>
             <td>${r.status==="open"?form(r):""}</td></tr>`; }).join("")}
       </tbody></table></div>
@@ -4054,6 +4093,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-05e"></script>
+<script src="intelligence.js?v=11-05f"></script>
 </body>
 </html>
