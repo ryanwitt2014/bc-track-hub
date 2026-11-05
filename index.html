@@ -129,6 +129,8 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .su-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
 .su-row:first-child{border-top:0}.su-row.su-out{opacity:.62}
 .su-who{min-width:0;display:grid}.su-who a{color:var(--fg);text-decoration:none}.su-who small{color:var(--muted);font-size:12px}
+.su-form{grid-column:1/-1;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}.su-form b{color:var(--fg)}
+.if-tbl td{vertical-align:top}.if-tbl textarea{width:100%;font:12px var(--mono)}
 .su-tag{font-size:12px;font-weight:700;border-radius:3px;padding:2px 8px;white-space:nowrap;background:var(--chip)}
 .su-tag.su-new{background:var(--gold);color:var(--gold-ink)}.su-tag.su-rec{background:var(--accent);color:var(--accent-ink)}
 .su-tag.su-xc{background:var(--gold-soft);border:1px solid var(--gold)}
@@ -566,7 +568,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05b";
+const HUB_VERSION = "11-05c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2698,6 +2700,88 @@ async function edDelete(start){
   await publishWeeks(WORKOUTS.filter(w=>w.start!==start), "Week deleted.");
   if(ed && ed.editing===start){ const msg=edMsg; edNew(); edMsg=msg; render(); }
 }
+/* ---- Interest form (Google Form) import. Answers live in the coach-only "interest" key; only the Google Form checkmark is public. ---- */
+let INTEREST = {}, ifx = {open:false, text:"", rows:null, msg:{kind:"",text:""}};
+function parseTSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  const t = String(text||"").replace(/\r\n?/g, "\n");
+  for (let i=0;i<t.length;i++){
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i+1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; continue; }
+    if (c === '"' && cell === "") { q = true; continue; }
+    if (c === "\t") { row.push(cell); cell = ""; continue; }
+    if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; continue; }
+    cell += c;
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim()));
+}
+const ifNorm = s => String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/[^a-z ]+/g," ").replace(/\s+/g," ").trim();
+function ifMatch(name){
+  const k = ifNorm(name); if (!k || k.split(" ").length < 2) return null;
+  const p = k.split(" ");
+  return ATHLETES.find(a => ifNorm(a.fullName||a.name)===k || ifNorm(a.name)===k)
+    || ATHLETES.find(a => { const n = ifNorm(a.fullName||a.name).split(" "); return n[0]===p[0] && n[n.length-1]===p[p.length-1]; }) || null;
+}
+// Events answer: "Mid Distance (800m, 400m), Throws (Shot Put) (Discus), Not sure yet" -> ["Mid Distance","Throws","Not sure yet"]
+function ifEvents(v){ const out = []; let depth = 0, cur = "";
+  for (const c of String(v||"")) { if (c==="(") depth++; if (c===")") depth = Math.max(0, depth-1); if (c==="," && !depth) { out.push(cur); cur = ""; } else cur += c; }
+  out.push(cur); return out.map(x => x.replace(/\([^)]*\)/g,"").trim()).filter(Boolean); }
+function ifParse(){
+  const rows = parseTSV(ifx.text); ifx.rows = null;
+  if (!rows.length) { ifx.msg = {kind:"err", text:"Paste the rows from the response sheet first."}; render(); return; }
+  const hasHead = /timestamp/i.test(rows[0][0]||"");
+  const head = hasHead ? rows[0].map(h=>String(h).trim()) : null;
+  const out = (hasHead ? rows.slice(1) : rows).map(r => {
+    // the name is the first cell that matches a roster athlete (or the first 2-word cell)
+    let ni = r.findIndex((c,i) => i>0 && ifMatch(c));
+    if (ni < 0) ni = r.findIndex((c,i) => i>0 && /^[A-Za-z'.-]+(\s+[A-Za-z'.-]+)+\s*$/.test(String(c).trim()) && !/^(yes|no)$/i.test(String(c).trim()));
+    const name = ni >= 0 ? String(r[ni]).trim() : "";
+    const a = name ? ifMatch(name) : null;
+    const evI = r.findIndex(c => /distance|sprint|throw|jump|hurdle|vault|relay|not sure/i.test(c));
+    const friendsI = r.length - 1;
+    const friends = r[friendsI] && friendsI !== ni && friendsI !== evI && !/^(yes|no)$/i.test(String(r[friendsI]).trim())
+      ? String(r[friendsI]).split(/\n|,|;/).map(x=>x.trim()).filter(Boolean) : [];
+    const answers = [];
+    r.forEach((c,i) => { if (i===0 || i===ni || i===evI || (friends.length && i===friendsI) || !String(c).trim()) return; if (i===ni+1) return;
+      answers.push([head ? head[i] : `Question ${i+1}`, String(c).trim()]); });
+    return {a, name, ts: String(r[0]||"").trim(), grade: ni>=0 ? String(r[ni+1]||"").trim() : "", events: evI>=0 ? ifEvents(r[evI]) : [], answers, friends};
+  });
+  ifx.rows = out;
+  const bad = out.filter(x=>!x.a).length;
+  ifx.msg = {kind: bad ? "err" : "ok", text: `${out.length - bad} matched to the roster${bad ? `, ${bad} not found (they'll be listed so you can add them)` : ""}. Check below, then save.`};
+  render();
+}
+async function ifSave(){
+  if (!canPost || !ifx.rows) return;
+  const nextI = JSON.parse(JSON.stringify(INTEREST)), beforeS = JSON.parse(JSON.stringify(SIGN));
+  let n = 0;
+  ifx.rows.forEach(x => {
+    const key = x.a ? x.a.id : "new:" + ifNorm(x.name).replace(/ /g,"-");
+    nextI[key] = {name: x.a ? x.a.name : x.name, ts: x.ts, grade: x.grade, events: x.events, answers: x.answers, friends: x.friends};
+    if (x.a) { SIGN[x.a.id] = Object.assign({}, SIGN[x.a.id], {gf: true}); n++; }
+  });
+  ifx.msg = {kind:"", text:"Saving…"}; render();
+  try { await saveKey("interest", nextI); await saveKey("signups", JSON.parse(JSON.stringify(SIGN))); INTEREST = nextI;
+    ifx = {open:false, text:"", rows:null, msg:{kind:"ok", text:`Saved ${ifx.rows.length} responses. ${n} Google Form box${n===1?"":"es"} checked.`}}; applySelfSignups(); }
+  catch(e){ SIGN = beforeS; ifx.msg = {kind:"err", text:saveErr(e)}; }
+  render();
+}
+const ifLine = f => `<div class="su-form"><span>📝 Form ${esc((f.ts||"").split(" ")[0])}</span>${f.grade?`<span>Gr <b>${esc(f.grade)}</b></span>`:""}${f.events&&f.events.length?`<span>Interested in <b>${esc(f.events.join(", "))}</b></span>`:""}${(f.answers||[]).map(([q,v])=>`<span>${esc(q)}: <b>${esc(v)}</b></span>`).join("")}${f.friends&&f.friends.length?`<span>Friends to recruit: <b>${esc(f.friends.join(", "))}</b></span>`:""}</div>`;
+function ifPanel(){
+  const all = Object.entries(INTEREST);
+  const friends = [...new Set(all.flatMap(([,f])=>f.friends||[]))].map(n=>({n, a: ifMatch(n), by: all.filter(([,f])=>(f.friends||[]).includes(n)).map(([,f])=>f.name)})).filter(x=>!x.a);
+  const unmatched = all.filter(([k])=>k.startsWith("new:"));
+  return `<details class="panel ed" ${ifx.open||ifx.rows?"open":""} ontoggle="ifx.open=this.open"><summary><b>Interest form responses (${all.length})</b> <span class="muted">· coaches only · paste new rows from the Google Sheet</span></summary>
+    <p class="note" style="margin:8px 0">In the response sheet, select the new rows (include the header row if you can, so the questions keep their names), copy, and paste here. Matching kids get the Google Form box checked. Answers and friends' names are only visible to signed-in coaches.</p>
+    <label class="ed-g all" for="if-text"><span>Pasted rows</span><textarea id="if-text" rows="5" oninput="ifx.text=this.value">${esc(ifx.text)}</textarea></label>
+    <div class="ed-save" style="border:0;padding-top:6px"><button type="button" class="btn" onclick="ifParse()">Check rows</button>${ifx.rows?`<button type="button" class="btn primary" onclick="ifSave()" ${saving?"disabled":""}>Save ${ifx.rows.length} response${ifx.rows.length===1?"":"s"}</button>`:""}</div>
+    <p class="ed-msg ${ifx.msg.kind}" role="status" style="margin:0">${esc(ifx.msg.text)}</p>
+    ${ifx.rows ? `<div class="tbl"><table class="if-tbl"><thead><tr><th>Name</th><th>Roster match</th><th>Grade</th><th>Events</th><th>Friends</th></tr></thead><tbody>${ifx.rows.map(x=>`<tr><td><b>${esc(x.name||"?")}</b></td><td>${x.a?`<span class="chip home">${esc(x.a.level)} · ${esc(x.a.name)}</span>`:`<span class="chip">Not on roster</span>`}</td><td>${esc(x.grade)}</td><td>${esc(x.events.join(", "))}</td><td>${esc(x.friends.join(", "))}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${unmatched.length ? `<p style="margin:10px 0 0"><b>Filled out the form, not on the roster:</b> ${unmatched.map(([,f])=>`${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}`).join(" · ")}</p>` : ""}
+    ${friends.length ? `<p style="margin:10px 0 0"><b>Friends named who aren't on the roster</b> (recruiting leads): ${friends.map(x=>`${esc(x.n)} <span class="muted">(from ${esc(x.by.join(", "))})</span>`).join(" · ")}</p>` : ""}
+  </details>`;
+}
 /* ---- Sign-up checklist (Final Forms + Google Form) ---- */
 let su = {lv:"All", g:"All", st:"All", show:"All", q:"", msg:{kind:"",text:""}};
 let suQueue = Promise.resolve();
@@ -2738,7 +2822,7 @@ function suToggle(id, field){
   const cur = SIGN[id] = Object.assign({}, SIGN[id]);
   cur[field] = !cur[field];
   if (field==="ff") { if (cur.ff) cur.ffd = iso(today); else delete cur.ffd; }
-  if (!cur.ff && !cur.gf) delete SIGN[id];
+  if (!cur.ff && !cur.gf && !cur.form) delete SIGN[id];
   su.msg = {kind:"",text:"Saving…"}; applySelfSignups(); render();
   const snapshot = JSON.parse(JSON.stringify(SIGN));
   suQueue = suQueue.then(async()=>{
@@ -2825,11 +2909,13 @@ const views = {
         ${[["All","All"],["noff","Not in Final Forms"],["nogf","No Google Form"],["ffnogf","In Final Forms, no Google Form"]].map(([k,l])=>`<button type="button" aria-pressed="${su.show===k}" onclick="${setSu('show',k)}">${l}</button>`).join("")}
       </div>
       <span class="ed-msg ${su.msg.kind}" role="status">${esc(su.msg.text)}</span>
+      ${canPost ? ifPanel() : ""}
       ${list.length?`<div class="su-list">${list.map(r=>`<div class="su-row ${r.c.ff?"":"su-out"}">
           <div class="su-who"><a href="#a-${r.a.id}"><b>${esc(r.a.name)}</b></a>
             <small>${r.a.level} ${r.a.g==="B"?"Boys":"Girls"} · Gr ${r.a.grade??"—"}${r.a.cats.length?" · "+esc(r.a.cats.slice(0,2).join(", ")):""}</small></div>
           <span class="su-tag su-${r.s.k}">${esc(r.s.l)}</span>
           <div class="su-boxes">${box(r,"ff","Final Forms")}${box(r,"gf","Google Form")}</div>
+          ${canPost && INTEREST[r.a.id] ? ifLine(INTEREST[r.a.id]) : ""}
         </div>`).join("")}</div>`
       :`<p class="note">Nobody matches these filters.</p>`}
       <p class="note">Final Forms boxes were pre-checked from the Nov 3 export. <b>New</b> = not on last spring's roster or this fall's XC roster. <b>Recruit</b> = on the recruiting list. <b>XC → first track</b> = ran XC this fall, no track marks yet.</p></div>`;
@@ -3865,6 +3951,7 @@ async function loadAll(){
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) WINTER = {ids: byKey.winter.ids};
+  if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
@@ -3953,6 +4040,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-05b"></script>
+<script src="intelligence.js?v=11-05c"></script>
 </body>
 </html>
