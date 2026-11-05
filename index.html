@@ -1476,7 +1476,7 @@ const forLv = (arr,l) => (arr||[]).filter(it => !it.lv || it.lv===l);
 const shownGroups = d => CATEGORIES.filter(c => d.groups[c] && d.groups[c].length && (wcat==="All" || wcat===c));
 // Combined blocks: one workout shared by several groups, e.g. {groups:["Distance","Mid Distance"], items:[...]}
 const shownCombos = d => (d.combos||[]).filter(cb => cb.items && cb.items.length && (wcat==="All" || cb.groups.includes(wcat)));
-const comboName = cb => cb.groups.length===CATEGORIES.length ? "All event groups" : cb.groups.join(" + ");
+const comboName = cb => cb.name || (cb.groups.length===CATEGORIES.length ? "All event groups" : cb.groups.join(" + "));
 const dayHas = (d,l) => focusFor(d,l) || forLv(d.all,l).length || CATEGORIES.some(c=>forLv((d.groups||{})[c],l).length) || (d.combos||[]).some(cb=>forLv(cb.items,l).length);
 let wcat = "All";
 try { wcat = localStorage.getItem("hub-wcat") || "All"; } catch(e) {}
@@ -3111,6 +3111,7 @@ const views = {
     const home = cw ? vw.indexOf(cw) : (nw ? vw.indexOf(nw) : last);
     const i = weekIdx===null ? home : Math.min(Math.max(weekIdx,0),last);
     const w = vw[i], cur = last;
+    const wx = window.SP ? SP.inject(w) : w; // sprint/hurdle/jump sessions shown, never saved into the posted week
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${parseD(w.start) > today ? "Coming up" : w===cw ? "This week" : "Past week"} · ${esc(weekLabel(w))}</div><h1>Workouts</h1>${wlv!=="JH" ? weekObj(w, "HS") : ""}</div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="weekIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===cur?"disabled":""} onclick="weekIdx=${i+1};render()">›</button></div>${postBtn}</div>
@@ -3118,9 +3119,9 @@ const views = {
       <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
       ${fmpHTML("w")}
-      ${wlv!=="Both" && !w.days.some(d=>dayHas(d,wlv)) ? `<div class="panel"><p style="margin:0">No ${wlv==="JH"?"Junior High":"High School"} workouts are posted for this week yet.</p>
+      ${wlv!=="Both" && !wx.days.some(d=>dayHas(d,wlv)) ? `<div class="panel"><p style="margin:0">No ${wlv==="JH"?"Junior High":"High School"} workouts are posted for this week yet.</p>
         <div class="ed-save" style="border:0;padding-top:8px"><button type="button" class="btn primary" onclick="setWlv('${wlv==="JH"?"HS":"JH"}')">Show ${wlv==="JH"?"High School":"Junior High"}</button><button type="button" class="btn" onclick="setWlv('Both')">Show both</button></div></div>` : ""}
-      <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
+      <div class="days">${wx.days.map(d=>dayHTML(d)).join("")}</div>
       <p class="note">▶ Video buttons open in a new tab. Use the arrows to look ahead at any posted week.</p></div>`;
   },
   coaches(){
@@ -3134,10 +3135,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["sgroups","Sprint Groups"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
+    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.editor() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
   },
   _warmEdit(){
@@ -4035,6 +4036,7 @@ async function loadAll(){
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   applyLogs();
   applySelfSignups();
+  window.HUB_BYKEY = byKey; if (window.SP && SP.onData) SP.onData(byKey);
   render();
 }
 applySelfSignups(); render();
@@ -4120,5 +4122,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
+<script src="sprints.js?v=11-05a"></script>
 </body>
 </html>

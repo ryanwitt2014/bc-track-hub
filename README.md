@@ -11,6 +11,7 @@ About 30 minutes, start to finish.
 |---|---|
 | `index.html` | The whole site |
 | `config.js` | Your Supabase address and key (you fill this in) |
+| `sprints.js` | Sprints, Hurdles & Jumps program: 12-week winter calendar (indoor/outdoor), drill library, block/hurdle/jump pathways, strength. Group assignments save to the `sgroups` key. Spring weeks get added to `SP_WEEKS` in the same shape. |
 | `supabase/setup.sql` | Creates the database tables and security rules, adds you as a coach, and copies over the event assignments you already saved |
 
 ---
