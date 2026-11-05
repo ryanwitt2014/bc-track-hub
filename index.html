@@ -1917,7 +1917,13 @@ function parseCSV(t){
   if(f||row.length){ row.push(f); rows.push(row); }
   return rows.filter(r=>r.some(x=>x.trim()));
 }
+// Interest-form responses pasted here by mistake: send them to the Sign-ups importer instead
+const looksLikeInterest = txt => /events i am interested|participated in track|winter track conditioning|physical on file|No- this will be my first year|Distance \(3200m|Sprints \(200m|Throws \(Shot Put\)/i.test(txt||"");
+function toInterestImport(txt){ ifx.text = txt; ifx.open = true; location.hash = "#signups"; render(); ifParse();
+  ifx.msg = {kind: ifx.msg.kind, text: "That was the track interest form, so it was moved here from Recruiting. " + ifx.msg.text}; render();
+  setTimeout(()=>{ const el = document.getElementById("if-text"); if(el) el.closest("details").scrollIntoView({behavior:"smooth", block:"start"}); }, 50); }
 async function rcImport(){
+  if(looksLikeInterest(val("rc-imp"))){ toInterestImport(val("rc-imp")); return; }
   const rows = parseCSV(val("rc-imp"));
   if(rows.length<2){ rcMsg={kind:"err",text:"Paste the responses with the header row included."}; render(); return; }
   const h = rows[0].map(x=>x.toLowerCase());
@@ -2732,6 +2738,16 @@ function ifMatch(name){
   return ATHLETES.find(a => ifNorm(a.fullName||a.name)===k || ifNorm(a.name)===k || (a.aka||[]).some(x=>ifNorm(x)===k))
     || ATHLETES.find(a => { const n = ifNorm(a.fullName||a.name).split(" "); return n[0]===p[0] && n[n.length-1]===p[p.length-1]; }) || null;
 }
+// First name only ("Harlo", "Ethan"): match if one roster kid has that first name (or nickname); use the grade to break ties
+function ifFirst(name, grade){
+  const k = ifNorm(name); if (!k || k.includes(" ")) return null;
+  const firsts = a => [a.fullName||a.name, a.name, ...(a.aka||[])].map(x=>ifNorm(x).split(" ")[0]);
+  const hits = ATHLETES.filter(a => firsts(a).includes(k));
+  if (hits.length === 1) return hits[0];
+  const g = parseInt(String(grade||""),10);
+  const byG = g ? hits.filter(a => a.grade===g) : [];
+  return byG.length === 1 ? byG[0] : null;
+}
 // Events answer: "Mid Distance (800m, 400m), Throws (Shot Put) (Discus), Not sure yet" -> ["Mid Distance","Throws","Not sure yet"]
 function ifEvents(v){ const out = []; let depth = 0, cur = "";
   for (const c of String(v||"")) { if (c==="(") depth++; if (c===")") depth = Math.max(0, depth-1); if (c==="," && !depth) { out.push(cur); cur = ""; } else cur += c; }
@@ -2744,13 +2760,14 @@ function ifParse(){
   if (!rows.length) { ifx.msg = {kind:"err", text:"Paste the rows from the response sheet first."}; render(); return; }
   const hasHead = /timestamp/i.test(rows[0][0]||"");
   const body0 = hasHead ? rows.slice(1) : rows;
-  const head = hasHead ? rows[0].map(h=>ifShort(String(h).trim())) : (body0.every(r=>r.length>=11 && r.length<=12 && ifMatch(r[2])) ? IF_HEAD : null);
+  const head = hasHead ? rows[0].map(h=>ifShort(String(h).trim())) : (body0.every(r=>r.length>=11 && r.length<=12 && /^\d{1,2}\/\d{1,2}\/\d{4}/.test(String(r[0]).trim())) ? IF_HEAD : null);
+  const nameCol = head ? head.findIndex(h=>/^name$/i.test(String(h).trim())) : -1;
   const out = (hasHead ? rows.slice(1) : rows).map(r => {
     // the name is the first cell that matches a roster athlete (or the first 2-word cell)
-    let ni = r.findIndex((c,i) => i>0 && ifMatch(c));
+    let ni = nameCol >= 0 && String(r[nameCol]||"").trim() ? nameCol : r.findIndex((c,i) => i>0 && ifMatch(c));
     if (ni < 0) ni = r.findIndex((c,i) => i>0 && /^[A-Za-z'.-]+(\s+[A-Za-z'.-]+)+\s*$/.test(String(c).trim()) && !/^(yes|no)$/i.test(String(c).trim()));
     const name = ni >= 0 ? String(r[ni]).trim() : "";
-    const a = name ? ifMatch(name) : null;
+    const a = name ? (ifMatch(name) || ifFirst(name, r[ni+1])) : null;
     const evI = r.findIndex(c => /distance|sprint|throw|jump|hurdle|vault|relay|not sure/i.test(c));
     const friendsI = r.length - 1;
     const friends = r[friendsI] && friendsI !== ni && friendsI !== evI && !/^(yes|no)$/i.test(String(r[friendsI]).trim())
@@ -3329,8 +3346,8 @@ const views = {
             <label class="ed-row" for="rn-gr"><span>Grade</span><input id="rn-gr" type="number" min="5" max="12"></label>
             <label class="ed-row" for="rn-sp"><span>Sport</span><input id="rn-sp" type="text" placeholder="e.g. Soccer"></label></div>
           <div class="ed-save"><button type="button" class="btn primary" onclick="rcNewRecruit()" ${saving?"disabled":""}>Add to list</button></div></div>
-        <div class="panel ed"><h2>Import from Google Form</h2>
-          <p class="note" style="margin:0">Open the form's response sheet, select all, copy, and paste here. Columns are matched by their headers: recruit, your name, how likely (1–5), timestamp. Repeats are skipped.</p>
+        <div class="panel ed"><h2>Import recruiting talk reports</h2>
+          <p class="note" style="margin:0">For the form kids fill out after talking to a recruit. (The track <b>interest form</b> goes on <a href="#signups">Sign-ups</a> instead.) Open the form's response sheet, select all, copy, and paste here. Columns are matched by their headers: recruit, your name, how likely (1–5), timestamp. Repeats are skipped.</p>
           <textarea id="rc-imp" rows="5" aria-label="Pasted form responses"></textarea>
           <div class="ed-save"><button type="button" class="btn primary" onclick="rcImport()" ${saving?"disabled":""}>Import responses</button></div></div>
       </div></div>`;
