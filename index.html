@@ -2217,6 +2217,8 @@ const LEVEL_NAMES = {A:"A · Established", B:"B · Intermediate", C:"C · Develo
 const READY = {reduced:"Reduced: shorter workouts", easy:"Easy running only", out:"Not running right now"};
 const CHAMP_NAMES = {conf:"WCJC (conference)", reg:"Regional qualifier", state:"State qualifier"};
 const PATH_NAMES = {Distance:"Distance (1600/3200)", Hybrid:"Hybrid (800/1600)", Mid:"Mid-distance (400/800) · own plan"};
+// Middle school has no 3200: Distance = 800/1600, Mid-distance = 400/800 (no separate hybrid pathway)
+const PATH_NAMES_JH = {Distance:"Distance (800/1600)", Mid:"Mid-distance (400/800)"};
 // Which HS plan a runner follows: Mid-Distance runners get the Mid Distance group, everyone else the Distance group.
 function planGroup(a){
   const t = DTAGS[a.id] || {};
@@ -2231,7 +2233,7 @@ const CODE_NAME = {A:"Acceleration / max velocity", B:"Aerobic", C:"Speed endura
 const CODE_ADAPT = {A:"Maximum velocity and acceleration", B:"Aerobic development", C:"Speed endurance", D:"Event-specific (800) endurance", E:"Strength, coordination, mechanics"};
 const FOCUS_TY = f => /meet|sectional|regional|state/i.test(f) ? "meet" : /recovery|rest/i.test(f) ? "rec" : /800|sharpen|race/i.test(f) ? "race" : /speed|velocity/i.test(f) ? "speed" : /aerobic|easy/i.test(f) ? "aero" : "";
 const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
-const TAG_CHIP_JH = {A:"Advanced", B:"Development", C:"Foundation"};
+const TAG_CHIP_JH = {A:"Advanced", B:"Development", C:"Foundation", Distance:"800/1600", Mid:"Mid 400/800", Hybrid:"800/1600"};
 const LEVEL_NAMES_JH = {A:"Advanced", B:"Development", C:"Foundation"};
 const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
 const tagAthletes = (lv) => ATHLETES.filter(a=>a.level===(lv||"HS") && (a.cats.includes("Distance")||a.cats.includes("Mid Distance"))).sort((x,y)=>x.name.localeCompare(y.name));
@@ -2389,7 +2391,7 @@ function myWeekHTML(a){
     const lt = lastTime(a, text, dayDate(w, curDay));
     return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}${lt?`<div class="mylast">Last time · ${esc(lastShort(lt))}</div>`:""}</li>`;
   };
-  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
+  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.path] : TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
     ${weekObj(w, a.level)}
@@ -3417,7 +3419,7 @@ const views = {
     const pr = a => ["800","1600"].map(e=>a.prs[e]?`${e} ${esc(a.prs[e])}`:"").filter(Boolean).join(" · ") || "—";
     const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>Level</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":""}<th>This week</th><th>Coach note (shows on their page)</th></tr></thead><tbody>
         ${tagAthletes(lv).map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td class="mono" style="white-space:nowrap">${pr(a)}</td>
-          <td>${sel(a.id,"lv",lv==="JH"?LEVEL_NAMES_JH:LEVEL_NAMES,"Level")}</td><td>${sel(a.id,"path",PATH_NAMES,"Pathway")}</td>
+          <td>${sel(a.id,"lv",lv==="JH"?LEVEL_NAMES_JH:LEVEL_NAMES,"Level")}</td><td>${sel(a.id,"path",lv==="JH"?PATH_NAMES_JH:PATH_NAMES,"Pathway")}</td>
           ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:""}
           <td>${sel(a.id,"ready",READY,"This week")}</td><td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
       </tbody></table></div>`;
