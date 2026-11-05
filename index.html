@@ -566,7 +566,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04x";
+const HUB_VERSION = "11-04y";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1436,7 +1436,7 @@ const parseD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(
 const fmtD = s => parseD(s).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 let level = "JH";
 try { level = localStorage.getItem("hub-level") || "JH"; } catch(e) {}
-const sortedWeeks = () => [...WORKOUTS].sort((a,b)=>a.start.localeCompare(b.start));
+const sortedWeeks = () => WORKOUTS.filter(w=>w && typeof w.start==="string" && Array.isArray(w.days)).sort((a,b)=>a.start.localeCompare(b.start));
 const startedWeeks = () => sortedWeeks().filter(w => parseD(w.start) <= today);
 const nextWeek = () => sortedWeeks().find(w => parseD(w.start) > today) || null;
 // Every posted week is open to everyone so runners can click ahead.
@@ -1459,13 +1459,13 @@ const setG = v => { gsel = v; render(); };
 let wlv = "Both";
 try { wlv = localStorage.getItem("hub-wlv") || "Both"; } catch(e) {}
 const setWlv = l => { wlv = l; try { localStorage.setItem("hub-wlv", l); } catch(e) {} render(); };
-const focusFor = (d,l) => typeof d.focus==="string" ? d.focus : (d.focus[l] || "");
+const focusFor = (d,l) => typeof d.focus==="string" ? d.focus : ((d.focus && d.focus[l]) || "");
 const forLv = (arr,l) => (arr||[]).filter(it => !it.lv || it.lv===l);
 const shownGroups = d => CATEGORIES.filter(c => d.groups[c] && d.groups[c].length && (wcat==="All" || wcat===c));
 // Combined blocks: one workout shared by several groups, e.g. {groups:["Distance","Mid Distance"], items:[...]}
 const shownCombos = d => (d.combos||[]).filter(cb => cb.items && cb.items.length && (wcat==="All" || cb.groups.includes(wcat)));
 const comboName = cb => cb.groups.length===CATEGORIES.length ? "All event groups" : cb.groups.join(" + ");
-const dayHas = (d,l) => focusFor(d,l) || forLv(d.all,l).length || CATEGORIES.some(c=>forLv(d.groups[c],l).length) || (d.combos||[]).some(cb=>forLv(cb.items,l).length);
+const dayHas = (d,l) => focusFor(d,l) || forLv(d.all,l).length || CATEGORIES.some(c=>forLv((d.groups||{})[c],l).length) || (d.combos||[]).some(cb=>forLv(cb.items,l).length);
 let wcat = "All";
 try { wcat = localStorage.getItem("hub-wcat") || "All"; } catch(e) {}
 const setWcat = c => { wcat = c; try { localStorage.setItem("hub-wcat", c); } catch(e) {} render(); };
@@ -3869,6 +3869,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-04x"></script>
+<script src="intelligence.js?v=11-04y"></script>
 </body>
 </html>
