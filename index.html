@@ -234,6 +234,7 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .lift .lb{margin:6px 0 4px;padding:8px 10px;border-left:3px solid #5d6470;background:var(--bg);border-radius:4px;font-size:13px}
 .lift table{width:100%;border-collapse:collapse}.lift td,.lift th{padding:4px 8px 4px 0;vertical-align:top;border-top:1px solid var(--line);text-align:left}
 .lift th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-top:0}
+li.wsec{list-style:none;margin:8px 0 2px -18px !important;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}li.wsec:first-child{margin-top:0 !important}
 .lift .sub{color:var(--muted);font-size:12px}.lift .tag{font-size:10px;font-weight:700;text-transform:uppercase;color:#5d6470}
 @media (max-width:600px){.lift .hide-sm{display:none}}
 .sh-lift{width:100%;border-collapse:collapse;font-size:10.5px;margin:4px 0 6px}.sh-lift td,.sh-lift th{border:1px solid #999;padding:2px 4px;text-align:left}
@@ -776,7 +777,7 @@ const V = q => "https://www.youtube.com/results?search_query=" + encodeURICompon
 // Week: {start:"YYYY-MM-DD", days:[{day:"Mon", focus:"Speed" | {JH:"…",HS:"…"}, all:[items], groups:{Distance:[items], …}}]}
 // Item: {t:"text", lv:"JH"|"HS" (optional), url:"https://…" (optional)}
 const SEASON_START = "2026-12-01";
-let WORKOUTS = [];
+let WORKOUTS = [], RAW_STARTS = [];
 
 let WARMUPS = {
   stretch: null, // filled from STRETCH_DEFAULT below
@@ -1472,7 +1473,20 @@ let wlv = "Both";
 try { wlv = localStorage.getItem("hub-wlv") || "Both"; } catch(e) {}
 const setWlv = l => { wlv = l; try { localStorage.setItem("hub-wlv", l); } catch(e) {} render(); };
 const focusFor = (d,l) => typeof d.focus==="string" ? d.focus : ((d.focus && d.focus[l]) || "");
-const forLv = (arr,l) => (arr||[]).filter(it => !it.lv || it.lv===l);
+// A line that prescribes a run ("25–35 min Easy", "5 miles easy"). Used to catch old untagged lines that conflict with the level-tagged plan.
+const RUN_AMT = /\b\d+(?:\.\d+)?\s*(?:[–-]\s*\d+(?:\.\d+)?\s*)?(?:mi|miles?|km|min|minutes)\b/i, RUN_WORD = /\b(easy|run|jog|aerobic|recovery|long|steady|tempo|threshold)\b/i,
+  NOT_RUN = /^(check-in|warm-?up|cool-?down|drills|weight room|strength|home strength|jh strength|dynamic|strides|hip-stability|athletic development|optional|mobility)/i;
+const isRunLine = t => { const x = splitTags(t).text; return RUN_AMT.test(x) && RUN_WORD.test(x) && !NOT_RUN.test(x); };
+// Hidden lines: exact repeats, and an untagged run line on a day where the plan already gives that level its own (HS/JH-tagged) run.
+// l = "HS"/"JH" checks that level; no l = shared view (stale if any level-tagged run exists).
+function staleSet(arr, l){
+  const s = new Set(), seen = new Set(), a = (arr||[]).filter(Boolean);
+  const tagged = a.some(x => x.lv && (!l || x.lv===l) && isRunLine(x.t));
+  a.forEach(it => { const k = (it.lv||"") + "|" + it.t; if (seen.has(k)) s.add(it); seen.add(k); if (!it.lv && tagged && isRunLine(it.t)) s.add(it); });
+  return s;
+}
+const forLv = (arr,l) => { const st = staleSet(arr, l); return (arr||[]).filter(it => it && (!it.lv || it.lv===l) && !st.has(it)); };
+const cleanLines = arr => { const st = staleSet(arr); return (arr||[]).filter(it => it && !st.has(it)); };
 const shownGroups = d => CATEGORIES.filter(c => d.groups[c] && d.groups[c].length && (wcat==="All" || wcat===c));
 // Combined blocks: one workout shared by several groups, e.g. {groups:["Distance","Mid Distance"], items:[...]}
 const shownCombos = d => (d.combos||[]).filter(cb => cb.items && cb.items.length && (wcat==="All" || cb.groups.includes(wcat)));
@@ -1506,6 +1520,14 @@ const EX = {
   "Dead bug":{cue:"Low back pressed into the floor. Reach opposite arm and leg slowly, breathe out.", eq:"Mat", alt:"Heel taps"},
   "Pallof press":{cue:"Band at chest height, stand side-on, press straight out and hold 2 sec. Don't let it twist you.", eq:"Band or cable", alt:"Half-kneeling version"},
   "Side plank":{cue:"Elbow under shoulder, hips high, straight line.", eq:"Mat", alt:"From the knees"},
+  "Trap-bar deadlift":{cue:"Stand in the middle of the bar, hips back, chest up, push the floor away. Bar stays close.", eq:"Trap bar", alt:"Goblet squat"},
+  "Dumbbell bench press":{cue:"Feet flat, shoulder blades pinched, lower to chest level with control, press up together.", eq:"Dumbbells + bench", alt:"Push-up"},
+  "Split squat":{cue:"Long stance, back knee lowers straight down, front heel stays down, torso tall.", eq:"Bodyweight or dumbbells", alt:"Hold a rail for balance"},
+  "Rear-foot split squat":{cue:"Back foot on a bench, front shin vertical-ish, lower slowly, drive up through the front heel.", eq:"Bench + dumbbells", alt:"Split squat"},
+  "Pull-up":{cue:"Full hang to chin over bar, no kipping.", eq:"Bar", alt:"Inverted row or band-assisted"},
+  "Inverted row":{cue:"Body straight under a bar, pull chest to the bar, lower slowly.", eq:"Bar or rings", alt:"Band row"},
+  "Med-ball scoop toss":{cue:"Hinge, then explode hips forward and throw the ball up and out. Every rep fast.", eq:"Med ball 2–4 kg", alt:"Chest pass"},
+  "Front plank":{cue:"Forearms down, elbows under shoulders, straight line head to heels. Squeeze glutes and keep breathing.", eq:"Mat", alt:"From the knees"},
   "Hip bridge":{cue:"Feet flat, drive through heels, squeeze glutes at the top, don't arch the low back.", eq:"Mat", alt:"Shorter range"},
   "Single-leg hip bridge":{cue:"One foot down, other knee up. Hips stay level.", eq:"Mat", alt:"Two-leg hip bridge"},
   "A-march":{cue:"Tall posture, knee up, toe up, foot comes down under the hip. Arms match legs.", drill:1},
@@ -1526,7 +1548,7 @@ const EX = {
   "Squat":{cue:"Bodyweight first. Sit back and down, chest tall, knees over toes, stand tall.", eq:"None (light dumbbell later)", alt:"Squat to a box"},
 };
 const LIFTS = {
-  A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6–8/leg"],["Standing calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
+  A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", rest:"45–75 sec, as needed", note:"Light weights. Technique first: learn the squat, hinge, lunge and calf raise. Stop each set with plenty left in the tank.", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6 each leg"],["Standing calf raise","2 × 12"],["Dead bug","2 × 8 each side"],["Front plank","2 × 20–30 sec"]]},
   A2:{name:"Strength A2 · Foundational Progression", when:"Weeks 3 and 6", ex:[["Goblet squat","3 × 6",1],["Dumbbell Romanian deadlift","3 × 8",1],["Step-up","2 × 8/leg"],["Standing calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
   B1:{name:"Strength B1 · Strength and Stability", when:"Week 7", ex:[["Dumbbell squat","3 × 6",1],["Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 10"],["Side plank","2 × 25 sec/side"]]},
   Deload:{name:"Strength Deload", when:"Week 8", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Calf raise","2 × 10"],["Dumbbell row","2 × 8"],["Dead bug","2 × 8/side"]]},
@@ -1541,8 +1563,30 @@ const LIFTS = {
 };
 const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"], LIFT_ORDER_JH = ["JA","JB","JL","JM"];
 const liftCode = t => { const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
-  const m = String(t).match(/\b(?:Strength (A1|A2|B1|B2|Deload|M)|Home strength (H1|H2))\b/); return m ? (m[1]||m[2]) : null; };
-const liftRest = (L, main) => L.home ? "30–45 sec" : main ? "60–90 sec" : "Circuit, 30–45 sec";
+  const m = String(t).match(/\b(?:Strength\s*[-–]?\s*(A1|A2|B1|B2|Deload|M)|Home strength\s*(H1|H2))\b/i);
+  if (m) { const c = m[1]||m[2]; return c.length===1 ? c.toUpperCase() : c.charAt(0).toUpperCase() + c.slice(1); }
+  return /\+\s*(light\s+)?strength\b/i.test(String(t)) ? "M" : null; };   // "40 min Easy + strength" = the maintenance session
+// Strength lines that list their own exercises ("E3 Strength: split squat 2×6/leg, calf raise 2×12, …") get the same how-to table.
+const INLINE_LIFT = /^(?:E\d+\s+)?(?:Strength|Home strength|Weight room)\b[^:]*:\s*(.+)$/i;
+function exKey(name){
+  const n = String(name).toLowerCase().replace(/\([^)]*\)/g,"").replace(/^core:\s*/,"").replace(/[^a-z -]/g,"").trim(); if (!n) return null;
+  const keys = Object.keys(EX); const exact = keys.find(k => k.toLowerCase()===n); if (exact) return exact;
+  const inN = keys.filter(k => n.includes(k.toLowerCase())).sort((a,b)=>b.length-a.length)[0]; if (inN) return inN;
+  return keys.find(k => k.toLowerCase().includes(n)) || null;
+}
+function inlineLifts(text){
+  const m = String(text).match(INLINE_LIFT); if (!m || liftCode(text)) return null;
+  const rows = m[1].split(/,\s*(?![^()]*\))/).map(p => p.trim().replace(/\.$/,"")).filter(Boolean).map(p => { const q = p.match(/^(.*?)\s+(\d.*)$/); const name = q ? q[1] : p; return {name, dose: q ? q[2] : "", key: exKey(name)}; });
+  return rows.length >= 2 ? rows : null;
+}
+function liftInlineHTML(text){
+  const rows = inlineLifts(text); if (!rows) return "";
+  const light = /light/i.test(text);
+  return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows.map(r => { const e = EX[r.key]||{};
+    return `<tr><td><b>${esc(r.name.charAt(0).toUpperCase()+r.name.slice(1))}</b>${e.cue?`<div class="sub">${esc(e.cue)}</div>`:""}</td><td class="mono" style="white-space:nowrap">${esc(r.dose||"as written")}</td><td class="sub">${light ? "30–45 sec" : "45–75 sec"}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("")}</tbody></table>
+    <p class="sub" style="margin:6px 0 0">${light ? "Light: smooth reps, nothing heavy." : "Light to moderate loads, 2–3 reps left in the tank."} Never to failure. Stop if your form slips.</p></div></details>`;
+}
+const liftRest = (L, main) => L.rest || (L.home ? "30–45 sec" : main ? "60–90 sec" : "Circuit, 30–45 sec");
 function liftHTML(code){
   const L = LIFTS[code]; if (!L) return "";
   const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
@@ -1550,7 +1594,7 @@ function liftHTML(code){
   const ORD = L.jh ? LIFT_ORDER_JH : LIFT_ORDER;
   const prog = L.home ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${ORD.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
   return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="sub" style="margin:6px 0 0">${L.jh ? "Technique first, supervised, scaled to each kid's size and experience. Bodyweight before dumbbells. Never HS loads by default." : "Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure."}${L.home||L.jh?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
+    ${L.note ? `<p class="sub" style="margin:6px 0 0"><b>${esc(L.note)}</b></p>` : ""}<p class="sub" style="margin:6px 0 0">${L.jh ? "Technique first, supervised, scaled to each kid's size and experience. Bodyweight before dumbbells. Never HS loads by default." : "Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure."}${L.home||L.jh?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
 }
 // Printed sheets: the lift list for any strength line on the sheet
 function liftPrint(items){
@@ -1594,10 +1638,22 @@ const itemHTML = it => {
   if (it.url) return `${label} <a class="vid" href="${esc(it.url)}" target="_blank" rel="noopener"><i>▶</i>Video</a>`;
   if (it.link) return `<a href="${esc(it.link)}">${label}</a>`;
   const lc = liftCode(text);
-  return label + (lc ? liftHTML(lc) : drillHTML(text));
+  return label + (lc ? liftHTML(lc) : inlineLifts(text) ? liftInlineHTML(text) : drillHTML(text));
 };
 
-const li = arr => arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
+// Each group's day reads Warm-up → Main workout → Strength → Cool-down → Optional (main work keeps its written order).
+const SECS = [["warm","Warm-up"],["main","Main workout"],["str","Strength"],["cool","Cool-down"],["opt","Optional"]];
+function secOf(it){
+  const {tags, text: x} = splitTags(it.t);
+  if (/^(check-in|warm-?up|standard (sprint )?warm-?up|dynamic warm|drills\b)/i.test(x)) return "warm";
+  if (/^(cool-?down|cool down)/i.test(x)) return "cool";
+  if ((liftCode(x) && !isRunLine(it.t)) || inlineLifts(x) || /^(weight room|strength|home strength|jh strength|first day in the weight room)/i.test(x)) return "str";
+  if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
+  return "main";
+}
+const li = arr => { const s = arr.map(secOf), k = new Set(s);
+  if (k.size < 2) return arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
+  return SECS.filter(([c])=>k.has(c)).map(([c,l]) => `<li class="wsec">${l}</li>` + arr.filter((it,i)=>s[i]===c).map(it=>`<li>${itemHTML(it)}</li>`).join("")).join(""); };
 function blockHTML(name, arr, combo){
   if(!arr || !arr.length) return "";
 
@@ -1606,7 +1662,7 @@ function blockHTML(name, arr, combo){
     const mine = forLv(arr,wlv);
     return mine.length ? `<div class="${cls}"><div class="evname">${esc(name)}</div><ul>${li(mine)}</ul></div>` : "";
   }
-  const sh = arr.filter(it=>!it.lv), jh = arr.filter(it=>it.lv==="JH"), hs = arr.filter(it=>it.lv==="HS");
+  const ca = cleanLines(arr), sh = ca.filter(it=>!it.lv), jh = ca.filter(it=>it.lv==="JH"), hs = ca.filter(it=>it.lv==="HS");
   return `<div class="${cls}"><div class="evname">${esc(name)}</div><div>
     ${sh.length?`<ul>${li(sh)}</ul>`:""}
     ${jh.length||hs.length?`<div class="lvsplit">
@@ -1810,6 +1866,61 @@ async function mdnSave(){
   const err = await publishFiles({"midnotes.json": JSON.stringify(mdn)});
   if (err) mdnMsg = {kind:"err", text:err}; else { MDNOTES = {...mdn}; mdnMsg = {kind:"ok", text:"Notes saved."}; }
   render();
+}
+
+/* ---- Plan check: finds conflicting, repeated, or broken lines in the saved workouts and cleans them up ---- */
+let pcMsg = {kind:"",text:""};
+const STR_LINE = /^(weight room|strength|home strength|jh strength)\b/i;
+function planIssues(){
+  const out = [];
+  const where = (w, d, g) => `${dayDate(w, d.day).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})} · ${g}`;
+  sortedWeeks().forEach(w => (w.days||[]).forEach(d => {
+    const lists = [["Everyone", d.all||[]], ...Object.entries(d.groups||{}), ...(d.combos||[]).map(cb => [cb.groups.join(" + "), cb.items||[]])];
+    lists.forEach(([g, arr]) => {
+      const seen = new Set();
+      arr.filter(Boolean).forEach(it => {
+        const k = (it.lv||"") + "|" + it.t;
+        if (seen.has(k)) out.push({w:w.start, kind:"dup", where: where(w,d,g), t: it.t, fix:"remove"}); seen.add(k);
+        if (!it.lv && isRunLine(it.t)) {
+          const hs = staleSet(arr, "HS").has(it), jh = staleSet(arr, "JH").has(it);
+          if (hs && jh) out.push({w:w.start, kind:"stale", where: where(w,d,g), t: it.t, fix:"remove"});
+          else if (hs || jh) out.push({w:w.start, kind:"stale1", where: where(w,d,g), t: it.t, fix: hs ? "JH" : "HS"});
+        }
+        const x = splitTags(it.t).text;
+        if (STR_LINE.test(x) && !liftCode(x) && !inlineLifts(x) && !/^(weight room|strength)\b.*\b(learn|deload|first day)/i.test(x)) out.push({w:w.start, kind:"lift", where: where(w,d,g), t: it.t});
+      });
+    });
+  }));
+  const off = [...new Set(RAW_STARTS.filter(s => mondayOf(s)!==s))];
+  off.forEach(s => out.push({kind:"off", where: `Saved as the week of ${parseD(s).toLocaleDateString("en-US",{month:"short",day:"numeric"})}`, t: `Merged into the week of ${parseD(mondayOf(s)).toLocaleDateString("en-US",{month:"short",day:"numeric"})}. Cleaning up saves it under the Monday.`, fix:"save"}));
+  return out;
+}
+const PC_LABEL = {dup:"Exact repeat", stale:"Old untagged line that conflicts with the plan", stale1:"Untagged run line (applies to one level only)", lift:"Strength line with no exercises", off:"Week saved under a non-Monday date"};
+async function planFix(){
+  const next = JSON.parse(JSON.stringify(sortedWeeks()));
+  let removed = 0, tagged = 0;
+  next.forEach(w => (w.days||[]).forEach(d => {
+    const fix = arr => { const out = [], seen = new Set();
+      (arr||[]).filter(Boolean).forEach(it => { const k = (it.lv||"") + "|" + it.t; if (seen.has(k)) { removed++; return; } seen.add(k);
+        if (!it.lv && isRunLine(it.t)) { const hs = staleSet(arr, "HS").has(it), jh = staleSet(arr, "JH").has(it);
+          if (hs && jh) { removed++; return; } if (hs || jh) { it = Object.assign({}, it, {lv: hs ? "JH" : "HS"}); tagged++; } }
+        out.push(it); });
+      return out; };
+    d.all = fix(d.all); Object.keys(d.groups||{}).forEach(g => d.groups[g] = fix(d.groups[g])); (d.combos||[]).forEach(cb => cb.items = fix(cb.items));
+  }));
+  const ok = await publishWeeks(next, `Plan cleaned: removed ${removed} line${removed===1?"":"s"}${tagged?`, tagged ${tagged} to the one level they apply to`:""}. Saved weeks are filed under their Monday.`);
+  if (ok) { RAW_STARTS = next.map(w=>w.start); pcMsg = {kind:"ok", text: edMsg.text}; } else pcMsg = {kind:"err", text: edMsg.text};
+  render();
+}
+function planCheckHTML(){
+  const iss = planIssues(), fixable = iss.filter(x => x.fix);
+  if (!iss.length) return `<div class="panel" style="padding:10px 14px"><p style="margin:0">✅ <b>Plan check:</b> no conflicting, repeated, or broken lines in the saved workouts.</p>${pcMsg.text?`<p class="ed-msg ${pcMsg.kind}" style="margin:4px 0 0">${esc(pcMsg.text)}</p>`:""}</div>`;
+  return `<div class="panel ed"><h2 style="margin:0 0 4px">Plan check · ${iss.length} issue${iss.length===1?"":"s"}</h2>
+    <p class="note" style="margin:0 0 8px">Athletes already don't see old untagged lines or exact repeats. Cleaning up removes them from the saved plan for good.</p>
+    <div class="tbl"><table><thead><tr><th>Where</th><th>Issue</th><th>Line</th><th>Fix</th></tr></thead><tbody>${iss.slice(0,60).map(x=>`<tr><td style="white-space:nowrap">${esc(x.where)}</td><td>${esc(PC_LABEL[x.kind])}</td><td>${esc(x.t)}</td><td>${x.fix==="remove"?"Remove":x.fix==="save"?"Re-save":x.fix?`Tag ${x.fix} only`:"Edit the week"}</td></tr>`).join("")}</tbody></table></div>
+    ${iss.length>60?`<p class="note">…and ${iss.length-60} more.</p>`:""}
+    <div class="ed-save">${fixable.length?`<button type="button" class="btn primary" onclick="planFix()" ${saving?"disabled":""}>Clean up ${fixable.length} issue${fixable.length===1?"":"s"}</button>`:""}<span class="note">Plan lines (HS/JH) are never changed.</span></div>
+    <p class="ed-msg ${pcMsg.kind}" role="status" style="margin:0">${esc(pcMsg.text)}</p></div>`;
 }
 
 /* ---- Runner tags editor ---- */
@@ -2369,7 +2480,7 @@ function groupRoster(lv, cat){
 function sheetItems(d, cat, lv){
   if (!d) return [];
   const raw = [...(d.all||[]), ...((d.combos||[]).filter(cb=>cb.groups.includes(cat)).flatMap(cb=>cb.items||[])), ...((d.groups||{})[cat]||[])];
-  const list = lv==="Both" ? raw : forLv(raw, lv);
+  const list = lv==="Both" ? cleanLines(raw) : forLv(raw, lv);
   return list.map(it => (lv==="Both" && it.lv ? it.lv+": " : "") + it.t);
 }
 function dayDate(week, dayName){
@@ -2380,7 +2491,7 @@ function dayDate(week, dayName){
 function sheetRaw(d, cat, lv){
   if (!d) return [];
   const raw = [...(d.all||[]), ...((d.combos||[]).filter(cb=>cb.groups.includes(cat)).flatMap(cb=>cb.items||[])), ...((d.groups||{})[cat]||[])];
-  return lv==="Both" ? raw : forLv(raw, lv);
+  return lv==="Both" ? cleanLines(raw) : forLv(raw, lv);
 }
 const REP_RX = /\d\s*×\s*(flying\s+)?\d+\s*(m|min|sec)\b/;
 const isRepLine = t => { const x = splitTags(t).text; return REP_RX.test(x) && !/^(E[12]\b|Strength|Warm-up|Drills|Athletic development|Weight room|Optional|Dynamic|Check-in|Hip-stability|Indoor version|Outdoor version)/i.test(x); };
@@ -3408,7 +3519,7 @@ const views = {
     if(!ed) edNew();
     const weeks = sortedWeeks();
     const dayOpts = DAYS.filter(d=>!ed.days.some(x=>x.day===d));
-    return `<p class="lede" style="margin:0">Fill in a week and save. Everyone can see it right away, including future weeks, so runners can look ahead.</p>
+    return `${planCheckHTML()}<p class="lede" style="margin:0">Fill in a week and save. Everyone can see it right away, including future weeks, so runners can look ahead.</p>
       <div class="panel ed-help"><b>How to write it.</b> Same workout for more than one group (like an easy run for Distance and Mid Distance)? Use <b>+ Distance + Mid</b> or another combo button under each day and type it once. One item per line. Start a line with <code>JH:</code> or <code>HS:</code> if it's for one level only; no prefix means both. Paste a YouTube or Drive link at the end of a line and it becomes a ▶ Video button. Leave any group blank to skip it that day. To reschedule a week, open it with <b>Edit</b> and change the start date. To move one day, use <b>Move to</b>.</div>
       ${weeks.length?`<div><h2 style="margin-bottom:10px">Posted weeks</h2><div class="tbl"><table><thead><tr><th>Week</th><th>Status</th><th>Days</th><th></th></tr></thead><tbody>
         ${weeks.map(w=>`<tr><td><b>Week ${weekNum(w)}</b> · ${esc(weekLabel(w))}</td><td>${parseD(w.start)<=today?`<span class="chip home">Started</span>`:`<span class="chip">Upcoming</span>`}</td>
@@ -3708,7 +3819,7 @@ const views = {
           const home = Math.max(0, weeks.findIndex(w => w===cw || w===nw));
           const i = mdcal.wi===null ? home : Math.min(Math.max(mdcal.wi,0), weeks.length-1), w = weeks[i];
           const k = weekKind(w.start), ms = hsMeetsIn(w.start);
-          const list = arr => `<ul>${arr.map(it=>`<li>${itemHTML(it)}</li>`).join("")}</ul>`;
+          const list = arr => `<ul>${li(arr)}</ul>`;
           body = `<div class="bar">${toggle}<div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="mdcal.wi=${i-1};render()">‹</button><b>${esc(weekLabel(w))}</b>
               <button type="button" aria-label="Next week" ${i===weeks.length-1?"disabled":""} onclick="mdcal.wi=${i+1};render()">›</button></div>
               ${canPost?`<button type="button" class="btn" onclick="ctab='workouts';edLoad('${w.start}');location.hash='#coaches'">Edit this week</button>`:""}</div>
@@ -4035,7 +4146,7 @@ async function loadAll(){
   const w = byKey.workouts, wu0 = byKey.warmups, lg = byKey.logs, rj = byKey.recruits, aj = byKey.assignments;
   if (aj && typeof aj === "object") ASSIGN = Object.assign({"HS-B":{}, "HS-G":{}, "JH-B":{}, "JH-G":{}}, aj);
   if (rj && Array.isArray(rj.list)) REC = {list: rj.list, contacts: (rj.contacts||[]).map(({note, ...c})=>c)};
-  if (Array.isArray(w)) WORKOUTS = mergeWeeks(w);
+  if (Array.isArray(w)) { RAW_STARTS = w.filter(x=>x && typeof x.start==="string").map(x=>x.start); WORKOUTS = mergeWeeks(w); }
   if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
@@ -4133,6 +4244,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05c"></script>
+<script src="sprints.js?v=11-05d"></script>
 </body>
 </html>

@@ -454,6 +454,7 @@ function strBlock(r){
   const S = STR[r.str]; if (!S) return "";
   return `<details class="sp-tech"><summary><b>${r.home ? "Home strength (optional)" : "Weight room"} · ${esc(S.n)}</b> · 30–35 min${r.mod?` · <span class="muted">${esc(STR_MOD[r.mod])}</span>`:""}</summary>
     <ul>${(r.home ? [["Split squat","2×8 each leg"],["Push-ups","2×8–12"],["Single-leg RDL (bodyweight)","2×8 each"],["Glute bridge","2×10"],["Dead bug + side plank","2×8 each / 2×20 s"]] : S.ex).map(([n,p])=>`<li>${esc(n)} <span class="mono">${esc(p)}</span></li>`).join("")}</ul>
+    <p class="note" style="margin:4px 0 0"><b>Rest:</b> ${r.home ? "30–45 s between exercises." : "60–90 s between sets of the first two lifts; 30–45 s between the rest (as a circuit)."}</p>
     <p class="note" style="margin:4px 0 0">${esc(r.home ? "Bodyweight at home. Stop well before failure." : S.note)} ${r.n?esc(r.n):""} Supervised and individualized; never to failure.</p></details>`;
 }
 function rowsHTML(rows, mo, env, g, a){
@@ -815,11 +816,11 @@ SP.coachTab = function(){
 };
 
 /* ---------- Workouts page: every sprint day shows under Sprints / Hurdles / Long Jump / High Jump / Pole Vault (display only, never saved into the posted weeks) ---------- */
-const plain = r => r.wu ? "Standard sprint warm-up: 12–15 min" : r.str ? `Weight room: ${STR[r.str].n} (30–35 min)${r.mod?" · "+STR_MOD[r.mod]:""}` : `${r.x}${r.p?": "+r.p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+")":""}`;
+const plain = r => r.wu ? "Standard sprint warm-up: 12–15 min" : r.str ? `Weight room (${STR[r.str].n}, 30–35 min${r.mod?"; "+STR_MOD[r.mod].replace(/\.$/,"").replace(/:/g," ·"):""}): ${STR[r.str].ex.map(e=>e[0]+" "+e[1]).join(", ")}` : `${r.x}${r.p?": "+r.p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+")":""}`;
 const SG = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
 function printLine(r){
   if (r.wu) return "Standard sprint warm-up (12–15 min): easy movement → dynamic mobility → A-skips / ankling / dribbles → build-ups → event prep";
-  if (r.str) { const s = STR[r.str]; return `Weight room · ${s.n} (30–35 min): ${s.ex.map(e=>e[0]+" "+e[1]).join(" · ")}. ${r.mod?STR_MOD[r.mod]+" ":""}${s.note}`; }
+  if (r.str) { const s = STR[r.str]; return `Weight room · ${s.n} (30–35 min): ${s.ex.map(e=>e[0]+" "+e[1]).join(" · ")}. Rest 60–90 s on the first two lifts, 30–45 s on the rest. ${r.mod?STR_MOD[r.mod]+" ":""}${s.note}`; }
   let p = r.p || "", m, q;
   if ((m = r.x.match(/flying (\d+)m/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:reps?)?(.*)$/))) p = `${q[1]}×flying ${m[1]}m${q[2]}`;
   else if ((m = r.x.match(/^Timed (\d+)m starts/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:attempts?)?(.*)$/))) p = `${q[1]}×${m[1]}m${q[2]}`;
