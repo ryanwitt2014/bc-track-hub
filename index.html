@@ -219,6 +219,21 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .wcode{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;border-radius:3px;padding:0 5px;margin-right:6px;vertical-align:1px;color:#fff}
 .ty-speed{background:#b4472b}.ty-aero{background:var(--accent)}.ty-race{background:var(--gold);color:var(--gold-ink)}.ty-str{background:#5d6470}.ty-rec{background:#8a8f98}.ty-meet{background:#2f4f8f}
 .tchip.xo{background:transparent;border:1px dashed #6b4fa3;color:#6b4fa3}
+.sess{display:inline-block;font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:none;border-radius:3px;padding:1px 6px;margin-top:4px;white-space:nowrap}
+.ss-coach{background:var(--accent);color:var(--accent-ink)}.ss-indep{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.ss-break{background:transparent;border:1px dashed var(--gold);color:var(--fg)}.ss-off{background:#2f4f8f;color:#fff}.ss-rest{background:transparent;color:var(--muted)}
+.sess-flag{display:inline-block;font-size:11px;font-weight:700;color:var(--track);margin-left:4px;cursor:help;text-transform:none}
+.day.d-coach{border-left:5px solid var(--accent);background:linear-gradient(90deg,var(--gold-soft),var(--surface) 140px)}
+.sess-info{font-size:13px;color:var(--muted);margin:0 0 6px;display:grid;gap:2px}.sess-info b{color:var(--fg)}
+.sess-info .flag{color:var(--track)}
+.wkobj{font-size:14px;color:var(--muted);margin:2px 0 0}.wkobj b{color:var(--fg)}
+.lift{margin:4px 0 2px}.lift summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--accent);display:inline-block}
+.lift .lb{margin:6px 0 4px;padding:8px 10px;border-left:3px solid #5d6470;background:var(--bg);border-radius:4px;font-size:13px}
+.lift table{width:100%;border-collapse:collapse}.lift td,.lift th{padding:4px 8px 4px 0;vertical-align:top;border-top:1px solid var(--line);text-align:left}
+.lift th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-top:0}
+.lift .sub{color:var(--muted);font-size:12px}.lift .tag{font-size:10px;font-weight:700;text-transform:uppercase;color:#5d6470}
+@media (max-width:600px){.lift .hide-sm{display:none}}
+.sh-lift{width:100%;border-collapse:collapse;font-size:10.5px;margin:4px 0 6px}.sh-lift td,.sh-lift th{border:1px solid #999;padding:2px 4px;text-align:left}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tchip.xo{border-color:#b9a3e6;color:#b9a3e6}}
 .mdtabs{display:flex;flex-wrap:wrap;gap:6px}
 .mdtbl td,.mdtbl th{vertical-align:top}
@@ -551,7 +566,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04t";
+const HUB_VERSION = "11-04w";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1460,6 +1475,97 @@ const sample = `<span class="sample">Sample data · replace with yours</span>`;
 const back = `<a class="backlink" href="#hub">← Back to Hub</a>`;
 const levelToggle = () => `<div class="seg" role="group" aria-label="Level">
   ${["JH","HS"].map(l => `<button type="button" aria-pressed="${level===l}" onclick="setLevel('${l}')">${l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>`;
+/* ---- Winter strength + drills library (Dec–Feb). Lines like "Weight room: Strength A1 · …" open the full session. ---- */
+const EX = {
+  "Goblet squat":{cue:"Bell at your chest, sit down between your heels, chest tall, knees track over toes.", eq:"Dumbbell or kettlebell", alt:"Box squat to a bench"},
+  "Front squat":{cue:"Only for runners who own the goblet squat. Elbows high, sit straight down.", eq:"Barbell or 2 dumbbells", alt:"Goblet squat"},
+  "Dumbbell squat":{cue:"Bells at your sides or on your shoulders. Same pattern as the goblet squat.", eq:"2 dumbbells", alt:"Goblet squat"},
+  "Bodyweight squat":{cue:"Arms forward, sit back and down, stand tall. Slow on the way down.", eq:"None", alt:"Squat to a chair"},
+  "Romanian deadlift":{cue:"Soft knees, push hips back, weights slide down your thighs, flat back. Stand by squeezing your glutes.", eq:"Dumbbells or barbell", alt:"Hip hinge with a broomstick"},
+  "Dumbbell Romanian deadlift":{cue:"Soft knees, push hips back, bells slide down your thighs, flat back. Stand by squeezing your glutes.", eq:"2 dumbbells", alt:"Hip hinge with a broomstick"},
+  "Reverse lunge":{cue:"Step back, lower the back knee toward the floor, push up through the front foot. Stay tall.", eq:"Bodyweight or light dumbbells", alt:"Split squat holding a rail"},
+  "Step-up":{cue:"Box at knee height or lower. Whole foot on the box; drive up with that leg, don't push off the back foot.", eq:"Box or bench", alt:"Lower box"},
+  "Standing calf raise":{cue:"Full range: heels down, rise high, pause 1 sec, lower slowly.", eq:"Step (optional dumbbell)", alt:"Two legs on flat ground"},
+  "Bent-knee calf raise":{cue:"Knees bent about 30°, full range. Works the soleus, the big runner's calf muscle.", eq:"Step or wall", alt:"Seated calf raise"},
+  "Calf raise":{cue:"Full range, pause at the top, lower slowly.", eq:"Step", alt:"Two legs on flat ground"},
+  "Push-up":{cue:"Straight line head to heels, chest to fist height, elbows about 45°.", eq:"None", alt:"Incline push-up on a bench"},
+  "Dumbbell row":{cue:"Hand on a bench, flat back, pull the elbow to your hip. No twisting.", eq:"Dumbbell + bench", alt:"Band row"},
+  "Row":{cue:"Flat back, pull the elbow to your hip. No twisting.", eq:"Dumbbell + bench", alt:"Band row"},
+  "Dead bug":{cue:"Low back pressed into the floor. Reach opposite arm and leg slowly, breathe out.", eq:"Mat", alt:"Heel taps"},
+  "Pallof press":{cue:"Band at chest height, stand side-on, press straight out and hold 2 sec. Don't let it twist you.", eq:"Band or cable", alt:"Half-kneeling version"},
+  "Side plank":{cue:"Elbow under shoulder, hips high, straight line.", eq:"Mat", alt:"From the knees"},
+  "Hip bridge":{cue:"Feet flat, drive through heels, squeeze glutes at the top, don't arch the low back.", eq:"Mat", alt:"Shorter range"},
+  "Single-leg hip bridge":{cue:"One foot down, other knee up. Hips stay level.", eq:"Mat", alt:"Two-leg hip bridge"},
+  "A-march":{cue:"Tall posture, knee up, toe up, foot comes down under the hip. Arms match legs.", drill:1},
+  "A-skip":{cue:"A-march with a skip rhythm. Quick, light contact under the hip.", drill:1},
+  "Ankling":{cue:"Small, quick steps with nearly straight legs, bouncing off the ball of the foot.", drill:1},
+  "Low dribbles":{cue:"Heel rises to ankle height and steps over it. Quick and relaxed.", drill:1},
+  "Single-leg balance reach":{cue:"Stand on one leg, reach the other foot forward, side, back. Knee stays over toes."},
+  "Single-leg balance":{cue:"Stand tall on one leg. Eyes closed only if it's easy."},
+  "Lateral band walks":{cue:"Band above knees or ankles, quarter squat, step sideways. Toes forward."},
+  "Band walks":{cue:"Band above knees or ankles, quarter squat, step sideways. Toes forward."},
+  "Medicine-ball chest pass":{cue:"Ball at chest, step and push hard to a partner or wall. Catch soft."},
+  "Medicine-ball throws":{cue:"Light ball (2–4 kg): overhead backward, underhand forward, or side throws. Every throw fast."},
+  "Light medicine-ball throws":{cue:"Light ball, crisp throws, nothing hard."},
+  "Low pogo hops":{cue:"Small, stiff-ankle bounces. Quiet landings. Stop when they get sloppy."},
+  "Low box jumps":{cue:"Low box, jump up, land soft, step down. Prepared athletes only."},
+  "Clamshells":{cue:"On your side, knees bent, open the top knee without rolling back."},
+  "Single-leg bridge":{cue:"One foot down, other knee up. Hips stay level."},
+};
+const LIFTS = {
+  A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6–8/leg"],["Standing calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
+  A2:{name:"Strength A2 · Foundational Progression", when:"Weeks 3 and 6", ex:[["Goblet squat","3 × 6",1],["Dumbbell Romanian deadlift","3 × 8",1],["Step-up","2 × 8/leg"],["Standing calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
+  B1:{name:"Strength B1 · Strength and Stability", when:"Week 7", ex:[["Dumbbell squat","3 × 6",1],["Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 10"],["Side plank","2 × 25 sec/side"]]},
+  Deload:{name:"Strength Deload", when:"Week 8", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Calf raise","2 × 10"],["Dumbbell row","2 × 8"],["Dead bug","2 × 8/side"]]},
+  B2:{name:"Strength B2 · Progressive Strength", when:"Weeks 9–10", ex:[["Goblet squat","3 × 6 (or front squat)",1],["Dumbbell Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg (or step-up)"],["Bent-knee calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
+  M:{name:"Strength M · Maintenance", when:"Week 11 on", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 10"],["Row","2 × 8"],["Dead bug","2 × 8/side"]]},
+  H1:{name:"Home strength H1", when:"Winter break, week 1", home:1, ex:[["Bodyweight squat","2 × 10"],["Hip bridge","2 × 12"],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 15"],["Push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
+  H2:{name:"Home strength H2", when:"Winter break, week 2", home:1, ex:[["Bodyweight squat","2 × 10"],["Single-leg hip bridge","2 × 8/leg"],["Step-up","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
+};
+const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"];
+const liftCode = t => { const m = String(t).match(/\b(?:Strength (A1|A2|B1|B2|Deload|M)|Home strength (H1|H2))\b/); return m ? (m[1]||m[2]) : null; };
+const liftRest = (L, main) => L.home ? "30–45 sec" : main ? "60–90 sec" : "Circuit, 30–45 sec";
+function liftHTML(code){
+  const L = LIFTS[code]; if (!L) return "";
+  const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
+    <td class="sub">${esc(liftRest(L, main))}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("");
+  const prog = L.home ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${LIFT_ORDER.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
+  return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="sub" style="margin:6px 0 0">Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure.${L.home?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
+}
+// Printed sheets: the lift list for any strength line on the sheet
+function liftPrint(items){
+  const codes = [...new Set((items||[]).map(liftCode).filter(Boolean))];
+  return codes.map(c => { const L = LIFTS[c]; return `<table class="sh-lift"><tr><th colspan="3">${esc(L.name)} · 2–3 reps in reserve, no max lifts</th></tr>${L.ex.map(([n,sr,main])=>`<tr><td>${esc(n)}${main?" (main)":""}</td><td>${esc(sr)}</td><td>${esc(liftRest(L, main))} · easier: ${esc((EX[n]||{}).alt||"—")}</td></tr>`).join("")}</table>`; }).join("");
+}
+function drillHTML(text){
+  if (!/^(Drills|Athletic development|Hip-stability)/i.test(text)) return "";
+  const low = text.toLowerCase();
+  const hits = Object.keys(EX).filter(n => (EX[n].drill || /^(Athletic|Hip)/i.test(text)) && low.includes(n.toLowerCase()))
+    .sort((a,b)=>b.length-a.length);
+  const list = []; hits.forEach(n => { if (!list.some(x=>x.toLowerCase().includes(n.toLowerCase()))) list.push(n); });
+  if (!list.length) return "";
+  list.sort((a,b)=>low.indexOf(a.toLowerCase())-low.indexOf(b.toLowerCase()));
+  return `<details class="lift"><summary>How to</summary><div class="lb">${list.map(n=>`<div style="margin:0 0 4px"><b>${esc(n)}</b>: <span class="sub">${esc(EX[n].cue)}</span></div>`).join("")}</div></details>`;
+}
+// Session info on a day (Dec–Feb winter plan): coach-led vs on your own, voluntary, session type
+const SESS_K = {coach:["Coach-led · voluntary","ss-coach"], coachq:["Coach-led if school is open","ss-coach"], indep:["On your own · voluntary","ss-indep"], break:["Winter break · optional","ss-break"], official:["Official practice","ss-off"], rest:["Rest day","ss-rest"]};
+const sessOf = (d, lv) => (d && d.sess && d.sess[lv==="Both"?"HS":lv]) || null;
+const isCoachLed = (d, lv) => { const s = sessOf(d, lv); return !!s && (s.kind==="coach" || s.kind==="coachq" || s.kind==="official"); };
+function sessBadge(d, lv){
+  const S = sessOf(d, lv); if (!S || !SESS_K[S.kind]) return "";
+  return `<span class="sess ${SESS_K[S.kind][1]}">${esc(SESS_K[S.kind][0])}</span>${S.flag && canPost ? `<span class="sess-flag" title="${esc(S.flag)}">⚑ check</span>` : ""}`;
+}
+function sessInfo(d, lv){
+  const S = sessOf(d, lv); if (!S) return "";
+  const bits = [];
+  if (S.title && S.kind!=="rest") bits.push(`<span><b>${esc(S.title)}</b>${S.cls ? " · " + esc(S.cls) : ""}</span>`);
+  if (S.equip && canPost) bits.push(`<span>Equipment: ${esc(S.equip)}</span>`);
+  if (S.note && canPost) bits.push(`<span>Coach note: ${esc(S.note)}</span>`);
+  if (S.flag && canPost) bits.push(`<span class="flag">⚑ Review: ${esc(S.flag)}</span>`);
+  return bits.length ? `<div class="sess-info">${bits.join("")}</div>` : "";
+}
+const weekObj = (w, lv) => { const s = (w.days||[]).map(d=>sessOf(d, lv||"HS")).find(Boolean); return s && s.obj ? `<p class="wkobj"><b>${esc(s.wk||"")}</b>${s.wk?" · ":""}${esc(s.obj)}</p>` : ""; };
 const itemHTML = it => {
   const {tags, text} = splitTags(it.t);
   const cm = text.match(/^([A-E][1-3])\b\s*/);
@@ -1468,7 +1574,8 @@ const itemHTML = it => {
 
   if (it.url) return `${label} <a class="vid" href="${esc(it.url)}" target="_blank" rel="noopener"><i>▶</i>Video</a>`;
   if (it.link) return `<a href="${esc(it.link)}">${label}</a>`;
-  return label;
+  const lc = liftCode(text);
+  return label + (lc ? liftHTML(lc) : drillHTML(text));
 };
 
 const li = arr => arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
@@ -1496,8 +1603,9 @@ function dayHTML(d){
   const everyone = blockHTML("Everyone", d.all);
   const hasAll = wlv==="Both" ? (d.all||[]).length : forLv(d.all,wlv).length;
   const empty = !groups && wcat!=="All" ? `<p class="muted" style="margin:0">No separate ${esc(wcat)} work today.${hasAll?" Follow the Everyone plan.":" Check with your event coach."}</p>` : "";
-  return `<div class="day"><div class="when">${d.day}<small>${focus}</small></div>
-    <div class="evlist">${everyone}${groups}${empty}</div></div>`;
+  const sl = wlv==="JH" ? null : "HS";
+  return `<div class="day${sl && isCoachLed(d, sl) ? " d-coach" : ""}"><div class="when">${d.day}<small>${focus}</small>${sl ? sessBadge(d, sl) : ""}</div>
+    <div class="evlist">${sl ? sessInfo(d, sl) : ""}${everyone}${groups}${empty}</div></div>`;
 }
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 let login = {open:false, email:"", sent:false, msg:"", mode:"pw", create:false};
@@ -1539,10 +1647,11 @@ function edLoad(start){
     const split = typeof d.focus!=="string";
     const txt = blankTxt(); txt.Everyone = itemsToText(d.all);
     CATEGORIES.forEach(c=>{ txt[c] = itemsToText((d.groups||{})[c]); });
-    return {day:d.day, focus:split?"":d.focus, fJH:split?(d.focus.JH||""):"", fHS:split?(d.focus.HS||""):"", split, txt, combos:(d.combos||[]).map(cb=>({groups:[...cb.groups], txt:itemsToText(cb.items)})), gfocus:{...(d.gfocus||{})}};
+    return {day:d.day, focus:split?"":d.focus, fJH:split?(d.focus.JH||""):"", fHS:split?(d.focus.HS||""):"", split, txt, combos:(d.combos||[]).map(cb=>({groups:[...cb.groups], txt:itemsToText(cb.items)})), gfocus:{...(d.gfocus||{})}, sess:JSON.parse(JSON.stringify(d.sess||{}))};
   })};
   edMsg = {kind:"",text:""}; render(); document.querySelector(".ed")?.scrollIntoView({behavior:"smooth"});
 }
+function edSess(di, kind){ const d = ed.days[di]; d.sess = d.sess || {}; if (!kind) delete d.sess.HS; else d.sess.HS = {...(d.sess.HS||{}), kind}; }
 function edAddDay(day){ ed.days.push(blankDay(day)); ed.days.sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)); render(); }
 function edBuild(){
   return {start: ed.start, days: ed.days.map(d=>{
@@ -1550,7 +1659,8 @@ function edBuild(){
     const focus = d.split ? Object.fromEntries([["JH",d.fJH.trim()],["HS",d.fHS.trim()]].filter(x=>x[1])) : d.focus.trim();
     const combos = (d.combos||[]).filter(cb=>cb.groups.length).map(cb=>({groups:cb.groups, items:textToItems(cb.txt)})).filter(cb=>cb.items.length);
     const gf = Object.fromEntries(Object.entries(d.gfocus||{}).map(([k,v])=>[k,String(v||"").trim()]).filter(x=>x[1]));
-    return {day:d.day, focus, all:textToItems(d.txt.Everyone), groups, ...(combos.length?{combos}:{}), ...(Object.keys(gf).length?{gfocus:gf}:{})};
+    const ss = Object.fromEntries(Object.entries(d.sess||{}).filter(([,v])=>v && v.kind));
+    return {day:d.day, focus, all:textToItems(d.txt.Everyone), groups, ...(combos.length?{combos}:{}), ...(Object.keys(gf).length?{gfocus:gf}:{}), ...(Object.keys(ss).length?{sess:ss}:{})};
   })};
 }
 /* ---- Supabase data store ----
@@ -2048,7 +2158,7 @@ function outlookHTML(w, rest){
   } else {
     const days = rest.map(d=>({d, gs: groups.map(g=>[g, groupItems(d,g,oLv)]).filter(x=>x[1].length), ev: everyone(d)})).filter(x=>x.gs.length);
     body = days.length ? `<div class="days">${days.map(({d,gs,ev})=>{ const f = gFocus(d,groups[0]) || focusFor(d,oLv);
-        return `<div class="day ${cls}"><div class="when">${d.day}<small>${esc(f)}</small></div><div class="evlist">
+        return `<div class="day ${cls}"><div class="when">${d.day}<small>${esc(f)}</small>${oLv==="HS" && (key==="Distance"||key==="Mid Distance") ? sessBadge(d, "HS") : ""}</div><div class="evlist">
           ${ev.length?`<div class="evblock"><div class="evname">Everyone</div>${list(ev)}</div>`:""}
           ${gs.length>1||ev.length ? gs.map(([g,it])=>`<div class="evblock"><div class="evname">${esc(g)}</div>${list(it)}</div>`).join("") : list(gs[0][1])}</div></div>`; }).join("")}</div>`
       : `<div class="panel"><p style="margin:0">No ${esc(title)} workouts posted for the rest of this week.</p></div>`;
@@ -2118,7 +2228,8 @@ function myWeekHTML(a){
   return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
-    ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a)) || focusFor(d,a.level))}</small></div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
+    ${a.level==="HS" ? weekObj(w, "HS") : ""}
+    ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day${isCoachLed(d, a.level) ? " d-coach" : ""}"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a)) || focusFor(d,a.level))}</small>${sessBadge(d, a.level)}</div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">No workouts posted for this week yet.</p>`}
     <p class="note" style="margin:8px 0 0">Paces come from your best race, same as the <a href="#paces">Paces</a> page. Effort matters more than hitting the exact number.</p></div>`;
 }   // "Find my pace" picker open on the Workouts page
@@ -2217,7 +2328,7 @@ function sheetRaw(d, cat, lv){
   return lv==="Both" ? raw : forLv(raw, lv);
 }
 const REP_RX = /\d\s*×\s*(flying\s+)?\d+\s*(m|min|sec)\b/;
-const isRepLine = t => { const x = splitTags(t).text; return REP_RX.test(x) && !/^(E[12]\b|Strength|Warm-up)/i.test(x); };
+const isRepLine = t => { const x = splitTags(t).text; return REP_RX.test(x) && !/^(E[12]\b|Strength|Warm-up|Drills|Athletic development|Weight room|Optional|Dynamic|Check-in|Hip-stability)/i.test(x); };
 function kidPace(a, d, cat, lv){
   const seen = new Set(), out = [];
   sheetRaw(d, cat, lv).filter(it => sheetFit(splitTags(it.t).tags, a) && !splitTags(it.t).tags.includes("Crossover")).forEach(it => {
@@ -2332,7 +2443,9 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
       <div class="sh-meta"><div><b>${esc(dateLabel)}</b></div><div>Coach: ______________</div></div>
     </div>
     <div class="sh-work"><div><b>Focus:</b> ${esc(focus||"—")}</div>
-      ${items.length ? `<ol>${items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ol>` : `<div class="sh-lines"><div></div><div></div><div></div></div>`}</div>
+      ${sessOf(d, lv) ? `<div><b>Session:</b> ${esc((SESS_K[sessOf(d, lv).kind]||[""])[0])}${sessOf(d, lv).cls ? " · " + esc(sessOf(d, lv).cls) : ""}</div>` : ""}
+      ${items.length ? `<ol>${items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ol>` : `<div class="sh-lines"><div></div><div></div><div></div></div>`}
+      ${liftPrint(items)}</div>
     <table class="sh-table"><thead>
       ${field || runCols || timed ? "" : `<tr class="sh-dist"><th colspan="${3 + (withPace?1:0) + (withLast?1:0)}" style="text-align:right">Rep distance →</th>${Array.from({length:n},()=>`<th></th>`).join("")}<th></th></tr>`}
       <tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${withPace?`<th class="sh-pace">Target pace</th>`:""}${withLast?`<th class="sh-last">Last time</th>`:""}
@@ -2383,7 +2496,7 @@ function coverHTML(w, lvs){
   return `<section class="sheet cover">
     <div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Week Packet</div><div class="sh-title">${esc(weekLabel(w))}</div></div>
       <div class="sh-meta"><div><b>${esc(who)}</b></div><div>${lvs.join(" + ")}</div></div></div>
-    ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}</h4>
+    ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}${lvs.includes("HS") && sessOf(d,"HS") ? ` · ${esc((SESS_K[sessOf(d,"HS").kind]||[""])[0])}` : ""}</h4>
       ${blocks.map(b=>{ const f = gFocus(d,b.cat) || focusFor(d,b.lv); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
         <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`
       : `<p>Nothing posted for these groups this week.</p>`}
@@ -2395,6 +2508,7 @@ function buildPacket(){
   const out = [coverHTML(w, lvs)];
   lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
     const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
+    const ss = sessOf(d, lv); if (ss && ["indep","break","rest"].includes(ss.kind)) return;   // not a practice: on the cover page only
     const date = dayDate(w, d.day);
     const focus = gFocus(d,cat) || focusFor(d, lv);
     out.push(sheetHTML({dateLabel: date.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}), dayName: d.day, focus, cat, lv, items, d, date}));
@@ -2718,7 +2832,7 @@ const views = {
           const lv = wlv==="JH" ? "JH" : "HS";
           const groups = nwItems(nx.d).map(([n,it])=>[n, forLv(it, lv)]).filter(([,it])=>it.length);
           return `<div class="bar"><div class="eyebrow">Next workout · ${esc(when)}</div><a href="#workouts">Workouts →</a></div>
-            <h3>${esc(focusFor(nx.d, lv) || "Workout")}</h3>
+            <h3>${esc(focusFor(nx.d, lv) || "Workout")}</h3>${sessBadge(nx.d, lv)}
             ${dleft>1?`<div class="wk-count">${dleft}<span>days away</span></div>`:""}
             <div class="nw">${groups.map(([n,it])=>`${groups.length>1&&n?`<div class="nw-g">${esc(n)}</div>`:""}<ul>${it.map(x=>`<li>${itemHTML(x)}</li>`).join("")}</ul>`).join("")}</div>
             ${fmpHTML("top")}`;
@@ -2794,7 +2908,7 @@ const views = {
     const home = cw ? vw.indexOf(cw) : (nw ? vw.indexOf(nw) : last);
     const i = weekIdx===null ? home : Math.min(Math.max(weekIdx,0),last);
     const w = vw[i], cur = last;
-    return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${parseD(w.start) > today ? "Coming up" : w===cw ? "This week" : "Past week"} · ${esc(weekLabel(w))}</div><h1>Workouts</h1></div>
+    return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${parseD(w.start) > today ? "Coming up" : w===cw ? "This week" : "Past week"} · ${esc(weekLabel(w))}</div><h1>Workouts</h1>${wlv!=="JH" ? weekObj(w, "HS") : ""}</div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="weekIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===cur?"disabled":""} onclick="weekIdx=${i+1};render()">›</button></div>${postBtn}</div>
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
@@ -3087,6 +3201,7 @@ const views = {
             <label class="ed-check" for="ed-mv-${di}">Move to <select id="ed-mv-${di}" style="width:auto" onchange="edMoveDay(${di}, this.value)">${DAYS.map(x=>`<option value="${x}" ${x===d.day?"selected":""} ${x!==d.day&&ed.days.some(y=>y.day===x)?"disabled":""}>${x}</option>`).join("")}</select></label>
             <label class="ed-check" for="ed-split-${di}"><input id="ed-split-${di}" type="checkbox" ${d.split?"checked":""} onchange="ed.days[${di}].split=this.checked;render()"> JH and HS have different focus</label>
             <button type="button" class="btn sm" onclick="ed.days.splice(${di},1);render()" aria-label="Remove ${d.day}">Remove day</button></div>
+          <label class="ed-row" for="ed-ss-${di}"><span>HS session</span><select id="ed-ss-${di}" onchange="edSess(${di}, this.value)"><option value="">Not set</option>${Object.entries(SESS_K).map(([k,[l]])=>`<option value="${k}" ${((d.sess||{}).HS||{}).kind===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
           <label class="ed-row" for="ed-gm-${di}"><span>Mid Distance focus</span><input id="ed-gm-${di}" type="text" value="${esc((d.gfocus||{})["Mid Distance"]||"")}" placeholder="optional, e.g. Max velocity" oninput="(ed.days[${di}].gfocus=ed.days[${di}].gfocus||{})['Mid Distance']=this.value"></label>
           ${d.split?`<div class="ed-grid2">
               <label class="ed-row" for="ed-fj-${di}"><span>JH focus</span><input id="ed-fj-${di}" type="text" value="${esc(d.fJH)}" placeholder="e.g. Meet" oninput="ed.days[${di}].fJH=this.value"></label>
@@ -3754,6 +3869,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-04t"></script>
+<script src="intelligence.js?v=11-04w"></script>
 </body>
 </html>
