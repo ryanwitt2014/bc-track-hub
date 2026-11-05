@@ -423,7 +423,7 @@ function schoolsView(){
 /* ---------- Phase 2: Scouting dashboard ----------
    Pick an upcoming meet → who's in it → project every event from best marks (2026 results + our current roster PRs),
    with last year's seniors removed. Shows projected team scores, each event's top places, and where BC is closest to more points. */
-IX.d = {meet:"", g:"G", grad:true, entries:"", open:null, ovAll:{}, ovKey:"", evEdit:null};
+IX.d = {meet:"", g:"G", grad:true, entries:"", open:null, xfer:true, ovAll:{}, ovKey:"", evEdit:null};
 try { IX.d.ovAll = JSON.parse(localStorage.getItem("ixWhatIf")||"{}") || {}; } catch(e) {}
 IX.all = null;
 async function ixAll(){
@@ -475,6 +475,16 @@ async function unGone(id){
   if (error) { IX.msg = {kind:"err", text:error.message}; } else { IX.flags = IX.flags.filter(f=>f.id!==id); IX.msg = {kind:"ok", text:"Back in the projections."}; }
   render();
 }
+// Possible transfers IN (coach-only): an opponent's results count for BC when "Count possible transfers" is on.
+// The name is shortened to initials everywhere in Scouting; they are never added to the public roster.
+const xferFlag = (schoolId, name) => (IX.flags||[]).find(f => f.school_id===schoolId && f.athlete_key===nk(name) && f.status==="transfer");
+const xferName = name => { const p = String(name||"").trim().split(/\s+/); return "Possible transfer (" + p.map(x=>x[0]).join(".").toUpperCase() + ".)"; };
+async function markXfer(schoolId, name){
+  if (IX.flagsMissing) { IX.msg = {kind:"err", text:"Run supabase/migrations/003_scouting_not_returning.sql in Supabase first."}; render(); return; }
+  const {data, error} = await SB.from("athlete_flags").insert({school_id:schoolId, athlete:name, athlete_key:nk(name), status:"transfer", note:"Possible transfer to BC", created_by:coachEmail}).select().single();
+  if (error) { IX.msg = {kind:"err", text:error.message}; } else { IX.flags.push(data); IX.d.xfer = true; IX.msg = {kind:"ok", text:`${xferName(name)} added. Scores now count her for BC (turn off with the checkbox).`}; }
+  render();
+}
 // Relay adjustments: key "4x800|G" per school. adj_mark = new projected time; empty = not a factor.
 const relayKey = (ev, g) => ev+"|"+g;
 const relayFlag = (schoolId, ev, g) => (IX.flags||[]).find(f => f.status==="relay" && f.school_id===schoolId && f.athlete_key===nk(relayKey(ev,g)));
@@ -500,16 +510,18 @@ let USE_GOALS = false;
 function entrants(ev, g, schoolIds, grad){
   const bc = bcSchool(), best = new Map(), goalKeys = new Set();
   const put = (key, o) => { const cur = best.get(key); if (!cur || better(ev, o.v, cur.v)) best.set(key, o); };
-  (IX.all||[]).forEach(r => {
+  (IX.all||[]).forEach(r0 => {
+    const xf = bc && !r0.relay && grad && IX.d.xfer && xferFlag(r0.school_id, r0.athlete);
+    const r = xf ? {...r0, school_id: bc.id, athlete: xferName(r0.athlete), bc_athlete_id: "xfer", xfer: true} : r0;
     if (r.event!==ev || r.gender!==g || r.mark_value==null || !schoolIds.includes(r.school_id)) return;
-    const gr = r.relay ? null : gradeOf(r);
+    const gr = r.relay ? null : gradeOf(r0);
     if (grad && gr===12) return;                                       // graduated
     if (grad && !r.relay && isGone(r.school_id, r.athlete)) return;    // marked not returning
-    if (grad && bc && r.school_id===bc.id && !r.relay && !(r.bc_athlete_id ? ATHLETES.some(a=>a.id===r.bc_athlete_id) : onRoster(r.athlete))) return;   // not on this year's roster
+    if (grad && bc && r.school_id===bc.id && !r.relay && !r.xfer && !(r.bc_athlete_id ? ATHLETES.some(a=>a.id===r.bc_athlete_id) : onRoster(r.athlete))) return;   // not on this year's roster
     if (r.relay && grad) { const rf = relayFlag(r.school_id, ev, g); if (rf) return; }   // replaced by the coach's adjustment below
     const key = r.relay ? "R|"+r.school_id : r.school_id+"|"+nk(r.athlete);
-    if (USE_GOALS && bc && r.school_id===bc.id && !r.relay) { const a = ATHLETES.find(a=>a.id===r.bc_athlete_id) || null; if (a && a.goals && a.goals[ev]) return; }
-    put(key, {v:+r.mark_value, who:r.relay ? "Relay" : r.athlete, school:r.school_id, grade: gr ? (grad ? gr+1 : gr) : null, bc: bc && r.school_id===bc.id, src:"2026"});
+    if (USE_GOALS && bc && r.school_id===bc.id && !r.relay && !r.xfer) { const a = ATHLETES.find(a=>a.id===r.bc_athlete_id) || null; if (a && a.goals && a.goals[ev]) return; }
+    put(key, {v:+r.mark_value, who:r.relay ? "Relay" : r.athlete, school:r.school_id, grade: gr ? (grad ? gr+1 : gr) : null, bc: bc && r.school_id===bc.id, src:"2026", xfer: !!r.xfer});
   });
   // coach-adjusted relays
   if (grad && /^4x/.test(ev)) (IX.flags||[]).filter(f=>f.status==="relay" && f.athlete_key===nk(relayKey(ev,g)) && schoolIds.includes(f.school_id) && f.adj_mark).forEach(f => {
@@ -805,6 +817,12 @@ function evEditHTML(e, m, g, grad){
   </div></td></tr>`;
 }
 const gapTxt = (ev, gap) => FIELD.has(ev) ? (gap>=12 ? `${Math.floor(gap/12)}' ${(gap%12).toFixed(1)}"` : `${gap.toFixed(1)}"`) : (gap>=60 ? fmtMark(ev, gap) : gap.toFixed(2)+"s");
+function xferHTML(){
+  const xs = (IX.flags||[]).filter(f=>f.status==="transfer"); if (!xs.length) return "";
+  return `<div class="steals"><label class="ed-check" for="dxf"><input id="dxf" type="checkbox" ${IX.d.xfer?"checked":""} onchange="IX.d.xfer=this.checked;render()"> <b>Count possible transfers for BC</b> (2027 view)</label>
+    <div style="margin-top:4px">${xs.map(f=>`<span class="ix-pill">${esc(xferName(f.athlete))} · from ${esc(schoolName(f.school_id))} <button type="button" class="dash-x" aria-label="Remove" onclick="IX.unGone(${f.id})">✕</button></span>`).join(" ")}</div>
+    <p class="note" style="margin:4px 0 0">Coaches only. Initials only, and not on the public roster.</p></div>`;
+}
 function goneHTML(){
   const fl = (IX.flags||[]).filter(f=>f.status==="gone"||f.status==="relay"), q = IX.d.q||"";
   let hits = [];
@@ -816,7 +834,7 @@ function goneHTML(){
     ${fl.length ? `<div class="tbl" style="margin-top:8px"><table class="ix-tbl"><tbody>${fl.map(f=>`<tr><td><b>${esc(f.athlete)}</b>${f.status==="relay"?` <span class="ix-pill">${f.adj_mark?"relay → "+esc(f.adj_mark):"relay dropped"}</span>`:""}</td><td>${esc(schoolName(f.school_id))}</td>
       <td class="ix-edit"><input value="${esc(f.note||"")}" placeholder="why (optional)" onchange="IX.noteGone(${f.id}, this.value)"></td><td><button type="button" class="btn sm" onclick="IX.unGone(${f.id})">Undo</button></td></tr>`).join("")}</tbody></table></div>` : ""}
     <label class="ed-row ix" for="gq" style="margin-top:8px"><span>Find an athlete</span><input id="gq" type="text" value="${esc(q)}" placeholder="name, 3+ letters" oninput="IX.d.q=this.value;render();const e=document.getElementById('gq');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></label>
-    ${hits.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${hits.map(r=>`<button type="button" class="btn sm" onclick="IX.markGone(${r.school_id}, ${esc(JSON.stringify(r.athlete))})">✕ ${esc(r.athlete)} · ${esc(schoolName(r.school_id))}</button>`).join("")}</div>` : ""}
+    ${hits.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${hits.map(r=>`<button type="button" class="btn sm" onclick="IX.markGone(${r.school_id}, ${esc(JSON.stringify(r.athlete))})">✕ ${esc(r.athlete)} · ${esc(schoolName(r.school_id))}</button>${bcSchool() && r.school_id!==bcSchool().id && !xferFlag(r.school_id, r.athlete) ? `<button type="button" class="btn sm" onclick="IX.markXfer(${r.school_id}, ${esc(JSON.stringify(r.athlete))})">→ BC (possible transfer)</button>` : ""}`).join("")}</div>` : ""}
   </details>`;
 }
 function dashView(){
@@ -855,6 +873,7 @@ function dashView(){
       <label class="ed-check" for="dg"><input id="dg" type="checkbox" ${d.grad?"checked":""} onchange="IX.d.grad=this.checked;render()"> 2027 view: last year's seniors removed, everyone a grade older</label></div>
       <p class="note" style="margin:0">Teams: ${m.schools.map(s=>esc(sName(s))).join(", ")}${m.missing.length?` · <b>No 2026 data for ${esc(m.missing.join(", "))}</b>`:""} · Scoring ${esc(m.sc.ind.join("-"))}${m.sc.relay&&m.sc.relay.join()!==m.sc.ind.join()?`, relays ${esc(m.sc.relay.join("-"))}`:""}${m.sc.inferred&&m.tmpl&&/assumed/.test(m.sc.basis||"")?" (assumed)":""}.
         Marks are each kid's best from last season, plus our current roster's PRs. BC kids are placed in the events that score the most, up to ${perKid} individual events each (Indiana's limit is 4 including relays; relays are counted separately here, so check with your AD). It's a projection, not a prediction.</p></div>
+    ${d.grad ? xferHTML() : ""}
     ${ovCount() ? `<div class="steals"><b>What-ifs on (${ovCount()})</b> in ${Object.keys(d.ovAll[d.ovKey]).map(evLabel).map(esc).join(", ")}. Every score below includes them. <button type="button" class="btn sm" onclick="IX.ovDo('', 'resetAll')">Clear all what-ifs</button></div>` : ""}
     ${(USE_GOALS_VIEW = !!useG, briefHTML(m, d.g, D, O))}
     <div class="cols">
@@ -900,7 +919,7 @@ async function copyBrief(){
   render();
 }
 function countMany(list){ IX.d.steals = IX.d.steals || {}; list.forEach(([k,v,label])=>IX.d.steals[k]={v,label}); render(); }
-Object.assign(IX, {ovDo, toggleSteal, countMany, copyBrief, markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
+Object.assign(IX, {markXfer, ovDo, toggleSteal, countMany, copyBrief, markGone, unGone, setRelay, noteGone, view:ixView, reload:()=>ixLoad(true), preview:()=>{ buildPreview(); render(); }, save:ixSave, loadResults:ixResults, fix:ixFix, delResult:ixDelResult,
   saveMeet:ixSaveMeet, delMeet:ixDelMeet, saveSchool:ixSaveSchool, doMerge:ixMerge, readFile, template:downloadTemplate,
   _test:{parsePasted, looksLikeCSV, normEvent, normGender, parseMark, parseCSV, mapHeader, inferScoring, fmtMark}});
 if (typeof render === "function") render();
