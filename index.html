@@ -566,7 +566,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04y";
+const HUB_VERSION = "11-04z";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1413,7 +1413,7 @@ const SECTIONS = [
   {id:"signups", g:"team", name:"Sign-ups", blurb:"Final Forms and Google Form checklist"},
   {id:"team", g:"team", name:"Coaches & Program", blurb:"Coaching staff, program philosophy, expectations, practice flow"},
   {id:"workouts", g:"train", name:"Workouts", blurb:"Week-by-week plan with drill videos"},
-  {id:"middistance", g:"train", name:"Mid-Distance", blurb:"400/800 program: calendar, workout library, crossover, 800 pace calculator"},
+  {id:"middistance", g:"train", name:"Distance & Mid", blurb:"Distance + mid-distance program: philosophy, calendar, strength, workout library, 800 pace"},
   {id:"paces", g:"train", name:"Paces", blurb:"Training paces for distance and mid-distance runners"},
   {id:"form", g:"train", name:"Form", blurb:"Technique for every event and relay handoffs"},
   {id:"warmups", g:"train", name:"Warm-ups & Care", blurb:"Warm-ups, stretching, soreness vs. pain, injuries, ice"},
@@ -1711,11 +1711,13 @@ async function publishWeeks(next, okText){
 
 /* ---- Mid-Distance program ---- */
 const MD = {
-  motto: "Speed is developed. Endurance is earned. Recovery is protected.",
+  motto: "Build the engine. Feed the speed. Protect the athlete.",
   profiles: [["200m–400m","80%","20%"],["400m–800m","50%","50%"],["800m–3200m","20%","80%"]],
-  phases: [["Foundation","December 2026","Mechanics, acceleration, aerobic introduction"],["Development","January 2027","Max velocity, speed endurance, aerobic support"],
-    ["Specific preparation","February 2027","400/800 race rhythm and endurance"],["Indoor competition","March 2027","Race integration, speed maintenance"],
-    ["Outdoor competition","April 2027","Race-specific work, relays, recovery"],["Championship","May–June 2027","Taper, sharpening, performance"]],
+  phases: [["Winter foundation","Dec 1 – Jan 17","Easy aerobic running, long runs, Strength A1 → B1","Same base, shorter runs, more general athleticism and power"],
+    ["Winter development","Jan 18 – Feb 14","Deload week, then Strength B2; short Steady finishes","Same; acceleration work only if limited contact is approved"],
+    ["Official season starts","Feb 15 – 28","Tuesday threshold (Tempo), Thursday speed development","Same days; Hybrid runners start 800 work on Thursdays"],
+    ["Indoor competition","March","Tempo, intervals, race integration","Race integration, speed maintenance"],
+    ["Outdoor competition","April","Race-specific work, relays, recovery","Race-specific work, relays, recovery"],["Championship","May – June","Taper and sharpen","Taper and sharpen"]],
   lib: [
     {c:"A1", n:"Foundation acceleration", reps:"4 × 20m + 3 × 40m accelerations", int:"Fast, crisp, relaxed. Not all-out.", rec:"2–3 min, walk back", why:"Starts, posture, push the ground back."},
     {c:"A2", n:"Maximum velocity", reps:"3 × 30m accelerations + 3 × flying 20m (20–30m build-up)", int:"Near top speed through the fly zone. Time the flys if you can.", rec:"3–5 min", why:"Raises top speed so every race pace feels easier."},
@@ -1737,8 +1739,6 @@ const MD = {
       tech:["Quiet landings, stiff ankles, tall hips","Arms drive front to back","Stop when contacts get loud or sloppy"]},
   ],
   xo: [
-    {ad:"Acceleration, then max velocity", when:"January (Jan 7, 14, 21)", who:"All distance runners", wk:"Accelerations, then a flying 20m intro (2 × 30m + 2 × flying 20m) after an easy run", rec:"Full recovery, walk back", repl:"Nothing. Short add-on to an easy day, not a hard session", meet:"No meets", note:"Builds speed with almost no fatigue. Skip it if legs are heavy."},
-    {ad:"Event-specific endurance", when:"Early February (Tue Feb 2)", who:"Hybrid 800/1600 who already have solid conditioning", wk:"D1: 4 × 200m at 800 pace, then 20 min Easy", rec:"2–3 min between 200s", repl:"Tuesday's Steady run", meet:"No meets", note:"Out of season. Only for runners who've trained consistently all winter. Keep it controlled; no one races these."},
     {ad:"Event-specific endurance", when:"Late February (Thu Feb 18)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 150s", meet:"No meets. First official week", note:"Only if the Tuesday tempo went well."},
     {ad:"Maximum velocity", when:"March (Mon Mar 1)", who:"All distance runners", wk:"Short max-velocity maintenance: 2 × 30m + 2 × flying 20m after the run", rec:"Full", repl:"Nothing. Add-on to an easy day", meet:"Mar 5 meet is 4 days later. OK.", note:"Only if recovered from recent racing or hard sessions. Short and sharp."},
     {ad:"Event-specific endurance", when:"Late March (Thu Apr 1)", who:"Hybrid 800/1600", wk:"D2: 3 × 300m at 800 pace", rec:"4–5 min", repl:"Thursday's 200s", meet:"Apr 6 meet is 5 days later. OK.", note:"HSR runners only if they've recovered."},
@@ -1751,7 +1751,7 @@ const MD = {
     ["Championship week","Less volume. Keep speed and race rhythm. Freshness and recovery come first."],
   ],
 };
-let mdtab = "overview", mdcal = {view:"week", wi:null, month:""}, md800 = {t:"", who:""}, MDNOTES = {general:"", mods:""}, mdn = null, mdnMsg = {kind:"",text:""};
+let mdtab = "overview", mdcal = {view:"week", wi:null, month:"", g:"Distance"}, md800 = {t:"", who:""}, MDNOTES = {general:"", mods:""}, mdn = null, mdnMsg = {kind:"",text:""};
 const mdWeeks = () => (canPost ? sortedWeeks() : visibleWeeks()).filter(w => w.days.some(d => (d.groups||{})["Mid Distance"]));
 const mdItems = d => forLv(((d.groups||{})["Mid Distance"]||[]), "HS");
 const xoItems = d => forLv(((d.groups||{})["Distance"]||[]), "HS").filter(it => splitTags(it.t).tags.includes("Crossover"));
@@ -2174,8 +2174,9 @@ function fmpHTML(key){
 }
 // Date of a posted day, and the next posted workout day from today on
 function nextWorkout(){
-  for (const w of visibleWeeks()) for (const d of w.days) { const dt = dayDate(w, d.day); if (dt >= today && dayHas(d, wlv==="JH"?"JH":"HS")) return {w, d, dt}; }
-  return null;
+  const find = lv => { for (const w of visibleWeeks()) for (const d of w.days) { const dt = dayDate(w, d.day); if (dt >= today && dayHas(d, lv)) return {w, d, dt, lv}; } return null; };
+  const want = wlv==="JH" ? "JH" : "HS";
+  return find(want) || find(want==="JH" ? "HS" : "JH");   // nothing posted for this level yet: show the other one (labeled)
 }
 // Lines for the Next workout card: the "as written" version (B/C variants are on each runner's page)
 function nwItems(d){
@@ -2829,9 +2830,9 @@ const views = {
           }
           const dleft = Math.round((nx.dt - today)/864e5);
           const when = dleft===0 ? "Today" : dleft===1 ? "Tomorrow" : nx.dt.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
-          const lv = wlv==="JH" ? "JH" : "HS";
+          const lv = nx.lv || (wlv==="JH" ? "JH" : "HS");
           const groups = nwItems(nx.d).map(([n,it])=>[n, forLv(it, lv)]).filter(([,it])=>it.length);
-          return `<div class="bar"><div class="eyebrow">Next workout · ${esc(when)}</div><a href="#workouts">Workouts →</a></div>
+          return `<div class="bar"><div class="eyebrow">Next workout${lv!==(wlv==="JH"?"JH":"HS") || wlv==="Both" ? " · " + (lv==="JH"?"Junior High":"High School") : ""} · ${esc(when)}</div><a href="#workouts">Workouts →</a></div>
             <h3>${esc(focusFor(nx.d, lv) || "Workout")}</h3>${sessBadge(nx.d, lv)}
             ${dleft>1?`<div class="wk-count">${dleft}<span>days away</span></div>`:""}
             <div class="nw">${groups.map(([n,it])=>`${groups.length>1&&n?`<div class="nw-g">${esc(n)}</div>`:""}<ul>${it.map(x=>`<li>${itemHTML(x)}</li>`).join("")}</ul>`).join("")}</div>
@@ -2915,6 +2916,8 @@ const views = {
       <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
       ${fmpHTML("w")}
+      ${wlv!=="Both" && !w.days.some(d=>dayHas(d,wlv)) ? `<div class="panel"><p style="margin:0">No ${wlv==="JH"?"Junior High":"High School"} workouts are posted for this week yet.</p>
+        <div class="ed-save" style="border:0;padding-top:8px"><button type="button" class="btn primary" onclick="setWlv('${wlv==="JH"?"HS":"JH"}')">Show ${wlv==="JH"?"High School":"Junior High"}</button><button type="button" class="btn" onclick="setWlv('Both')">Show both</button></div></div>` : ""}
       <div class="days">${w.days.map(d=>dayHTML(d)).join("")}</div>
       <p class="note">▶ Video buttons open in a new tab. Use the arrows to look ahead at any posted week.</p></div>`;
   },
@@ -3417,32 +3420,52 @@ const views = {
       <p class="note">More drills for each event are in <a href="#warmups">Warm-ups &amp; Care</a> and in each week's workouts.</p></div>`;
   },
   middistance(){
-    const tabs = [["overview","Overview"],["calendar","Calendar"],["library","Workout Library"],["crossover","Distance Crossover"],["pace","800 Pace"],["meets","Meet Weeks"]].concat(canPost?[["notes","Coach Notes"]]:[]);
+    const tabs = [["overview","Philosophy"],["calendar","Calendar"],["strength","Strength & Drills"],["library","Mid Workout Library"],["crossover","Distance Crossover"],["pace","800 Pace"],["meets","Meet Weeks"]].concat(canPost?[["notes","Coach Notes"]]:[]);
     if (mdtab==="notes" && !canPost) mdtab = "overview";
     const tyLegend = `<div class="legend"><span><i class="ty-speed"></i>Speed</span><span><i class="ty-aero"></i>Aerobic</span><span><i class="ty-race"></i>Race-specific</span><span><i class="ty-str"></i>Strength</span><span><i class="ty-rec"></i>Recovery</span><span><i class="ty-meet"></i>Meet</span><span><span class="tchip xo" style="margin:0">Optional crossover</span></span></div>`;
-    const head = `${back}<div class="stack"><div><div class="eyebrow">2027 · 400m / 800m</div><h1>Mid-Distance</h1>
+    const head = `${back}<div class="stack"><div><div class="eyebrow">2026–27 · 400m to 3200m</div><h1>Distance &amp; Mid-Distance</h1>
       <p class="lede" style="margin:6px 0 0"><i>${esc(MD.motto)}</i></p></div>
       <div class="seg mdtabs" role="group" aria-label="Section">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${mdtab===k}" onclick="mdtab='${k}';render()">${l}</button>`).join("")}</div>`;
     let body = "";
     if (mdtab==="overview") {
-      body = `<div class="cols">
-        <div class="panel"><h2>Philosophy</h2><p style="margin:0 0 10px">Tony Holler's <b>Feed the Cats</b> speed-first ideas, combined with Jack Daniels' structured aerobic work. Short, fast, fully recovered speed work, plus enough aerobic running to finish races strong.</p>
+      body = `<div class="panel"><h2>Our philosophy</h2>
+          <p style="margin:0 0 10px">Two coaching ideas, one program. <b>Jack Daniels</b> builds the engine: aerobic running at each runner's own VDOT paces, controlled threshold work, and steady progress. <b>Tony Holler (Feed the Cats)</b> protects and builds speed: short, fast, fully recovered sprinting, good mechanics, and no junk fatigue.</p>
+          <div class="cols"><div><h3 style="margin:0 0 6px">Build the engine (Daniels)</h3><ul class="exp"><li>Paces from each runner's best race (see Paces)</li><li>Most running is Easy, conversational</li><li>Threshold (Tempo) work that's controlled, not raced</li><li>Add work gradually; recovery is part of the plan</li></ul></div>
+            <div><h3 style="margin:0 0 6px">Feed the speed (Holler)</h3><ul class="exp"><li>Short, fast reps with full recovery</li><li>Mechanics and coordination</li><li>Speed is kept all year, never trained into the ground</li><li>No extra fatigue just to feel tired</li></ul></div>
+            <div><h3 style="margin:0 0 6px">Protect the athlete</h3><ul class="exp"><li>Weight room every winter Tuesday, progressive and light to moderate</li><li>Volume matches each runner's real training history (A/B/C)</li><li>No max lifts, no going to failure</li><li>A fast 5K doesn't mean high mileage</li></ul></div></div></div>
+        <div class="panel"><h2>Three pathways</h2><dl class="inj-dl">
+          <dt>Distance</dt><dd>1600 and 3200. Aerobic consistency, running economy, strength, longer easy and long runs, threshold work once the season starts.</dd>
+          <dt>Hybrid 800/1600</dt><dd>Trains with the Distance group all winter. From Feb 15, branches toward 800 work, mostly on Thursdays, and stays eligible for the 1600.</dd>
+          <dt>Mid-Distance</dt><dd>400, 800, 4×800. Same weekly structure as Distance with shorter runs, more general athleticism and power, and 800-specific work once the season starts.</dd></dl>
+          <p class="note" style="margin:8px 0 0">Coaches set each runner's pathway and level on Coaches → Runner Tags. <b>Find my pace</b> then shows each kid their own version with paces.</p></div>
+        <div class="cols">
+          <div class="panel"><h2>Winter: Dec 1 – Feb 14</h2><p style="margin:0 0 8px">Two coach-led days a week. Everything else is on your own and voluntary.</p>
+            <div class="tbl"><table><tbody>${[["Mon","Easy run","On your own"],["Tue","Aerobic run + weight room","Coach-led"],["Wed","Recovery run","On your own"],["Thu","Athletic development + easy run","Coach-led"],["Fri","Easy run or rest","On your own"],["Sat","Long easy run","On your own"],["Sun","Rest","—"]].map(([d,w,x])=>`<tr><td><b>${d}</b></td><td>${w}</td><td>${x==="Coach-led"?`<span class="sess ss-coach" style="margin:0">Coach-led</span>`:x==="On your own"?`<span class="sess ss-indep" style="margin:0">On your own</span>`:"—"}</td></tr>`).join("")}</tbody></table></div>
+            <p class="note" style="margin:8px 0 0">Dec 21 – Jan 3 is winter break: all optional, with a home strength session each week. Official practice starts Feb 15 (confirm the IHSAA date).</p></div>
+          <div class="panel"><h2>A / B / C volume</h2><dl class="inj-dl"><dt>A · Established</dt><dd>The full prescribed time.</dd><dt>B · Intermediate</dt><dd>About 75–85% of it.</dd><dt>C · Developing</dt><dd>About 50–65%, with extra rest as needed.</dd></dl>
+            <p class="note" style="margin:8px 0 0">Starting points, not rules. Recent training, consistency, injuries, and recovery decide. A runner who joins late starts at C or B for 2–3 weeks.</p></div></div>
+        <div class="panel"><h2>The season</h2><div class="tbl"><table><thead><tr><th>Phase</th><th>Dates</th><th>Distance</th><th>Mid-distance</th></tr></thead><tbody>
+          ${MD.phases.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div></div>
+        <div class="panel"><h2>Speed vs. aerobic, by event</h2>
           <div class="tbl"><table><thead><tr><th>Athlete profile</th><th>Holler (speed)</th><th>Daniels (aerobic)</th></tr></thead><tbody>
           ${MD.profiles.map(r=>`<tr><td><b>${r[0]}</b></td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td></tr>`).join("")}</tbody></table></div>
-          <p class="note" style="margin:8px 0 0">Coaching emphasis, not literal workout volume.</p></div>
-        <div class="panel"><h2>Two training groups</h2><dl class="inj-dl">
-          <dt>Mid-Distance</dt><dd>Main events are the 400 and 800. Follow the Mid-Distance plan on the Workouts page (Mid Distance group).</dd>
-          <dt>Distance</dt><dd>Main events are the 800, 1600, and 3200. Stay on the distance plan and join some speed sessions as optional crossovers.</dd></dl>
-          <p style="margin:10px 0 0"><b>Joining late?</b> Dec 7 – Feb 14 is voluntary conditioning for both programs. A runner who starts later builds up gradually: shorter runs and fewer reps (Level C, then B) for 2–3 weeks before taking on the current week's full workload.</p>
-          <p class="note" style="margin:8px 0 0">Coaches set each runner's group on Coaches → Runner Tags ("Mid-distance" = this plan). <b>Find my pace</b> then shows each kid the right plan.</p></div></div>
-      <div class="panel"><h2>Phases</h2><div class="tbl"><table><thead><tr><th>Phase</th><th>Dates</th><th>Emphasis</th></tr></thead><tbody>
-        ${MD.phases.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div></div>`;
+          <p class="note" style="margin:8px 0 0">Coaching emphasis, not literal workout volume.</p></div>`;
+    }
+    else if (mdtab==="strength") {
+      body = `<p class="lede" style="margin:0">Every winter Tuesday has 25–30 minutes in the weight room. Light to moderate loads, 2–3 reps left in the tank, no max lifts. The sessions build week to week.</p>
+        ${LIFT_ORDER.concat(["H1","H2"]).map(k=>`<div class="panel"><h3 style="margin:0 0 4px">${esc(LIFTS[k].name)} <span class="muted" style="font-weight:400">· ${esc(LIFTS[k].when)}</span></h3>${liftHTML(k).replace('<details class="lift">','<details class="lift" open>')}</div>`).join("")}
+        <div class="panel"><h3 style="margin:0 0 6px">Thursday drills &amp; athletic development</h3>
+          <p class="note" style="margin:0 0 8px">Running drills are running-mechanics coaching. In winter, use them only if the session is approved as limited contact; otherwise swap in general mobility.</p>
+          ${Object.entries(EX).filter(([n,e])=>e.drill || !e.eq).map(([n,e])=>`<div style="margin:0 0 4px"><b>${esc(n)}</b>${e.drill?` <span class="tchip">drill</span>`:""}: <span class="muted">${esc(e.cue)}</span></div>`).join("")}</div>`;
     }
     else if (mdtab==="calendar") {
-      const weeks = mdWeeks();
-      if (!weeks.length) body = `<div class="panel"><p style="margin:0">The Mid-Distance calendar starts the week of Dec 7. Each week shows up here like the Workouts page does.</p></div>`;
+      const G = mdcal.g==="Distance" ? "Distance" : "Mid Distance";
+      const gItems = d => G==="Distance" ? forLv(((d.groups||{})["Distance"]||[]), "HS").filter(it => !splitTags(it.t).tags.includes("Crossover")) : mdItems(d);
+      const weeks = (canPost ? sortedWeeks() : visibleWeeks()).filter(w => w.days.some(d => gItems(d).length));
+      const gT = segBtns(G, [["Distance","Distance"],["Mid Distance","Mid-Distance"]], "(v=>{mdcal.g=v;render()})");
+      if (!weeks.length) body = `<div class="bar">${gT}</div><div class="panel"><p style="margin:0">Nothing posted for this group yet. The plan starts Dec 1.</p></div>`;
       else {
-        const toggle = segBtns(mdcal.view, [["week","Week"],["month","Month"]], "(v=>{mdcal.view=v;render()})");
+        const toggle = gT + segBtns(mdcal.view, [["week","Week"],["month","Month"]], "(v=>{mdcal.view=v;render()})");
         if (mdcal.view==="week") {
           const cw = currentWeek(), nw = nextWeek();
           const home = Math.max(0, weeks.findIndex(w => w===cw || w===nw));
@@ -3452,12 +3475,13 @@ const views = {
           body = `<div class="bar">${toggle}<div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="mdcal.wi=${i-1};render()">‹</button><b>${esc(weekLabel(w))}</b>
               <button type="button" aria-label="Next week" ${i===weeks.length-1?"disabled":""} onclick="mdcal.wi=${i+1};render()">›</button></div>
               ${canPost?`<button type="button" class="btn" onclick="ctab='workouts';edLoad('${w.start}');location.hash='#coaches'">Edit this week</button>`:""}</div>
-            <div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${["No-meet week","One-meet week","Two-meet week","Championship week"][k]}.</b> ${esc(MD.rules[k][1])}${ms.length?` <span class="muted">Meets: ${ms.map(m=>esc(m.meet.replace(/\s*\*[^*]+\*/g,""))+" ("+parseD(m.date).toLocaleDateString("en-US",{weekday:"short"})+")").join(", ")}.</span>`:""}</p></div>
+            ${weekObj(w, "HS")}
+            ${w.days.some(d=>{ const x = sessOf(d,"HS"); return x && x.kind!=="official"; }) ? "" : `<div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${["No-meet week","One-meet week","Two-meet week","Championship week"][k]}.</b> ${esc(MD.rules[k][1])}${ms.length?` <span class="muted">Meets: ${ms.map(m=>esc(m.meet.replace(/\s*\*[^*]+\*/g,""))+" ("+parseD(m.date).toLocaleDateString("en-US",{weekday:"short"})+")").join(", ")}.</span>`:""}</p></div>`}
             ${tyLegend}
-            <div class="days">${w.days.filter(d=>mdItems(d).length || xoItems(d).length).map(d=>{ const f = gFocus(d,"Mid Distance") || focusFor(d,"HS");
-              return `<div class="day"><div class="when">${d.day}<small><span class="fc">${esc(f)}</span></small></div><div class="evlist">
-                ${mdItems(d).length?`<div class="evblock"><div class="evname">Mid Distance</div>${list(mdItems(d))}</div>`:""}
-                ${xoItems(d).length?`<div class="evblock"><div class="evname">Distance crossover</div>${list(xoItems(d))}</div>`:""}</div></div>`; }).join("")}</div>`;
+            <div class="days">${w.days.filter(d=>gItems(d).length || xoItems(d).length).map(d=>{ const f = gFocus(d,G) || focusFor(d,"HS");
+              return `<div class="day${isCoachLed(d,"HS")?" d-coach":""}"><div class="when">${d.day}<small><span class="fc">${esc(f)}</span></small>${sessBadge(d,"HS")}</div><div class="evlist">${sessInfo(d,"HS")}
+                ${gItems(d).length?`<div class="evblock"><div class="evname">${G==="Distance"?"Distance":"Mid Distance"}</div>${list(gItems(d))}</div>`:""}
+                ${xoItems(d).length?`<div class="evblock"><div class="evname">Distance crossover (optional)</div>${list(xoItems(d))}</div>`:""}</div></div>`; }).join("")}</div>`;
         } else {
           const months = [...new Set(weeks.flatMap(w => w.days.map(d => iso(dayDate(w,d.day)).slice(0,7))))].sort();
           const ym = months.includes(mdcal.month) ? mdcal.month : (months.find(m => m >= iso(today).slice(0,7)) || months[0]);
@@ -3467,11 +3491,11 @@ const views = {
           for (let k=0;k<lead;k++) cells.push(`<div></div>`);
           for (let day=1; day<=nDays; day++) {
             const ds = iso(new Date(Y, M-1, day)), x = byDate[ds];
-            if (!x || !(mdItems(x.d).length || xoItems(x.d).length)) { cells.push(`<div class="mcell off"><span class="dn">${day}</span></div>`); continue; }
-            const f = gFocus(x.d,"Mid Distance") || focusFor(x.d,"HS"), wi = weeks.indexOf(x.w);
+            if (!x || !(gItems(x.d).length || xoItems(x.d).length)) { cells.push(`<div class="mcell off"><span class="dn">${day}</span></div>`); continue; }
+            const f = gFocus(x.d,G) || focusFor(x.d,"HS"), wi = weeks.indexOf(x.w);
             cells.push(`<button type="button" class="mcell ${ds===iso(today)?"today":""}" onclick="mdcal.view='week';mdcal.wi=${wi};render()" aria-label="${esc(ds)}: ${esc(f)}">
               <span class="dn">${day}</span>${f?`<span class="fc ty-${FOCUS_TY(f)||"str"}">${esc(f)}</span>`:""}
-              <span class="cds">${mdCodes(x.d).map(c=>`<span class="wcode ty-${CODE_TY[c[0]]}">${c}</span>`).join("")}${xoItems(x.d).length?`<span class="tchip xo" style="margin:0;font-size:10px;padding:0 3px">XO</span>`:""}</span></button>`);
+              ${isCoachLed(x.d,"HS")?`<span class="sess ss-coach" style="margin:0;font-size:9px;padding:0 3px">Coach-led</span>`:""}<span class="cds">${(G==="Mid Distance"?mdCodes(x.d):[]).map(c=>`<span class="wcode ty-${CODE_TY[c[0]]}">${c}</span>`).join("")}${xoItems(x.d).length?`<span class="tchip xo" style="margin:0;font-size:10px;padding:0 3px">XO</span>`:""}</span></button>`);
           }
           body = `<div class="bar">${toggle}<label class="mepick" for="md-month">Month <select id="md-month" onchange="mdcal.month=this.value;render()">${months.map(m=>`<option value="${m}" ${m===ym?"selected":""}>${new Date(+m.slice(0,4), +m.slice(5)-1, 1).toLocaleDateString("en-US",{month:"long",year:"numeric"})}</option>`).join("")}</select></label></div>
             ${tyLegend}
@@ -3499,10 +3523,10 @@ const views = {
             ${[["4 × 200m at 800 pace","Event-specific endurance","race"],["3 × 300m at 800 pace","Event-specific endurance","race"],["3 × flying 20m","Maximum velocity","speed"],["4 × 100m strides","Mechanics and controlled speed","aero"]].map(([w,a,t])=>`<tr><td>${w}</td><td><span class="wcode ty-${t}" style="vertical-align:0">&nbsp;</span>${a}</td></tr>`).join("")}</tbody></table></div>
             <p class="note" style="margin:8px 0 0">The 200s and 300s in the distance plan build 800 endurance. They don't replace true top-speed work.</p></div>
           <div class="panel"><h3>Planned max-velocity days for distance runners</h3><p style="margin:0 0 8px">Part of the distance plan, not optional. Low volume, full recovery.</p><ul class="exp">
-            <li><b>Thu Feb 18</b> · 3 × 30m accelerations + 2 × flying 20m (first official week)</li>
+            <li><b>Thu Feb 18</b> · 4 × 30m progressive accelerations, full recovery (first official week)</li>
             <li><b>Mon Mar 15</b> · 2 × 30m + 2 × flying 20m after the run, if recovered from Saturday</li>
             <li><b>Mon Apr 12</b> · 2 × flying 20m after the strides</li></ul>
-            <p class="note" style="margin:8px 0 0">Plus optional touches in January, Feb 25, Mar 1, and April (table above).</p></div></div>`;
+            <p class="note" style="margin:8px 0 0">Plus optional touches Feb 18, Mar 1, and April (table above). No speed add-ons during winter conditioning unless limited contact is approved.</p></div></div>`;
     }
     else if (mdtab==="pace") {
       const runners = ATHLETES.filter(a => a.prs["800"]).sort((x,y)=>tSec(x.prs["800"])-tSec(y.prs["800"]));
@@ -3869,6 +3893,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-04y"></script>
+<script src="intelligence.js?v=11-04z"></script>
 </body>
 </html>
