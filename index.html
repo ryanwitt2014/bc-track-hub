@@ -221,7 +221,7 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .tchip.xo{background:transparent;border:1px dashed #6b4fa3;color:#6b4fa3}
 .sess{display:inline-block;font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:none;border-radius:3px;padding:1px 6px;margin-top:4px;white-space:nowrap}
 .ss-coach{background:var(--accent);color:var(--accent-ink)}.ss-indep{background:transparent;border:1px solid var(--line);color:var(--muted)}
-.ss-break{background:transparent;border:1px dashed var(--gold);color:var(--fg)}.ss-off{background:#2f4f8f;color:#fff}.ss-rest{background:transparent;color:var(--muted)}
+.ss-break{background:transparent;border:1px dashed var(--gold);color:var(--fg)}.ss-off{background:#2f4f8f;color:#fff}.ss-meet{background:var(--gold);color:var(--gold-ink)}.ss-rest{background:transparent;color:var(--muted)}
 .sess-flag{display:inline-block;font-size:11px;font-weight:700;color:var(--track);margin-left:4px;cursor:help;text-transform:none}
 .day.d-coach{border-left:5px solid var(--accent);background:linear-gradient(90deg,var(--gold-soft),var(--surface) 140px)}
 .sess-info{font-size:13px;color:var(--muted);margin:0 0 6px;display:grid;gap:2px}.sess-info b{color:var(--fg)}
@@ -566,7 +566,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-04z";
+const HUB_VERSION = "11-05a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1511,6 +1511,7 @@ const EX = {
   "Low box jumps":{cue:"Low box, jump up, land soft, step down. Prepared athletes only."},
   "Clamshells":{cue:"On your side, knees bent, open the top knee without rolling back."},
   "Single-leg bridge":{cue:"One foot down, other knee up. Hips stay level."},
+  "Squat":{cue:"Bodyweight first. Sit back and down, chest tall, knees over toes, stand tall.", eq:"None (light dumbbell later)", alt:"Squat to a box"},
 };
 const LIFTS = {
   A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6–8/leg"],["Standing calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
@@ -1520,18 +1521,24 @@ const LIFTS = {
   B2:{name:"Strength B2 · Progressive Strength", when:"Weeks 9–10", ex:[["Goblet squat","3 × 6 (or front squat)",1],["Dumbbell Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg (or step-up)"],["Bent-knee calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
   M:{name:"Strength M · Maintenance", when:"Week 11 on", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 10"],["Row","2 × 8"],["Dead bug","2 × 8/side"]]},
   H1:{name:"Home strength H1", when:"Winter break, week 1", home:1, ex:[["Bodyweight squat","2 × 10"],["Hip bridge","2 × 12"],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 15"],["Push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
+  JA:{name:"JH Strength A · Foundation", when:"JH weeks 1–2, 6", jh:1, ex:[["Squat","2 × 8",1],["Reverse lunge","2 × 6/leg"],["Hip bridge","2 × 10"],["Calf raise","2 × 12"],["Push-up","2 × 6–10"],["Dead bug","2 × 8/side"]]},
+  JB:{name:"JH Strength B · Progression", when:"JH weeks 3, 7, 9–10", jh:1, ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Step-up","2 × 6/leg"],["Bent-knee calf raise","2 × 12"],["Row","2 × 10"],["Side plank","2 × 20 sec/side"]]},
+  JL:{name:"JH Strength Light", when:"JH week 8 (recovery)", jh:1, ex:[["Squat","2 × 8",1],["Hip bridge","2 × 10"],["Calf raise","2 × 10"],["Dead bug","2 × 6/side"]]},
+  JM:{name:"JH Strength Maintenance", when:"JH week 11 on", jh:1, ex:[["Goblet squat","2 × 6",1],["Dumbbell Romanian deadlift","2 × 6",1],["Step-up","2 × 5/leg"],["Calf raise","2 × 10"],["Side plank","2 × 15 sec/side"]]},
   H2:{name:"Home strength H2", when:"Winter break, week 2", home:1, ex:[["Bodyweight squat","2 × 10"],["Single-leg hip bridge","2 × 8/leg"],["Step-up","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
 };
-const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"];
-const liftCode = t => { const m = String(t).match(/\b(?:Strength (A1|A2|B1|B2|Deload|M)|Home strength (H1|H2))\b/); return m ? (m[1]||m[2]) : null; };
+const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"], LIFT_ORDER_JH = ["JA","JB","JL","JM"];
+const liftCode = t => { const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
+  const m = String(t).match(/\b(?:Strength (A1|A2|B1|B2|Deload|M)|Home strength (H1|H2))\b/); return m ? (m[1]||m[2]) : null; };
 const liftRest = (L, main) => L.home ? "30–45 sec" : main ? "60–90 sec" : "Circuit, 30–45 sec";
 function liftHTML(code){
   const L = LIFTS[code]; if (!L) return "";
   const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
     <td class="sub">${esc(liftRest(L, main))}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("");
-  const prog = L.home ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${LIFT_ORDER.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
+  const ORD = L.jh ? LIFT_ORDER_JH : LIFT_ORDER;
+  const prog = L.home ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${ORD.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
   return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="sub" style="margin:6px 0 0">Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure.${L.home?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
+    <p class="sub" style="margin:6px 0 0">${L.jh ? "Technique first, supervised, scaled to each kid's size and experience. Bodyweight before dumbbells. Never HS loads by default." : "Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure."}${L.home||L.jh?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
 }
 // Printed sheets: the lift list for any strength line on the sheet
 function liftPrint(items){
@@ -1549,7 +1556,7 @@ function drillHTML(text){
   return `<details class="lift"><summary>How to</summary><div class="lb">${list.map(n=>`<div style="margin:0 0 4px"><b>${esc(n)}</b>: <span class="sub">${esc(EX[n].cue)}</span></div>`).join("")}</div></details>`;
 }
 // Session info on a day (Dec–Feb winter plan): coach-led vs on your own, voluntary, session type
-const SESS_K = {coach:["Coach-led · voluntary","ss-coach"], coachq:["Coach-led if school is open","ss-coach"], indep:["On your own · voluntary","ss-indep"], break:["Winter break · optional","ss-break"], official:["Official practice","ss-off"], rest:["Rest day","ss-rest"]};
+const SESS_K = {coach:["Coach-led · voluntary","ss-coach"], coachq:["Coach-led if school is open","ss-coach"], indep:["On your own · voluntary","ss-indep"], break:["Winter break · optional","ss-break"], official:["Official practice","ss-off"], meet:["Meet day","ss-meet"], rest:["Rest day","ss-rest"]};
 const sessOf = (d, lv) => (d && d.sess && d.sess[lv==="Both"?"HS":lv]) || null;
 const isCoachLed = (d, lv) => { const s = sessOf(d, lv); return !!s && (s.kind==="coach" || s.kind==="coachq" || s.kind==="official"); };
 function sessBadge(d, lv){
@@ -1569,7 +1576,7 @@ const weekObj = (w, lv) => { const s = (w.days||[]).map(d=>sessOf(d, lv||"HS")).
 const itemHTML = it => {
   const {tags, text} = splitTags(it.t);
   const cm = text.match(/^([A-E][1-3])\b\s*/);
-  const label = tags.map(x=>`<span class="tchip${x==="Crossover"?" xo":""}">${esc(TAG_CHIP[x]||x)}</span>`).join("")
+  const label = tags.map(x=>`<span class="tchip${x==="Crossover"?" xo":""}">${esc((it.lv==="JH" && TAG_CHIP_JH[x]) || TAG_CHIP[x] || x)}</span>`).join("")
     + (cm ? `<span class="wcode ty-${CODE_TY[cm[1][0]]}" title="${esc(CODE_NAME[cm[1][0]])}">${cm[1]}</span>${esc(text.slice(cm[0].length))}` : esc(text));
 
   if (it.url) return `${label} <a class="vid" href="${esc(it.url)}" target="_blank" rel="noopener"><i>▶</i>Video</a>`;
@@ -1597,9 +1604,10 @@ function blockHTML(name, arr, combo){
 }
 function dayHTML(d){
   if(wlv!=="Both" && !dayHas(d,wlv)) return "";
-  const focus = wcat!=="All" && gFocus(d,wcat) ? esc(gFocus(d,wcat)) : wlv!=="Both" ? esc(focusFor(d,wlv)) :
+  const gl = wlv==="JH" ? "JH" : "HS";
+  const focus = wcat!=="All" && gFocus(d,wcat,gl) ? esc(gFocus(d,wcat,gl)) : wlv!=="Both" ? esc(focusFor(d,wlv)) :
     (typeof d.focus==="string" ? esc(d.focus) : ["JH","HS"].map(l=>`${l}: ${esc(d.focus[l]||"Off")}`).join("<br>"));
-  const groups = shownCombos(d).map(cb=>blockHTML(comboName(cb), cb.items, true)).join("") + shownGroups(d).map(c=>blockHTML(c + (gFocus(d,c) ? " · " + gFocus(d,c) : ""), d.groups[c])).join("");
+  const groups = shownCombos(d).map(cb=>blockHTML(comboName(cb), cb.items, true)).join("") + shownGroups(d).map(c=>blockHTML(c + (gFocus(d,c,gl) ? " · " + gFocus(d,c,gl) : ""), d.groups[c])).join("");
   const everyone = blockHTML("Everyone", d.all);
   const hasAll = wlv==="Both" ? (d.all||[]).length : forLv(d.all,wlv).length;
   const empty = !groups && wcat!=="All" ? `<p class="muted" style="margin:0">No separate ${esc(wcat)} work today.${hasAll?" Follow the Everyone plan.":" Check with your event coach."}</p>` : "";
@@ -1751,7 +1759,7 @@ const MD = {
     ["Championship week","Less volume. Keep speed and race rhythm. Freshness and recovery come first."],
   ],
 };
-let mdtab = "overview", mdcal = {view:"week", wi:null, month:"", g:"Distance"}, md800 = {t:"", who:""}, MDNOTES = {general:"", mods:""}, mdn = null, mdnMsg = {kind:"",text:""};
+let mdtab = "overview", mdcal = {view:"week", wi:null, month:"", g:"Distance", lv:"HS"}, md800 = {t:"", who:""}, MDNOTES = {general:"", mods:""}, mdn = null, mdnMsg = {kind:"",text:""};
 const mdWeeks = () => (canPost ? sortedWeeks() : visibleWeeks()).filter(w => w.days.some(d => (d.groups||{})["Mid Distance"]));
 const mdItems = d => forLv(((d.groups||{})["Mid Distance"]||[]), "HS");
 const xoItems = d => forLv(((d.groups||{})["Distance"]||[]), "HS").filter(it => splitTags(it.t).tags.includes("Crossover"));
@@ -2055,24 +2063,27 @@ const paceAthletes = () => ATHLETES.filter(a=>a.cats.includes("Distance")||a.cat
 // No tag = everyone. Picking your name on the Workouts page hides lines tagged for other runners.
 let DTAGS = {}, dtDraft = null, dtMsg = {kind:"",text:""};
 const LEVEL_NAMES = {A:"A · Established", B:"B · Intermediate", C:"C · Developing"};
+const READY = {reduced:"Reduced: shorter workouts", easy:"Easy running only", out:"Not running right now"};
+const CHAMP_NAMES = {conf:"WCJC (conference)", reg:"Regional qualifier", state:"State qualifier"};
 const PATH_NAMES = {Distance:"Distance (1600/3200)", Hybrid:"Hybrid (800/1600)", Mid:"Mid-distance (400/800) · own plan"};
 // Which HS plan a runner follows: Mid-Distance runners get the Mid Distance group, everyone else the Distance group.
 function planGroup(a){
-  if (a.level!=="HS") return null;
   const t = DTAGS[a.id] || {};
   if (t.path==="Mid") return "Mid Distance";
   if (t.path) return "Distance";
   return a.cats.includes("Distance") ? "Distance" : a.cats.includes("Mid Distance") ? "Mid Distance" : null;
 }
-const gFocus = (d, g) => (d.gfocus && g && d.gfocus[g]) || "";
+const gFocus = (d, g, lv) => (d.gfocus && g && d.gfocus[(lv==="JH" ? "JH " : "") + g]) || "";
 // Workout-library codes (A1–E2) and their look
 const CODE_TY = {A:"speed", B:"aero", C:"speed", D:"race", E:"str"};
 const CODE_NAME = {A:"Acceleration / max velocity", B:"Aerobic", C:"Speed endurance", D:"800-specific", E:"Strength / athletic development"};
 const CODE_ADAPT = {A:"Maximum velocity and acceleration", B:"Aerobic development", C:"Speed endurance", D:"Event-specific (800) endurance", E:"Strength, coordination, mechanics"};
 const FOCUS_TY = f => /meet|sectional|regional|state/i.test(f) ? "meet" : /recovery|rest/i.test(f) ? "rec" : /800|sharpen|race/i.test(f) ? "race" : /speed|velocity/i.test(f) ? "speed" : /aerobic|easy/i.test(f) ? "aero" : "";
-const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover"};
+const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
+const TAG_CHIP_JH = {A:"Advanced", B:"Development", C:"Foundation"};
+const LEVEL_NAMES_JH = {A:"Advanced", B:"Development", C:"Foundation"};
 const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
-const tagAthletes = () => ATHLETES.filter(a=>a.level==="HS" && (a.cats.includes("Distance")||a.cats.includes("Mid Distance"))).sort((x,y)=>x.name.localeCompare(y.name));
+const tagAthletes = (lv) => ATHLETES.filter(a=>a.level===(lv||"HS") && (a.cats.includes("Distance")||a.cats.includes("Mid Distance"))).sort((x,y)=>x.name.localeCompare(y.name));
 // Uses the same "Who are you?" pick as Recruiting (me / setMe), so a runner picks their name once.
 const meAth = () => (me && ATHLETES.find(a=>a.id===me && a.level==="HS")) || null;
 function setPlan(id){ if (id) { wlv = "HS"; try { localStorage.setItem("hub-wlv","HS"); } catch(e) {} } setMe(id||""); }
@@ -2089,6 +2100,7 @@ function tagsFit(tags, a){
   if (lv.length && t.lv && !lv.includes(t.lv)) return false;   // level not set yet = see every version
   if (pa.length && t.path && !pa.includes(t.path)) return false;
   if (g.length && !g.includes(a.g==="G"?"Girls":"Boys")) return false;
+  if (tags.includes("HS-ready") && !t.hs) return false;
   return true;
 }
 const RACE_M = {"400":400, "800":800, "1600":1600, "3200":3200};
@@ -2153,12 +2165,12 @@ function outlookHTML(w, rest){
   if (key === "Field") {
     const evs = groups.map(g => ({g, days: rest.map(d=>({d, it:groupItems(d,g,oLv)})).filter(x=>x.it.length)}));
     body = `<div class="fldgrid">${evs.map(({g,days})=>`<div class="panel fld"><h3>${esc(g)}</h3>
-      ${days.length ? days.map(({d,it})=>`<div class="fday"><b>${d.day}</b><div>${gFocus(d,g)?`<small class="muted">${esc(gFocus(d,g))}</small>`:""}${list(it)}</div></div>`).join("")
+      ${days.length ? days.map(({d,it})=>`<div class="fday"><b>${d.day}</b><div>${gFocus(d,g,oLv)?`<small class="muted">${esc(gFocus(d,g,oLv))}</small>`:""}${list(it)}</div></div>`).join("")
         : `<p class="note" style="margin:0">Nothing posted for the rest of this week.</p>`}</div>`).join("")}</div>`;
   } else {
     const days = rest.map(d=>({d, gs: groups.map(g=>[g, groupItems(d,g,oLv)]).filter(x=>x[1].length), ev: everyone(d)})).filter(x=>x.gs.length);
-    body = days.length ? `<div class="days">${days.map(({d,gs,ev})=>{ const f = gFocus(d,groups[0]) || focusFor(d,oLv);
-        return `<div class="day ${cls}"><div class="when">${d.day}<small>${esc(f)}</small>${oLv==="HS" && (key==="Distance"||key==="Mid Distance") ? sessBadge(d, "HS") : ""}</div><div class="evlist">
+    body = days.length ? `<div class="days">${days.map(({d,gs,ev})=>{ const f = gFocus(d,groups[0],oLv) || focusFor(d,oLv);
+        return `<div class="day ${cls}"><div class="when">${d.day}<small>${esc(f)}</small>${key==="Distance"||key==="Mid Distance" ? sessBadge(d, oLv) : ""}</div><div class="evlist">
           ${ev.length?`<div class="evblock"><div class="evname">Everyone</div>${list(ev)}</div>`:""}
           ${gs.length>1||ev.length ? gs.map(([g,it])=>`<div class="evblock"><div class="evname">${esc(g)}</div>${list(it)}</div>`).join("") : list(gs[0][1])}</div></div>`; }).join("")}</div>`
       : `<div class="panel"><p style="margin:0">No ${esc(title)} workouts posted for the rest of this week.</p></div>`;
@@ -2179,19 +2191,19 @@ function nextWorkout(){
   return find(want) || find(want==="JH" ? "HS" : "JH");   // nothing posted for this level yet: show the other one (labeled)
 }
 // Lines for the Next workout card: the "as written" version (B/C variants are on each runner's page)
-function nwItems(d){
-  const groups = [];
-  const add = (name, arr) => { const it = (arr||[]).filter(x => { const t = splitTags(x.t).tags; return !t.some(y=>y==="B"||y==="C"); }); if (it.length) groups.push([name, it]); };
+function nwItems(d, lv){
+  const groups = [], skip = lv==="JH" ? ["A","C"] : ["B","C"];
+  const add = (name, arr) => { const it = (arr||[]).filter(x => { const t = splitTags(x.t).tags; return !t.some(y=>skip.includes(y)) && !t.includes("HS-ready"); }); if (it.length) groups.push([name, it]); };
   add("", d.all);
   (d.combos||[]).forEach(cb => add(comboName(cb), cb.items));
-  CATEGORIES.forEach(c => add(c + (gFocus(d,c) ? " · " + gFocus(d,c) : ""), (d.groups||{})[c]));
+  CATEGORIES.forEach(c => add(c + (gFocus(d,c,lv) ? " · " + gFocus(d,c,lv) : ""), (d.groups||{})[c]));
   return groups;
 }
 // One athlete's version of a week: their level, their event groups, their tags, with paces under each line.
 let awIdx = null;
 function myItems(a, d){
   const pg = planGroup(a);
-  const mine = (pg ? [pg] : a.cats).filter(c=>d.groups && d.groups[c]);
+  const mine = (pg ? [pg, ...(a.level==="JH" ? a.cats.filter(c=>c!=="Distance" && c!=="Mid Distance") : [])] : a.cats).filter(c=>d.groups && d.groups[c]);
   let items = [...(d.all||[])];
   (d.combos||[]).filter(cb=>cb.groups.some(g=>a.cats.includes(g))).forEach(cb=>items.push(...cb.items));
   mine.forEach(c=>items.push(...d.groups[c]));
@@ -2226,11 +2238,12 @@ function myWeekHTML(a){
     const lt = lastTime(a, text, dayDate(w, curDay));
     return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}${lt?`<div class="mylast">Last time · ${esc(lastShort(lt))}</div>`:""}</li>`;
   };
-  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
+  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
-    ${a.level==="HS" ? weekObj(w, "HS") : ""}
-    ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day${isCoachLed(d, a.level) ? " d-coach" : ""}"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a)) || focusFor(d,a.level))}</small>${sessBadge(d, a.level)}</div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
+    ${weekObj(w, a.level)}
+    ${t.ready && t.ready!=="full" ? `<p class="wkobj"><b>This week:</b> ${esc(READY[t.ready]||t.ready)}</p>` : ""}${t.note ? `<p class="wkobj"><b>Coach note:</b> ${esc(t.note)}</p>` : ""}
+    ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day${isCoachLed(d, a.level) ? " d-coach" : ""}"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a), a.level) || focusFor(d,a.level))}</small>${sessBadge(d, a.level)}</div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">No workouts posted for this week yet.</p>`}
     <p class="note" style="margin:8px 0 0">Paces come from your best race, same as the <a href="#paces">Paces</a> page. Effort matters more than hitting the exact number.</p></div>`;
 }   // "Find my pace" picker open on the Workouts page
@@ -2353,7 +2366,7 @@ const timedLine = it => { const {tags, text} = splitTags(it.t); return !tags.inc
 // On a printed sheet every kid needs one version: untagged kids get the as-written (Level A) version of their usual group.
 function sheetFit(tags, a){
   const t = DTAGS[a.id] || {}, saved = DTAGS[a.id];
-  DTAGS[a.id] = {lv: t.lv || "A", path: t.path || (a.cats.includes("Distance") ? "Distance" : a.cats.includes("Mid Distance") ? "Mid" : undefined)};
+  DTAGS[a.id] = {...t, lv: t.lv || (a.level==="JH" ? "B" : "A"), path: t.path || (a.cats.includes("Distance") ? "Distance" : a.cats.includes("Mid Distance") ? "Mid" : undefined)};
   try { return tagsFit(tags, a); } finally { if (saved) DTAGS[a.id] = saved; else delete DTAGS[a.id]; }
 }
 function kidReps(a, d, cat, lv){ return sheetRaw(d, cat, lv).filter(it => timedLine(it) && sheetFit(splitTags(it.t).tags, a)).flatMap(it => lineReps(splitTags(it.t).text)); }
@@ -2497,8 +2510,8 @@ function coverHTML(w, lvs){
   return `<section class="sheet cover">
     <div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Week Packet</div><div class="sh-title">${esc(weekLabel(w))}</div></div>
       <div class="sh-meta"><div><b>${esc(who)}</b></div><div>${lvs.join(" + ")}</div></div></div>
-    ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}${lvs.includes("HS") && sessOf(d,"HS") ? ` · ${esc((SESS_K[sessOf(d,"HS").kind]||[""])[0])}` : ""}</h4>
-      ${blocks.map(b=>{ const f = gFocus(d,b.cat) || focusFor(d,b.lv); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
+    ${days.length ? `<div class="cv-days">${days.map(({d,blocks})=>`<div class="cv-day"><h4>${esc(fmt(d))}${lvs.length===1 && sessOf(d,lvs[0]) ? ` · ${esc((SESS_K[sessOf(d,lvs[0]).kind]||[""])[0])}` : ""}</h4>
+      ${blocks.map(b=>{ const f = gFocus(d,b.cat,b.lv) || focusFor(d,b.lv); return `<div class="cv-blk"><b>${esc(b.cat)}${lvs.length>1?" · "+b.lv:""}</b>${f?` <span class="cv-f">${esc(f)}</span>`:""}
         <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`
       : `<p>Nothing posted for these groups this week.</p>`}
     <div class="sh-foot">Group sheets follow: ${lvs.join(" then ")}, one page per group per practice day.</div></section>`;
@@ -2509,9 +2522,9 @@ function buildPacket(){
   const out = [coverHTML(w, lvs)];
   lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
     const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
-    const ss = sessOf(d, lv); if (ss && ["indep","break","rest"].includes(ss.kind)) return;   // not a practice: on the cover page only
+    const ss = sessOf(d, lv); if (ss && ["indep","break","rest","meet"].includes(ss.kind)) return;   // not a practice: on the cover page only
     const date = dayDate(w, d.day);
-    const focus = gFocus(d,cat) || focusFor(d, lv);
+    const focus = gFocus(d,cat,lv) || focusFor(d, lv);
     out.push(sheetHTML({dateLabel: date.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}), dayName: d.day, focus, cat, lv, items, d, date}));
   })));
   return out.join("");
@@ -2831,7 +2844,7 @@ const views = {
           const dleft = Math.round((nx.dt - today)/864e5);
           const when = dleft===0 ? "Today" : dleft===1 ? "Tomorrow" : nx.dt.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
           const lv = nx.lv || (wlv==="JH" ? "JH" : "HS");
-          const groups = nwItems(nx.d).map(([n,it])=>[n, forLv(it, lv)]).filter(([,it])=>it.length);
+          const groups = nwItems(nx.d, lv).map(([n,it])=>[n, forLv(it, lv)]).filter(([,it])=>it.length);
           return `<div class="bar"><div class="eyebrow">Next workout${lv!==(wlv==="JH"?"JH":"HS") || wlv==="Both" ? " · " + (lv==="JH"?"Junior High":"High School") : ""} · ${esc(when)}</div><a href="#workouts">Workouts →</a></div>
             <h3>${esc(focusFor(nx.d, lv) || "Workout")}</h3>${sessBadge(nx.d, lv)}
             ${dleft>1?`<div class="wk-count">${dleft}<span>days away</span></div>`:""}
@@ -3087,19 +3100,27 @@ const views = {
   },
   _tagEdit(){
     if(!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
-    const sel = (id,k,opts) => `<select aria-label="${k==="lv"?"Level":"Group"}" onchange="dtSet('${id}','${k}',this.value)"><option value="">Not set</option>${Object.entries(opts).map(([v,l])=>`<option value="${v}" ${((dtDraft[id]||{})[k]||"")===v?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
-    return `<p class="lede" style="margin:0">Give each HS distance runner a level and a group. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
-      <div class="panel ed"><div class="tbl"><table><thead><tr><th>Runner</th><th>Events</th><th>Level</th><th>Group</th></tr></thead><tbody>
-        ${tagAthletes().map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td>${esc(a.events.map(evn).join(", "))||"—"}</td>
-          <td>${sel(a.id,"lv",LEVEL_NAMES)}</td><td>${sel(a.id,"path",PATH_NAMES)}</td></tr>`).join("")}
-      </tbody></table></div>
-      <div class="ed-save"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button></div>
-      <p class="ed-msg ${dtMsg.kind}" role="status" style="margin:0">${esc(dtMsg.text)}</p></div>
+    const sel = (id,k,opts,lab) => `<select aria-label="${esc(lab)}" onchange="dtSet('${id}','${k}',this.value)"><option value="">${k==="ready"?"Full training":"Not set"}</option>${Object.entries(opts).map(([v,l])=>`<option value="${v}" ${((dtDraft[id]||{})[k]||"")===v?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+    const txt = (id,k,ph,w) => `<input type="text" aria-label="${esc(ph)}" style="width:${w}px" value="${esc((dtDraft[id]||{})[k]||"")}" placeholder="${esc(ph)}" onchange="dtSet('${id}','${k}',this.value.trim())">`;
+    const chk = (id,k,lab) => `<label class="ed-check"><input type="checkbox" ${((dtDraft[id]||{})[k])?"checked":""} onchange="dtSet('${id}','${k}',this.checked?'1':'')"> ${esc(lab)}</label>`;
+    const pr = a => ["800","1600"].map(e=>a.prs[e]?`${e} ${esc(a.prs[e])}`:"").filter(Boolean).join(" · ") || "—";
+    const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>Level</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":""}<th>This week</th><th>Coach note (shows on their page)</th></tr></thead><tbody>
+        ${tagAthletes(lv).map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td class="mono" style="white-space:nowrap">${pr(a)}</td>
+          <td>${sel(a.id,"lv",lv==="JH"?LEVEL_NAMES_JH:LEVEL_NAMES,"Level")}</td><td>${sel(a.id,"path",PATH_NAMES,"Pathway")}</td>
+          ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:""}
+          <td>${sel(a.id,"ready",READY,"This week")}</td><td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
+      </tbody></table></div>`;
+    return `<p class="lede" style="margin:0">Give each distance and mid-distance runner a level and a pathway. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
+      <div class="panel ed"><h2>High school</h2>${tbl("HS")}</div>
+      <div class="panel ed"><h2>Junior high</h2><p class="note" style="margin:0 0 8px"><b>Advanced</b> = established runner with a proven training history (not just a fast PR). <b>Development</b> = consistent JH runner (the as-written plan). <b>Foundation</b> = newer or lower-volume runner. <b>HS group invite</b> lets an advanced runner see the invite to join HS warm-ups, drills, and strength on Tuesdays. Nothing here adds mileage automatically.</p>${tbl("JH")}</div>
+      <div class="ed-save"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button>
+        <span class="note">Coach notes and "This week" show on the runner's public page. Keep medical details out.</span></div>
+      <p class="ed-msg ${dtMsg.kind}" role="status" style="margin:0">${esc(dtMsg.text)}</p>
       <div class="panel"><h3>Tagging workout lines</h3><ul class="exp">
-        <li>Start a line in Post Workouts with a tag to show it only to those runners: <span class="tchip">[A]</span><span class="tchip">[B]</span><span class="tchip">[C]</span> for level, <span class="tchip">[Distance]</span><span class="tchip">[Hybrid]</span><span class="tchip">[Mid]</span> for group, <span class="tchip">[Girls]</span><span class="tchip">[Boys]</span>.</li>
+        <li>Start a line in Post Workouts with a tag to show it only to those runners: <span class="tchip">[A]</span><span class="tchip">[B]</span><span class="tchip">[C]</span> for level (JH: Advanced / Development / Foundation), <span class="tchip">[Distance]</span><span class="tchip">[Hybrid]</span><span class="tchip">[Mid]</span> for pathway, <span class="tchip">[Girls]</span><span class="tchip">[Boys]</span>, <span class="tchip">[HS-ready]</span> for invited JH runners.</li>
         <li>Mix them: <b>[B] [Hybrid] 3 × 4 min Tempo</b> shows to Level B hybrids only. A line with no tag is for everyone.</li>
         <li>Use the Paces page words so the Paces button works: <b>Easy, Steady, Tempo, Interval, Rep pace, 800 pace, 1600 pace, 3200 pace</b>. Write rep distances like <b>4 × 200m</b>.</li>
-        <li>Runners with no level or group set see every version.</li></ul></div>`;
+        <li>Runners with no level or pathway set see every version.</li></ul></div>`;
   },
   _recEdit(){
     if(!rc) rcReset();
@@ -3423,7 +3444,7 @@ const views = {
     const tabs = [["overview","Philosophy"],["calendar","Calendar"],["strength","Strength & Drills"],["library","Mid Workout Library"],["crossover","Distance Crossover"],["pace","800 Pace"],["meets","Meet Weeks"]].concat(canPost?[["notes","Coach Notes"]]:[]);
     if (mdtab==="notes" && !canPost) mdtab = "overview";
     const tyLegend = `<div class="legend"><span><i class="ty-speed"></i>Speed</span><span><i class="ty-aero"></i>Aerobic</span><span><i class="ty-race"></i>Race-specific</span><span><i class="ty-str"></i>Strength</span><span><i class="ty-rec"></i>Recovery</span><span><i class="ty-meet"></i>Meet</span><span><span class="tchip xo" style="margin:0">Optional crossover</span></span></div>`;
-    const head = `${back}<div class="stack"><div><div class="eyebrow">2026–27 · 400m to 3200m</div><h1>Distance &amp; Mid-Distance</h1>
+    const head = `${back}<div class="stack"><div><div class="eyebrow">2026–27 · High school and junior high · 400m to 3200m</div><h1>Distance &amp; Mid-Distance</h1>
       <p class="lede" style="margin:6px 0 0"><i>${esc(MD.motto)}</i></p></div>
       <div class="seg mdtabs" role="group" aria-label="Section">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${mdtab===k}" onclick="mdtab='${k}';render()">${l}</button>`).join("")}</div>`;
     let body = "";
@@ -3446,6 +3467,16 @@ const views = {
             <p class="note" style="margin:8px 0 0">Starting points, not rules. Recent training, consistency, injuries, and recovery decide. A runner who joins late starts at C or B for 2–3 weeks.</p></div></div>
         <div class="panel"><h2>The season</h2><div class="tbl"><table><thead><tr><th>Phase</th><th>Dates</th><th>Distance</th><th>Mid-distance</th></tr></thead><tbody>
           ${MD.phases.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div></div>
+        <div class="panel"><h2>Junior high: same workout, different dosage, individualized pace</h2>
+          <p style="margin:0 0 8px">JH runners train on the same calendar, with the same drills, words, and lifts as the high school, at JH volume. An elite 7th or 8th grader keeps progressing, a new 6th grader isn't overwhelmed, and everyone shows up to freshman year already knowing the system.</p>
+          <div class="tbl"><table><thead><tr><th>Level</th><th>Who</th><th>Easy run</th><th>Long run</th></tr></thead><tbody>
+            <tr><td><b>Foundation</b></td><td>Newer or lower-volume runner</td><td class="mono">10–20 min</td><td class="mono">20–30 min</td></tr>
+            <tr><td><b>Development</b></td><td>Consistent JH runner (the plan as written)</td><td class="mono">20–30 min</td><td class="mono">30–45 min</td></tr>
+            <tr><td><b>Advanced</b></td><td>Established runner with proven training tolerance</td><td class="mono">30–45 min</td><td class="mono">40–60 min</td></tr></tbody></table></div>
+          <p class="note" style="margin:6px 0 10px">Advanced is an option, not a goal. A fast PR never adds mileage by itself. 3–4 running days a week is plenty for most JH runners in winter.</p>
+          <div class="cols"><div><h3 style="margin:0 0 6px">Season</h3><ul class="exp"><li><b>Dec</b> · Foundation</li><li><b>Jan</b> · Aerobic development</li><li><b>Feb</b> · Transition (controlled aerobic reps start Feb 15)</li><li><b>Mar</b> · Event development; 800 and 1600 branch on Thursdays from Mar 29</li><li><b>Apr</b> · Competition</li><li><b>May</b> · Championship taper</li></ul></div>
+            <div><h3 style="margin:0 0 6px">Championship path</h3><ul class="exp"><li>Apr 15 · Lafayette Tecumseh (home): baseline times</li><li>Apr 19 · BC / Wea / West Lafayette</li><li>Apr 30 · <b>Bison Invitational</b> (home, top two per event)</li><li>May 3 &amp; 6 · Seeger, Delphi</li><li>May 10 · <b>WCJC Championships</b></li><li>May 15 · Regional at Avon (qualifiers)</li><li>May 22 · <b>MS State Finals</b>, Indiana State</li></ul></div></div>
+          <p class="note" style="margin:8px 0 0"><b>Controlled aerobic</b> reps are not automatically threshold. Only advanced runners with reliable paces push toward Tempo. Advanced JH runners the coaches invite can join HS warm-ups, drills, and strength coaching on Tuesdays and still run JH reps. Runners who don't qualify for regional or state get a season wrap-up, not more taper.</p></div>
         <div class="panel"><h2>Speed vs. aerobic, by event</h2>
           <div class="tbl"><table><thead><tr><th>Athlete profile</th><th>Holler (speed)</th><th>Daniels (aerobic)</th></tr></thead><tbody>
           ${MD.profiles.map(r=>`<tr><td><b>${r[0]}</b></td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td></tr>`).join("")}</tbody></table></div>
@@ -3453,16 +3484,20 @@ const views = {
     }
     else if (mdtab==="strength") {
       body = `<p class="lede" style="margin:0">Every winter Tuesday has 25–30 minutes in the weight room. Light to moderate loads, 2–3 reps left in the tank, no max lifts. The sessions build week to week.</p>
+        <h2 style="margin:6px 0 0">High school</h2>
         ${LIFT_ORDER.concat(["H1","H2"]).map(k=>`<div class="panel"><h3 style="margin:0 0 4px">${esc(LIFTS[k].name)} <span class="muted" style="font-weight:400">· ${esc(LIFTS[k].when)}</span></h3>${liftHTML(k).replace('<details class="lift">','<details class="lift" open>')}</div>`).join("")}
+        <h2 style="margin:6px 0 0">Junior high</h2><p class="note" style="margin:0">Same exercise library, fewer sets, lighter loads. 15–20 minutes, technique first.</p>
+        ${LIFT_ORDER_JH.map(k=>`<div class="panel"><h3 style="margin:0 0 4px">${esc(LIFTS[k].name)} <span class="muted" style="font-weight:400">· ${esc(LIFTS[k].when)}</span></h3>${liftHTML(k).replace('<details class="lift">','<details class="lift" open>')}</div>`).join("")}
         <div class="panel"><h3 style="margin:0 0 6px">Thursday drills &amp; athletic development</h3>
           <p class="note" style="margin:0 0 8px">Running drills are running-mechanics coaching. In winter, use them only if the session is approved as limited contact; otherwise swap in general mobility.</p>
           ${Object.entries(EX).filter(([n,e])=>e.drill || !e.eq).map(([n,e])=>`<div style="margin:0 0 4px"><b>${esc(n)}</b>${e.drill?` <span class="tchip">drill</span>`:""}: <span class="muted">${esc(e.cue)}</span></div>`).join("")}</div>`;
     }
     else if (mdtab==="calendar") {
-      const G = mdcal.g==="Distance" ? "Distance" : "Mid Distance";
-      const gItems = d => G==="Distance" ? forLv(((d.groups||{})["Distance"]||[]), "HS").filter(it => !splitTags(it.t).tags.includes("Crossover")) : mdItems(d);
+      const G = mdcal.g==="Distance" ? "Distance" : "Mid Distance", L = mdcal.lv==="JH" ? "JH" : "HS";
+      const gItems = d => forLv(((d.groups||{})[G]||[]), L).filter(it => !splitTags(it.t).tags.includes("Crossover"));
+      const xoI = d => L==="HS" ? xoItems(d) : [];
       const weeks = (canPost ? sortedWeeks() : visibleWeeks()).filter(w => w.days.some(d => gItems(d).length));
-      const gT = segBtns(G, [["Distance","Distance"],["Mid Distance","Mid-Distance"]], "(v=>{mdcal.g=v;render()})");
+      const gT = segBtns(L, [["HS","High School"],["JH","Junior High"]], "(v=>{mdcal.lv=v;mdcal.wi=null;render()})") + segBtns(G, [["Distance","Distance"],["Mid Distance","Mid-Distance"]], "(v=>{mdcal.g=v;render()})");
       if (!weeks.length) body = `<div class="bar">${gT}</div><div class="panel"><p style="margin:0">Nothing posted for this group yet. The plan starts Dec 1.</p></div>`;
       else {
         const toggle = gT + segBtns(mdcal.view, [["week","Week"],["month","Month"]], "(v=>{mdcal.view=v;render()})");
@@ -3475,13 +3510,13 @@ const views = {
           body = `<div class="bar">${toggle}<div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="mdcal.wi=${i-1};render()">‹</button><b>${esc(weekLabel(w))}</b>
               <button type="button" aria-label="Next week" ${i===weeks.length-1?"disabled":""} onclick="mdcal.wi=${i+1};render()">›</button></div>
               ${canPost?`<button type="button" class="btn" onclick="ctab='workouts';edLoad('${w.start}');location.hash='#coaches'">Edit this week</button>`:""}</div>
-            ${weekObj(w, "HS")}
-            ${w.days.some(d=>{ const x = sessOf(d,"HS"); return x && x.kind!=="official"; }) ? "" : `<div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${["No-meet week","One-meet week","Two-meet week","Championship week"][k]}.</b> ${esc(MD.rules[k][1])}${ms.length?` <span class="muted">Meets: ${ms.map(m=>esc(m.meet.replace(/\s*\*[^*]+\*/g,""))+" ("+parseD(m.date).toLocaleDateString("en-US",{weekday:"short"})+")").join(", ")}.</span>`:""}</p></div>`}
+            ${weekObj(w, L)}
+            ${L==="JH" || w.days.some(d=>{ const x = sessOf(d,"HS"); return x && x.kind!=="official"; }) ? "" : `<div class="panel" style="padding:10px 14px"><p style="margin:0"><b>${["No-meet week","One-meet week","Two-meet week","Championship week"][k]}.</b> ${esc(MD.rules[k][1])}${ms.length?` <span class="muted">Meets: ${ms.map(m=>esc(m.meet.replace(/\s*\*[^*]+\*/g,""))+" ("+parseD(m.date).toLocaleDateString("en-US",{weekday:"short"})+")").join(", ")}.</span>`:""}</p></div>`}
             ${tyLegend}
-            <div class="days">${w.days.filter(d=>gItems(d).length || xoItems(d).length).map(d=>{ const f = gFocus(d,G) || focusFor(d,"HS");
-              return `<div class="day${isCoachLed(d,"HS")?" d-coach":""}"><div class="when">${d.day}<small><span class="fc">${esc(f)}</span></small>${sessBadge(d,"HS")}</div><div class="evlist">${sessInfo(d,"HS")}
+            <div class="days">${w.days.filter(d=>gItems(d).length || xoI(d).length).map(d=>{ const f = gFocus(d,G,L) || focusFor(d,L);
+              return `<div class="day${isCoachLed(d,L)?" d-coach":""}"><div class="when">${d.day}<small><span class="fc">${esc(f)}</span></small>${sessBadge(d,L)}</div><div class="evlist">${sessInfo(d,L)}
                 ${gItems(d).length?`<div class="evblock"><div class="evname">${G==="Distance"?"Distance":"Mid Distance"}</div>${list(gItems(d))}</div>`:""}
-                ${xoItems(d).length?`<div class="evblock"><div class="evname">Distance crossover (optional)</div>${list(xoItems(d))}</div>`:""}</div></div>`; }).join("")}</div>`;
+                ${xoI(d).length?`<div class="evblock"><div class="evname">Distance crossover (optional)</div>${list(xoI(d))}</div>`:""}</div></div>`; }).join("")}</div>`;
         } else {
           const months = [...new Set(weeks.flatMap(w => w.days.map(d => iso(dayDate(w,d.day)).slice(0,7))))].sort();
           const ym = months.includes(mdcal.month) ? mdcal.month : (months.find(m => m >= iso(today).slice(0,7)) || months[0]);
@@ -3491,11 +3526,11 @@ const views = {
           for (let k=0;k<lead;k++) cells.push(`<div></div>`);
           for (let day=1; day<=nDays; day++) {
             const ds = iso(new Date(Y, M-1, day)), x = byDate[ds];
-            if (!x || !(gItems(x.d).length || xoItems(x.d).length)) { cells.push(`<div class="mcell off"><span class="dn">${day}</span></div>`); continue; }
-            const f = gFocus(x.d,G) || focusFor(x.d,"HS"), wi = weeks.indexOf(x.w);
+            if (!x || !(gItems(x.d).length || xoI(x.d).length)) { cells.push(`<div class="mcell off"><span class="dn">${day}</span></div>`); continue; }
+            const f = gFocus(x.d,G,L) || focusFor(x.d,L), wi = weeks.indexOf(x.w);
             cells.push(`<button type="button" class="mcell ${ds===iso(today)?"today":""}" onclick="mdcal.view='week';mdcal.wi=${wi};render()" aria-label="${esc(ds)}: ${esc(f)}">
               <span class="dn">${day}</span>${f?`<span class="fc ty-${FOCUS_TY(f)||"str"}">${esc(f)}</span>`:""}
-              ${isCoachLed(x.d,"HS")?`<span class="sess ss-coach" style="margin:0;font-size:9px;padding:0 3px">Coach-led</span>`:""}<span class="cds">${(G==="Mid Distance"?mdCodes(x.d):[]).map(c=>`<span class="wcode ty-${CODE_TY[c[0]]}">${c}</span>`).join("")}${xoItems(x.d).length?`<span class="tchip xo" style="margin:0;font-size:10px;padding:0 3px">XO</span>`:""}</span></button>`);
+              ${isCoachLed(x.d,L)?`<span class="sess ss-coach" style="margin:0;font-size:9px;padding:0 3px">Coach-led</span>`:""}<span class="cds">${(G==="Mid Distance" && L==="HS"?mdCodes(x.d):[]).map(c=>`<span class="wcode ty-${CODE_TY[c[0]]}">${c}</span>`).join("")}${xoI(x.d).length?`<span class="tchip xo" style="margin:0;font-size:10px;padding:0 3px">XO</span>`:""}</span></button>`);
           }
           body = `<div class="bar">${toggle}<label class="mepick" for="md-month">Month <select id="md-month" onchange="mdcal.month=this.value;render()">${months.map(m=>`<option value="${m}" ${m===ym?"selected":""}>${new Date(+m.slice(0,4), +m.slice(5)-1, 1).toLocaleDateString("en-US",{month:"long",year:"numeric"})}</option>`).join("")}</select></label></div>
             ${tyLegend}
@@ -3893,6 +3928,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-04z"></script>
+<script src="intelligence.js?v=11-05a"></script>
 </body>
 </html>
