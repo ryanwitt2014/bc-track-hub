@@ -566,7 +566,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05a";
+const HUB_VERSION = "11-05b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1630,6 +1630,29 @@ function edDup(start){
 }
 function edAddCombo(di, groups){ ed.days[di].combos.push({groups:[...groups], txt:""}); render(); }
 function edToggleComboGroup(di, ci, g){ const cb = ed.days[di].combos[ci]; cb.groups = cb.groups.includes(g) ? cb.groups.filter(x=>x!==g) : CATEGORIES.filter(c=>c===g || cb.groups.includes(c)); render(); }
+// A week whose start isn't a Monday (e.g. one posted as "Dec 1") is folded into its Monday week, so a week never shows twice.
+const mondayOf = s => { const d = parseD(s); d.setDate(d.getDate() - (d.getDay()+6)%7); return iso(d); };
+function mergeWeeks(list){
+  const by = new Map(), key = it => (it.lv||"") + "|" + it.t;
+  const addItems = (a, b) => { const have = new Set((a||[]).map(key)); return (a||[]).concat((b||[]).filter(it => !have.has(key(it)))); };
+  list.filter(w => w && typeof w.start==="string" && Array.isArray(w.days)).sort((a,b)=>a.start.localeCompare(b.start)).forEach(w => {
+    const m = mondayOf(w.start);
+    if (!by.has(m)) { by.set(m, {...w, start: m, days: w.days.map(d=>({...d}))}); return; }
+    const t = by.get(m);
+    w.days.forEach(d => {
+      const x = t.days.find(y => y.day===d.day);
+      if (!x) { t.days.push({...d}); return; }
+      x.all = addItems(x.all, d.all);
+      const g = {...(x.groups||{})}; Object.entries(d.groups||{}).forEach(([c, arr]) => { g[c] = addItems(g[c], arr); }); x.groups = g;
+      if (d.combos && d.combos.length) x.combos = (x.combos||[]).concat(d.combos);
+      x.gfocus = {...(d.gfocus||{}), ...(x.gfocus||{})}; x.sess = {...(d.sess||{}), ...(x.sess||{})};
+      const ef = f => !f || (typeof f==="object" && !Object.values(f).some(Boolean));
+      if (ef(x.focus)) x.focus = d.focus; else if (typeof x.focus==="object" && typeof d.focus==="object") x.focus = {...d.focus, ...Object.fromEntries(Object.entries(x.focus).filter(([,v])=>v))};
+    });
+    t.days.sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day));
+  });
+  return [...by.values()];
+}
 function edNew(){
   const last = sortedWeeks().at(-1);
   let start;
@@ -1637,7 +1660,7 @@ function edNew(){
   else start = parseD(SEASON_START) > today ? parseD(SEASON_START) : (()=>{ const d=new Date(today); d.setDate(d.getDate()+((8-d.getDay())%7||7)); return d; })();
   const wd = (start.getDay()+6)%7; // Mon=0
   const days = DAYS.slice(Math.min(wd,4), 5).map(day=>blankDay(day));
-  ed = {start: iso(start), editing:null, days};
+  ed = {start: mondayOf(iso(start)), editing:null, days};
   edMsg = {kind:"",text:""};
 }
 const itemsToText = arr => (arr||[]).map(it => (it.lv?it.lv+": ":"") + it.t + (it.url?" "+it.url:"")).join("\n");
@@ -2661,7 +2684,9 @@ async function edSave(){
   if(!ed.start){ edMsg={kind:"err",text:"Pick the date the week starts."}; render(); return; }
   if(!ed.days.length){ edMsg={kind:"err",text:"Add at least one day."}; render(); return; }
   const wk = edBuild();
+  const asked = wk.start; wk.start = mondayOf(wk.start);   // weeks are filed by their Monday
   const clash = WORKOUTS.find(w=>w.start===wk.start && w.start!==ed.editing);
+  if (clash && asked!==wk.start) { edMsg={kind:"err",text:`That date is in the week of ${parseD(wk.start).toLocaleDateString("en-US",{month:"short",day:"numeric"})}, which is already posted. Open that week to edit it.`}; render(); return; }
   if(clash && !ed.overwrite){ ed.overwrite = true; edMsg={kind:"err",text:"A week already starts on that date. Press save again to replace it."}; render(); return; }
   const next = WORKOUTS.filter(w=>w.start!==wk.start && w.start!==ed.editing).concat([wk]).sort((a,b)=>a.start.localeCompare(b.start));
   const live = parseD(wk.start)<=today;
@@ -3833,7 +3858,7 @@ async function loadAll(){
   const w = byKey.workouts, wu0 = byKey.warmups, lg = byKey.logs, rj = byKey.recruits, aj = byKey.assignments;
   if (aj && typeof aj === "object") ASSIGN = Object.assign({"HS-B":{}, "HS-G":{}, "JH-B":{}, "JH-G":{}}, aj);
   if (rj && Array.isArray(rj.list)) REC = {list: rj.list, contacts: (rj.contacts||[]).map(({note, ...c})=>c)};
-  if (Array.isArray(w)) WORKOUTS = w;
+  if (Array.isArray(w)) WORKOUTS = mergeWeeks(w);
   if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
@@ -3928,6 +3953,6 @@ if (SB) {
   }
 }
 </script>
-<script src="intelligence.js?v=11-05a"></script>
+<script src="intelligence.js?v=11-05b"></script>
 </body>
 </html>
