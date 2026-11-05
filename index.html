@@ -3102,7 +3102,7 @@ const views = {
       <p class="note">Track marks are spring 2026 bests. Cross country times are from this fall (JH 3000m, HS 5000m). <b>#</b> is the athlete's best rank on their team. <span class="hs-tag">★ Top 3 overall</span> means a JH athlete is top 3 in that event among all boys or girls, HS and JH combined (flat races and jumps only, since hurdles, shot, and discus use different heights and weights).</p></div>`;
   },
   workouts(){
-    const vw = visibleWeeks();
+    const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
     const postBtn = canPost ? `<a class="anet" href="#coaches" onclick="ctab='workouts'"><b>Post workouts</b> →</a>` : "";
     if(!vw.length) return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Spring 2027</div><h1>Workouts</h1></div>${postBtn}</div>
       <div class="panel"><p style="margin:0">${today < parseD(SEASON_START) ? `Workouts start <b>${parseD(SEASON_START).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</b>. Each week shows up here on its start date.` : "This week's workouts haven't been posted yet. Check back soon."}</p></div></div>`;
@@ -3135,10 +3135,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["sgroups","Sprint Groups"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.editor() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
+    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
   },
   _warmEdit(){
@@ -4122,6 +4122,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05a"></script>
+<script src="sprints.js?v=11-05b"></script>
 </body>
 </html>
