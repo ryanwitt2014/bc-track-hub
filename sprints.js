@@ -55,6 +55,7 @@ const css = `
 .sp-dbtn:disabled{opacity:.4;cursor:default}
 .sp-dbtn.lb-speed,.sp-dbtn.lb-power{border-top:4px solid var(--accent)}.sp-dbtn.lb-rec{border-top:4px solid #6aa4c8}.sp-dbtn.lb-gf{border-top:4px solid var(--gold)}.sp-dbtn.lb-opt{border-top:4px dashed var(--gold)}.sp-dbtn.lb-rest{border-top:4px solid var(--line)}.sp-dbtn.lb-meet{border-top:4px solid #b4472b}
 .sp-lb{display:inline-block;font:700 12px var(--body);border-radius:3px;padding:2px 8px;white-space:nowrap}
+.sp-lb.lb-gsc{background:transparent;border:2px solid var(--accent);color:var(--fg)}.sp-dbtn.lb-gsc{border-top:4px double var(--accent)}
 .sp-lb.lb-speed,.sp-lb.lb-power{background:var(--accent);color:var(--accent-ink)}.sp-lb.lb-rec{background:#6aa4c8;color:#0b1d29}.sp-lb.lb-gf{background:var(--gold);color:var(--gold-ink)}.sp-lb.lb-opt{background:transparent;border:1px dashed var(--gold);color:var(--fg)}.sp-lb.lb-rest{background:var(--chip);color:var(--fg)}.sp-lb.lb-meet{background:#b4472b;color:#fff}
 .sp-daycard{display:grid;gap:10px}
 .sp-ddate{font:600 13px var(--mono);color:var(--muted);margin-bottom:4px}
@@ -280,7 +281,7 @@ const STR_MOD = {red:"Reduced volume: one fewer set on each lift.", light:"Light
    Coach-led Tue/Thu rows: {x:label, p:prescription, r:rest, i:"max"|"near"|"cf"|"tech"|"9095", d:drill id, g:[groups] (omit = everyone), n:note, cut:true (H/J may skip)}
    {tech:true} expands to each group's event technique for that month.  {str:"dec"|..., mod:"red"|...} = strength block.
    Other days come from the weekly defaults (DEF) unless a week lists its own in `days`. */
-const PROGRAM_START = "2026-12-01";
+const PROGRAM_START = "2026-12-01", SPORT_START = "2026-12-07";
 const R = {acc:"2–3 min, walk back", fly:"4–6 min", fall:"1–2 min", bj:"60–90 s", wall:"30–45 s", drill:"walk back", se80:"6–8 min", se120:"8–10 min", full:"Full recovery"};
 const WU = {x:"Standard warm-up", p:"12–15 min", wu:true};
 const TECH = {tech:true, x:"Event-specific technical work", p:"15–20 min"};
@@ -310,6 +311,14 @@ const IND = {
     steps:[["A-march","2 × 10m","Tall, knee up, toe up, step down under you."],["Wall acceleration holds","2 × 10 s each side","Lean into the wall, straight line head to heel, one knee up."],["Slow wall switches","2 × 5 each leg","Switch legs under control, stay stiff."],["Dribble marching","2 × 10m","Step over the ankle, step down. Rhythm, not speed."],["Easy walk cooldown","3 min",""]],
     end:"Only if you've been taught these drills. No max sprinting, resisted sprints, block starts, or hard jumping."},
 };
+Object.assign(IND, {
+  W1WED:{n:"Optional · Mobility + Comfortable Walk", dur:"10–15 min", rpe:"1–2/10 · very easy", equip:"None", obj:"Loosen up after Tuesday's first lift.",
+    steps:[["Comfortable walk","5–8 min","Easy pace, chat-level."],["Ankle circles","10 each direction, each ankle",""],["Leg swings, forward/back + side to side","8 each, each leg","Hold a wall, controlled."],["Hip-flexor stretch","30 s each side","Half-kneeling, squeeze the glute of the down knee."],["Calf stretch","30 s each side","Hands on a wall, back heel down."]], end:"If you're sore from Tuesday, that's normal. Keep it easy."},
+  W1FRI:{n:"Optional · Easy Walk, Cycle, or Mobility", dur:"15–25 min", rpe:"2–3/10 · easy", equip:"None (bike if you have one)", obj:"Easy movement after Thursday's session.",
+    choose:[["Easy walk","15–25 min"],["Easy bike (stationary or outdoors where safe)","15–25 min"],["Mobility: Recovery C · Mobility Reset","12–18 min"]], end:"Nothing hard. You should feel better when you're done."},
+  W1SAT:{n:"Optional · Recreational Activity or General Fitness", dur:"20–30 min", rpe:"3–4/10 · comfortable", equip:"Whatever the activity needs", obj:"Move for fun. Enjoy it.",
+    choose:[["Shoot hoops, play catch, or a pickup game","20–30 min"],["Bike ride, hike, or swim","20–30 min"],["General Fitness B · Core + Stability","15–20 min"]], end:"Pick ONE. Tired or sore? Rest instead."},
+});
 const IND_KIND = {RA:"rec", RB:"rec", RC:"rec", GFA:"gf", GFB:"gf", TA:"opt"};
 // Standard independent days
 const DEF = {
@@ -326,25 +335,34 @@ const IND_MODS = {
   H:"Hurdlers: mobility, trunk stability, easy walking or cycling. Low-intensity hurdle mobility (walkovers) only if you have equipment, space, and have been taught it. No high-speed hurdle clearances on your own.",
   J:"Jumpers: mobility, balance, core, and general strength as tolerated. No maximal jumping, high-volume bounding, or pole vault technique on your own.",
 };
-const LABELS = {speed:["Coach-Led Speed","lb-speed"], power:["Coach-Led Power/Technique","lb-power"], rec:["Independent Recovery","lb-rec"], gf:["Independent General Fitness","lb-gf"], opt:["Optional Conditioning","lb-opt"], rest:["Rest","lb-rest"], meet:["Meet Day","lb-meet"], closed:["School Closed · Home Session","lb-opt"]};
+const LABELS = {gsc:["General Strength & Conditioning","lb-gsc"], speed:["Coach-Led Speed","lb-speed"], power:["Coach-Led Power/Technique","lb-power"], rec:["Independent Recovery","lb-rec"], gf:["Independent General Fitness","lb-gf"], opt:["Optional Conditioning","lb-opt"], rest:["Rest","lb-rest"], meet:["Meet Day","lb-meet"], closed:["School Closed · Home Session","lb-opt"]};
 
 const SP_WEEKS = [
- {n:1, start:"2026-11-30", focus:"Acceleration foundations + welcome", st:"vol", mo:"dec",
-  days:{Mon:{k:"none"}, Sat:{k:"opt", tpl:"GFB", alts:["GFA","RB","rest"], total:"15–30 min", obj:"Optional general conditioning to finish week one.", altNote:"Pick ONE, or rest if you're sore."}},
-  tue:{out:[WU,row("Welcome: expectations + your training group","10 min",{i:"tech",n:"How Tue/Thu work, what the home days are, full recovery, how to find your workout on the hub."}),row("Baseline movement check","10 min",{i:"tech",n:"Coaches watch, no timing: bodyweight squat ×5, reverse lunge ×3 each leg, A-march 10m, 2 falling starts."}),row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Falling starts","4×10m",{d:"fall",r:R.fall,i:"max"}),row("Standing accelerations","3×20m",{d:"stand",r:R.acc,i:"max"}),row("Progressive accelerations","2×30m",{d:"accel",r:"3 min",i:"near",cut:true})],
-       in:[WU,row("Welcome: expectations + your training group","10 min",{i:"tech"}),row("Baseline movement check","10 min",{i:"tech",n:"Coaches watch, no timing: squat ×5, reverse lunge ×3 each leg, A-march 10m, 2 falling starts."}),row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Falling starts","4×5m",{d:"fall",r:R.fall,i:"max"}),row("Standing accelerations","4×10m",{d:"stand",r:R.acc,i:"max"}),row("Accelerations","2×15m if safe",{d:"accel",r:R.acc,i:"near",cut:true,n:"Only with traction, a clear lane and stopping room."})]},
+ {n:1, start:"2026-11-30", focus:"General strength & conditioning", st:"vol", mo:"dec", note:"Dec 1–6: general strength and conditioning only. No sprint-specific training (blocks, timed sprints, sprint technique, hurdle or jump work) until Tue Dec 8: the limited-contact period for sport-specific training starts the week of Dec 7.",
+  days:{Mon:{k:"none"},
+    Tue:{k:"gsc", lift:"GA1", title:"General Strength A1: Movement Foundation", dur:"45–60 min", obj:"Learn the weight room: safety, equipment, and the squat, hinge, lunge, push and brace.",
+      blocks:[["warm","General dynamic warm-up","8–10 min","Easy jog or march, skips, arm circles, leg swings, walking lunges with reach, inchworms. General movement only, no sprint drills."],
+              ["intro","Weight-room safety, lifting technique, and equipment","10 min","How to pick up and rack dumbbells, spacing, spotting and clearing the area, and the cues for each lift below."],
+              ["str","Weight room: General Strength A1 · Movement Foundation","20–25 min",""],
+              ["cool","General cooldown + mobility","5 min","Easy walk, then calf, hip-flexor and hamstring stretches, 30 s each side."]]},
+    Wed:{k:"opt", tpl:"W1WED", total:"10–15 min", obj:"Optional: loosen up after Tuesday's first lift."},
+    Thu:{k:"gsc", lift:"GA2", title:"General Strength A2: Stability & Conditioning", dur:"45–60 min", obj:"Hip and trunk stability, general strength, and easy aerobic conditioning.",
+      blocks:[["warm","General warm-up","8–10 min","Easy jog or march, skips, arm circles, leg swings, glute bridges ×10, walking lunges."],
+              ["str","Weight room: General Strength A2 · Stability & Conditioning","20–25 min",""],
+              ["cond","General aerobic conditioning","10–15 min","Easy cycling, walking, or another low-intensity activity at RPE 2–3/10 (can talk the whole time)."],
+              ["cool","Cooldown","5 min","Easy walk + calf, hip-flexor and hamstring stretches."]]},
+    Fri:{k:"opt", tpl:"W1FRI", total:"15–25 min", obj:"Optional easy movement after Thursday."},
+    Sat:{k:"opt", tpl:"W1SAT", total:"20–30 min", obj:"Optional: something active you enjoy."}}},
+ {n:2, start:"2026-12-07", focus:"Acceleration foundations", st:"vol", mo:"dec",
+  tue:{out:[WU,row("Welcome to sprints: expectations + your training group","5 min",{i:"tech",n:"How Tue/Thu work, the home days, full recovery, and how to find your workout on the hub."}),row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Falling starts","4×10m",{d:"fall",r:R.fall,i:"max"}),row("Standing accelerations","3×20m",{d:"stand",r:R.acc,i:"max"}),row("Progressive accelerations","2×30m",{d:"accel",r:"3 min",i:"near",cut:true}),TECH],
+       in:[WU,row("Welcome to sprints: expectations + your training group","5 min",{i:"tech"}),row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Falling starts","4×5m",{d:"fall",r:R.fall,i:"max"}),row("Standing accelerations","4×10m",{d:"stand",r:R.acc,i:"max"}),row("Accelerations","2×15m if safe",{d:"accel",r:R.acc,i:"near",cut:true,n:"Only with traction, a clear lane and stopping room."}),TECH]},
   thu:{out:[WU,row("Starts","3×20m",{d:"stand",r:R.acc,i:"max"}),row("Intro plyometrics: pogo hops","2×10 contacts",{d:"pogo",r:R.bj,i:"tech"}),row("Broad jumps","2×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec",mod:"intro"}],
        in:[WU,row("Starts","3×10m",{d:"stand",r:R.acc,i:"max"}),row("Intro plyometrics: pogo hops","2×10 contacts",{d:"pogo",r:R.bj,i:"tech"}),row("Broad jumps","2×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec",mod:"intro"}]}},
- {n:2, start:"2026-12-07", focus:"First-step projection", st:"vol", mo:"dec",
+ {n:3, start:"2026-12-14", focus:"First-step projection", st:"vol", mo:"dec",
   tue:{out:[WU,row("Falling starts","3×10m",{d:"fall",r:R.fall,i:"max"}),row("Three-point starts","4×20m",{d:"three",r:R.acc,i:"max"}),row("Accelerations","2×30m",{d:"accel",r:"3 min",i:"near",cut:true}),TECH],
        in:[WU,row("Falling starts","3×5m",{d:"fall",r:R.fall,i:"max"}),row("Three-point starts","4×10m",{d:"three",r:R.acc,i:"max"}),row("Accelerations","3×15m if safe",{d:"accel",r:R.acc,i:"near",cut:true}),TECH]},
   thu:{out:[WU,row("Starts","3×20m",{d:"three",r:R.acc,i:"max"}),row("Broad jumps","3×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec"}],
        in:[WU,row("Starts","4×10m",{d:"three",r:R.acc,i:"max"}),row("Broad jumps","3×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec"}]}},
- {n:3, start:"2026-12-14", focus:"Horizontal pushing", st:"vol", mo:"dec",
-  tue:{out:[WU,row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Accelerations","3×20m",{d:"accel",r:R.acc,i:"max"}),row("Flying 10m","2 reps",{d:"fly10",r:R.fly,i:"max",cut:true,n:"Safe build-up and slowing area. Full recovery."}),TECH],
-       in:[WU,row("Wall switches","2×5 each leg",{d:"wall",r:R.wall,i:"tech"}),row("Accelerations","4×10m",{d:"accel",r:R.acc,i:"max"}),row("Dribble drills","3 passes",{d:"dribble",r:R.drill,i:"tech"}),TECH]},
-  thu:{out:[WU,row("Starts","3×20m",{d:"three",r:R.acc,i:"max"}),row("Broad jumps","3×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec"}],
-       in:[WU,row("Starts","3×10m",{d:"three",r:R.acc,i:"max"}),row("Broad jumps","3×3",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"dec"}]}},
  {n:4, start:"2026-12-21", focus:"Holiday: on your own", st:"break", mo:"dec",
   days:{Tue:{k:"opt", tpl:"TA", alts:["RC"], total:"10–15 min", obj:"Keep the drills you know. No practice this week."}, Thu:{k:"rec", tpl:"RC", alts:["RA"], total:"12–18 min", obj:"Christmas Eve: mobility only if you want it."}, Fri:{k:"rest", note:"Christmas Day."}}},
  {n:5, start:"2026-12-28", focus:"Holiday: on your own", st:"break", mo:"dec",
@@ -483,7 +501,8 @@ function dayInfo(wi, dn){
   let b = baseDay(w, dn);
   const ov = SP.edits[ds];
   if (ov) {
-    if (ov.k==="move" && ov.from && locate(ov.from)) { const L = locate(ov.from); b = baseDay(SP_WEEKS[L.wi], L.dn); b.movedFrom = ov.from; b.fromWi = L.wi; }
+    const sportOK = ds >= SPORT_START;   // limited-contact period for sport-specific training starts the week of Dec 7
+    if (ov.k==="move" && ov.from && locate(ov.from) && (sportOK || !["speed","power"].includes(baseDay(SP_WEEKS[locate(ov.from).wi], locate(ov.from).dn).k))) { const L = locate(ov.from); b = baseDay(SP_WEEKS[L.wi], L.dn); b.movedFrom = ov.from; b.fromWi = L.wi; }
     else if (ov.k==="indoor") b.forceIn = true;
     else if (ov.k==="home") b = {k:"closed", tpl: ov.tpl || "TA", alts:["RC","GFB"], total: IND[ov.tpl||"TA"].dur, obj:"School is closed or practice is cancelled. Do this at home instead, only if it's safe and you feel good."};
     else if (ov.k==="meet") b = {k:"meet", meet: ov.meet || "Meet"};
@@ -494,9 +513,12 @@ function dayInfo(wi, dn){
   return Object.assign(b, {wi: b.fromWi ?? wi, ownWi: wi, w: SP_WEEKS[b.fromWi ?? wi], dn, ds, date: parseD(ds)});
 }
 const isCoach = i => i && (i.k==="speed" || i.k==="power");
+const isGsc = i => i && i.k==="gsc";
+const isCoachLed = i => isCoach(i) || isGsc(i);
 const isInd = i => i && !!i.tpl && !isCoach(i);
-function dayTitle(i){ return isCoach(i) ? i.w.focus : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
+function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? i.w.focus : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
 function dayFacts(i){
+  if (isGsc(i)) return {dur: i.dur, rpe:"Light to moderate (RPE 4–6/10). Technique first, never to failure.", equip:"Workout clothes and shoes, water. Dumbbells, mats and benches are provided.", obj: i.obj};
   if (isCoach(i)) { const od = i.movedFrom ? locate(i.movedFrom).dn : i.dn; return {dur: DUR[od] || "60–90 min", rpe:"Max effort on each sprint with full rest. The session shouldn't leave you exhausted.", equip: od==="Thu" ? "Running shoes, water, workout clothes for the weight room" : "Running shoes, water, layers for outdoors", obj: i.w.focus}; }
   if (isInd(i)) { const T = IND[i.tpl]; return {dur: i.total || T.dur, rpe: T.rpe, equip: T.equip, obj: i.obj || T.obj}; }
   if (i.k==="meet") return {dur:"Meet day", rpe:"Race effort", equip:"Uniform, spikes, water", obj:"Compete. No extra workout."};
@@ -540,9 +562,14 @@ function doneHTML(ds){
 }
 function dayCard(i){
   const F = dayFacts(i), L = lab(i), a = meA(), g = a ? groupOf(a) : null;
-  const s3 = (SP.g==="S3" || (g && g.p==="S3")) && (isCoach(i) ? !(a && (SP.groups[a.id]||{}).s3==="sprint") : i.k!=="rest" && i.k!=="meet");
+  const s3 = (SP.g==="S3" || (g && g.p==="S3")) && (isCoachLed(i) ? !(a && (SP.groups[a.id]||{}).s3==="sprint") : i.k!=="rest" && i.k!=="meet");
   let body = "";
-  if (isCoach(i)) {
+  if (isGsc(i)) {
+    const nm = {warm:"Warm-up", intro:"Weight-room intro", str:"Strength", cond:"Conditioning", cool:"Cool-down"};
+    body = `<div class="sp-banner">General strength &amp; conditioning only. Sprint-specific training starts Tue Dec 8.</div>
+      ${i.blocks.map(([k,x,p,n]) => `<div class="sp-tech"><h4>${esc(nm[k])}</h4><p style="margin:0"><b>${esc(x.replace(/^Weight room: /,""))}</b> <span class="mono">${esc(p)}</span></p>${n?`<p class="note" style="margin:2px 0 0">${esc(n)}</p>`:""}${k==="str" && typeof liftHTML==="function" ? liftHTML(i.lift).replace("<details class=\"lift\">","<details class=\"lift\" open>") : ""}</div>`).join("")}
+      <p class="note" style="margin:0">Light resistance, technique first, never to failure. Anything hurts? Stop and tell your coach or athletic trainer. Coach-led and voluntary; follows the AD's reading of IHSAA out-of-season conditioning rules.</p>`;
+  } else if (isCoach(i)) {
     const env = i.forceIn ? "in" : SP.env, S = i.sess, rows = env==="in" ? (S.in || S.out) : S.out;
     body = `${i.forceIn ? `<div class="sp-banner">Moved indoors today (weather or facility).</div>` : ""}
       <p class="sp-pre"><b>${env==="in" ? "Indoor: hallway / gym" : "Outdoor: track"}</b>${env==="in" && !S.in ? " · same plan either way; keep starts to 10–20m indoors" : ""}</p>
@@ -610,7 +637,7 @@ function calendarView(){
     ${a && ag ? `<span>${chip(ag.p)}${(ag.s||[]).map(chip).join("")}</span>` : ""}</div>`;
   const strip = DAYN.map(dn => { const i = dayInfo(wi, dn), ds = dateIso(w, dn);
     return `<button type="button" class="sp-dbtn ${i ? lab(i)[1] : "lb-none"} ${ds===tIso?"today":""}" aria-pressed="${ds===SP.sel}" ${i?"":"disabled"} onclick="SP.sel='${ds}';render()">
-      <b>${dn}</b><span>${parseD(ds).getDate()}</span><small>${i ? esc(lab(i)[0].replace("Independent ","").replace("Coach-Led ","").replace("Optional Conditioning","Optional")) : "—"}</small></button>`; }).join("");
+      <b>${dn}</b><span>${parseD(ds).getDate()}</span><small>${i ? esc(lab(i)[0].replace("General Strength & Conditioning","Strength").replace("Independent ","").replace("Coach-Led ","").replace("Optional Conditioning","Optional")) : "—"}</small></button>`; }).join("");
   const sel = dayInfo(wi, L0.dn);
   return `${meBar}
     <div class="bar" style="justify-content:flex-start">
@@ -620,7 +647,7 @@ function calendarView(){
       <b>Wk ${w.n} · ${fmt(parseD(w.start < PROGRAM_START ? PROGRAM_START : w.start))}–${addDays(w.start,6).getDate()}</b>
       <button type="button" aria-label="Next week" ${wi===SP_WEEKS.length-1?"disabled":""} onclick="SP.week(1)">›</button>
       ${SP.sel!==defaultSel() ? `<button type="button" class="btn sm" onclick="SP.sel=null;render()">Today</button>` : ""}</div>
-    <div class="${ST[w.st][1]}"><b>${esc(w.focus)}.</b> ${esc(ST[w.st][0])}${w.test ? " <b>Testing week:</b> times are logged with method, surface and indoor/outdoor." : ""}</div>
+    <div class="${ST[w.st][1]}"><b>${esc(w.focus)}.</b> ${esc(w.note || ST[w.st][0])}${w.test ? " <b>Testing week:</b> times are logged with method, surface and indoor/outdoor." : ""}</div>
     <div class="sp-strip">${strip}</div>
     ${sel ? dayCard(sel) : `<div class="panel"><p style="margin:0">The program starts Tuesday, Dec 1.</p></div>`}
     <details class="panel"><summary><b>All 13 weeks</b></summary><div class="sp-wkgrid" style="margin-top:8px">${SP_WEEKS.map((x,k)=>`<button type="button" class="sp-wk ${x.st==="break"?"brk":""}" aria-pressed="${k===wi}" onclick="SP.sel='${x.start < PROGRAM_START ? PROGRAM_START : iso(addDays(x.start,1))}';render()"><b>Wk ${x.n} · ${fmt(parseD(x.start < PROGRAM_START ? PROGRAM_START : x.start))}</b>${esc(x.focus)}</button>`).join("")}</div></details>`;
@@ -660,7 +687,7 @@ function philView(){
         <tr><td><b>Fri</b></td><td>Independent recovery: Easy Aerobic</td><td class="mono">15–30 min</td></tr>
         <tr><td><b>Sat</b></td><td>Optional general fitness: Core + Stability</td><td class="mono">15–30 min</td></tr>
         <tr><td><b>Sun</b></td><td>Full rest</td><td class="mono">—</td></tr></tbody></table></div>
-        <p class="note" style="margin:8px 0 0">Starts Tue Dec 1. Dec 21 – Jan 3: no practices, optional work only. Coach-led winter sessions are voluntary/out-of-season and follow current IHSAA rules (confirm with the AD). Home days are always voluntary. <b>A recovery day is not another workout disguised as recovery.</b></p></div>
+        <p class="note" style="margin:8px 0 0">Starts Tue Dec 1 with general strength &amp; conditioning (Dec 1 and Dec 3). Sprint-specific training starts Tue Dec 8, when the limited-contact period begins. Dec 21 – Jan 3: no practices, optional work only. Coach-led winter sessions are voluntary/out-of-season and follow current IHSAA rules (confirm with the AD). Home days are always voluntary. <b>A recovery day is not another workout disguised as recovery.</b></p></div>
       <div class="panel"><h2>Indoor rules</h2><ul class="exp"><li>Hallway/gym space is about 40–60m <b>including</b> slowing down</li><li>Indoor accelerations start at 10–20m, only with traction, clear lanes, stopping room and coach approval</li><li>No indoor flying sprints unless the approach, timed zone and stopping area are verified safe</li><li>If sprinting isn't safe: technical drills, controlled power, strength</li></ul></div></div>`;
 }
 function warmView(){
@@ -767,12 +794,12 @@ SP.dayEditor = function(){
   const allDates = SP_WEEKS.flatMap(x => DAYN.map(dn => ({x, dn, ds: dateIso(x, dn)}))).filter(o => o.ds >= PROGRAM_START);
   const rowsH = DAYN.map(dn => {
     const ds = dateIso(w, dn); if (ds < PROGRAM_START) return "";
-    const ov = E[ds] || {}, plan = (() => { const b = baseDay(w, dn); return b.k==="none" ? "—" : (LABELS[b.k]||LABELS.rec)[0] + ": " + (b.k==="speed"||b.k==="power" ? w.focus : b.tpl ? IND[b.tpl].n : "Rest"); })();
+    const ov = E[ds] || {}, plan = (() => { const b = baseDay(w, dn); return b.k==="none" ? "—" : (LABELS[b.k]||LABELS.rec)[0] + ": " + (b.k==="gsc" ? b.title : b.k==="speed"||b.k==="power" ? w.focus : b.tpl ? IND[b.tpl].n : "Rest"); })();
     return `<tr><td><b>${dn} ${fmt(parseD(ds))}</b><div class="muted" style="font-size:12px">${esc(plan)}</div></td>
       <td><select aria-label="Change for ${dn}" onchange="SP.setOv('${ds}','k',this.value)">${OV_K.map(([k,l])=>`<option value="${k}" ${(ov.k||"")===k?"selected":""}>${l}</option>`).join("")}</select>
         ${ov.k==="home" ? `<select aria-label="Home session" onchange="SP.setOv('${ds}','tpl',this.value)">${Object.keys(IND).map(k=>`<option value="${k}" ${(ov.tpl||"TA")===k?"selected":""}>${esc(IND[k].n)}</option>`).join("")}</select>` : ""}
         ${ov.k==="meet" ? `<input type="text" placeholder="Meet name" value="${esc(ov.meet||"")}" onchange="SP.setOv('${ds}','meet',this.value.trim())">` : ""}
-        ${ov.k==="move" ? `<select aria-label="Which day's session" onchange="SP.setOv('${ds}','from',this.value)"><option value="">Pick a day…</option>${allDates.filter(o=>o.ds!==ds && ["speed","power"].includes(baseDay(o.x,o.dn).k)).map(o=>`<option value="${o.ds}" ${ov.from===o.ds?"selected":""}>Wk ${o.x.n} ${o.dn} ${fmt(parseD(o.ds))}: ${esc(o.x.focus)}</option>`).join("")}</select>` : ""}</td>
+        ${ov.k==="move" ? `<select aria-label="Which day's session" onchange="SP.setOv('${ds}','from',this.value)"><option value="">Pick a day…</option>${allDates.filter(o=>o.ds!==ds && ds >= SPORT_START && ["speed","power"].includes(baseDay(o.x,o.dn).k)).map(o=>`<option value="${o.ds}" ${ov.from===o.ds?"selected":""}>Wk ${o.x.n} ${o.dn} ${fmt(parseD(o.ds))}: ${esc(o.x.focus)}</option>`).join("")}</select>` : ""}</td>
       <td><input type="text" style="width:100%;min-width:160px" placeholder="Note shown to athletes (optional)" value="${esc(ov.note||"")}" onchange="SP.setOv('${ds}','note',this.value.trim())"></td></tr>`; }).join("");
   const n = Object.keys(E).length;
   return `<p class="lede" style="margin:0">Change any day for weather, school closures, meets, or how the team is feeling. The plan itself never changes; your change shows on the Sprints page and the Workouts page for that date.</p>
@@ -799,7 +826,7 @@ SP.weekOv = function(kind){
   const w = SP_WEEKS[SP.ewi];
   DAYN.forEach(dn => { const ds = dateIso(w, dn); if (ds < PROGRAM_START) return; const b = baseDay(w, dn);
     if (kind==="clear") delete SP.edraft[ds];
-    else if (b.k==="speed" || b.k==="power") SP.edraft[ds] = Object.assign({}, SP.edraft[ds], kind==="closed" ? {k:"home", tpl: dn==="Tue" ? "TA" : "GFB"} : {k:"indoor"}); });
+    else if (b.k==="speed" || b.k==="power" || (b.k==="gsc" && kind==="closed")) SP.edraft[ds] = Object.assign({}, SP.edraft[ds], kind==="closed" ? {k:"home", tpl: dn==="Tue" ? "TA" : "GFB"} : {k:"indoor"}); });
   SP.emsg = {kind:"",text:"Changed. Hit Save to publish."}; render();
 };
 SP.saveEdits = async function(){
@@ -827,7 +854,7 @@ function printLine(r){
   return `${r.x}${p?": "+p:""}${r.r?" · rest "+r.r:""}${r.i&&INT[r.i]?" · "+INT[r.i][0]:""}${r.g?" ("+r.g.join("/")+" only)":""}${r.cut?" · H/J may skip":""}${r.n?" · "+r.n:""}`;
 }
 // Packets/sheets: true when a sprint day is not a practice (home day, rest, meet) so no group sheet prints for it
-SP.printSkip = function(start, dn){ const wi = SP_WEEKS.findIndex(x=>x.start===start); if (wi<0) return false; const i = dayInfo(wi, dn); return !!i && !isCoach(i); };
+SP.printSkip = function(start, dn){ const wi = SP_WEEKS.findIndex(x=>x.start===start); if (wi<0) return false; const i = dayInfo(wi, dn); return !!i && !isCoachLed(i); };
 const tplLines = T => [
   ...(T.pre ? ["Warm-up: " + T.pre] : []),
   ...(T.choose ? ["Choose ONE: " + T.choose.map(([n,p])=>`${n} (${p})`).join(" · ")] : []),
@@ -849,10 +876,14 @@ SP.inject = function(w, opt){
     let d = copy.days.find(x=>x.day===dn);
     if (!d) { d = {day:dn, focus:"", all:[], groups:{}, combos:[], gfocus:{}}; copy.days.push(d); }
     const L = lab(i), F = dayFacts(i);
-    const head = P ? {t: i.k==="rest" ? "Rest" : isCoach(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:"HS"} : i.k==="rest" ? {t:"Rest · Full rest", lv:"HS"} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoach(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:"HS"};
+    const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:"HS"} : i.k==="rest" ? {t:"Rest · Full rest", lv:"HS"} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:"HS"};
     let items = [head];
     if (i.cnote) items.push({t:"Coach note: " + i.cnote, lv:"HS"});
-    if (isCoach(i)) {
+    if (isGsc(i)) {
+      items.push({t:"General strength & conditioning only. Sprint-specific training starts Tue Dec 8.", lv:"HS"});
+      i.blocks.forEach(([k,x,p,n]) => items.push({t: k==="warm" ? `Warm-up (${p}): ${n}` : k==="cool" ? `Cool-down (${p}): ${n}` : k==="str" ? `${x} (${p})` : `${x} (${p}): ${n}`, lv:"HS"}));
+      items.push({t:"400/800 hybrids (S3): follow the Mid Distance plan today.", lv:"HS"});
+    } else if (isCoach(i)) {
       const env = i.forceIn ? "in" : SP.env, rows = env==="in" ? (i.sess.in||i.sess.out) : i.sess.out;
       items.push({t:(env==="in" ? "Indoor plan (hallway/gym)" : "Outdoor plan (track)") + (i.forceIn ? ": moved indoors today" : ""), lv:"HS"});
       items = items.concat(rows.filter(r=>!r.tech).map(r => ({t: P ? printLine(r) : plain(r), lv:"HS"})));

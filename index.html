@@ -1529,6 +1529,9 @@ const EX = {
   "Pull-up":{cue:"Full hang to chin over bar, no kipping.", eq:"Bar", alt:"Inverted row or band-assisted"},
   "Inverted row":{cue:"Body straight under a bar, pull chest to the bar, lower slowly.", eq:"Bar or rings", alt:"Band row"},
   "Med-ball scoop toss":{cue:"Hinge, then explode hips forward and throw the ball up and out. Every rep fast.", eq:"Med ball 2–4 kg", alt:"Chest pass"},
+  "Glute bridge":{cue:"Feet flat, drive through heels, squeeze glutes at the top for 1 sec. Don't arch the low back.", eq:"Mat", alt:"Shorter range"},
+  "Push-up or dumbbell bench press":{cue:"Push-up: straight line head to heels, chest to fist height. Bench: feet flat, shoulder blades pinched, lower with control.", eq:"None, or dumbbells + bench", alt:"Incline push-up on a bench"},
+  "Bodyweight or light goblet squat":{cue:"Sit down between your heels, chest tall, knees track over toes. Bodyweight first; add a light bell only if every rep looks the same.", eq:"None or a light dumbbell/kettlebell", alt:"Squat to a box"},
   "Front plank":{cue:"Forearms down, elbows under shoulders, straight line head to heels. Squeeze glutes and keep breathing.", eq:"Mat", alt:"From the knees"},
   "Hip bridge":{cue:"Feet flat, drive through heels, squeeze glutes at the top, don't arch the low back.", eq:"Mat", alt:"Shorter range"},
   "Single-leg hip bridge":{cue:"One foot down, other knee up. Hips stay level.", eq:"Mat", alt:"Two-leg hip bridge"},
@@ -1561,10 +1564,15 @@ const LIFTS = {
   JB:{name:"JH Strength B · Progression", when:"JH weeks 3, 7, 9–10", jh:1, ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Step-up","2 × 6/leg"],["Bent-knee calf raise","2 × 12"],["Row","2 × 10"],["Side plank","2 × 20 sec/side"]]},
   JL:{name:"JH Strength Light", when:"JH week 8 (recovery)", jh:1, ex:[["Squat","2 × 8",1],["Hip bridge","2 × 10"],["Calf raise","2 × 10"],["Dead bug","2 × 6/side"]]},
   JM:{name:"JH Strength Maintenance", when:"JH week 11 on", jh:1, ex:[["Goblet squat","2 × 6",1],["Dumbbell Romanian deadlift","2 × 6",1],["Step-up","2 × 5/leg"],["Calf raise","2 × 10"],["Side plank","2 × 15 sec/side"]]},
+  GA1:{name:"General Strength A1 · Movement Foundation", when:"Sprints/hurdles/jumps · Tue Dec 1", gen:1, rest:"45–75 sec, as needed", note:"Light resistance. Technique first. Never to failure.",
+    ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6 each leg"],["Push-up or dumbbell bench press","2 × 8"],["Standing calf raise","2 × 12"],["Dead bug","2 × 8 each side"],["Front plank","2 × 20–30 sec"]]},
+  GA2:{name:"General Strength A2 · Stability & Conditioning", when:"Sprints/hurdles/jumps · Thu Dec 3", gen:1, rest:"45–60 sec, as needed", note:"Light, controlled reps. Never to failure.",
+    ex:[["Bodyweight or light goblet squat","2 × 8",1],["Glute bridge","2 × 12"],["Step-up","2 × 8 each leg"],["Dumbbell row","2 × 10"],["Push-up","2 × 8"],["Side plank","2 × 20 sec each side"]]},
   H2:{name:"Home strength H2", when:"Winter break, week 2", home:1, ex:[["Bodyweight squat","2 × 10"],["Single-leg hip bridge","2 × 8/leg"],["Step-up","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
 };
 const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"], LIFT_ORDER_JH = ["JA","JB","JL","JM"];
-const liftCode = t => { const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
+const liftCode = t => { const g = String(t).match(/\bGeneral Strength\s*(A1|A2)\b/i); if (g) return "G" + g[1].toUpperCase();
+  const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
   const m = String(t).match(/\b(?:Strength\s*[-–]?\s*(A1|A2|B1|B2|Deload|M)|Home strength\s*(H1|H2))\b/i);
   if (m) { const c = m[1]||m[2]; return c.length===1 ? c.toUpperCase() : c.charAt(0).toUpperCase() + c.slice(1); }
   return /\+\s*(light\s+)?strength\b/i.test(String(t)) ? "M" : null; };   // "40 min Easy + strength" = the maintenance session
@@ -1594,9 +1602,9 @@ function liftHTML(code){
   const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
     <td class="sub">${esc(liftRest(L, main))}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("");
   const ORD = L.jh ? LIFT_ORDER_JH : LIFT_ORDER;
-  const prog = L.home ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${ORD.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
+  const prog = L.home || L.gen ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${ORD.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
   return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows}</tbody></table>
-    ${L.note ? `<p class="sub" style="margin:6px 0 0"><b>${esc(L.note)}</b></p>` : ""}<p class="sub" style="margin:6px 0 0">${L.jh ? "Technique first, supervised, scaled to each kid's size and experience. Bodyweight before dumbbells. Never HS loads by default." : "Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure."}${L.home||L.jh?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
+    ${L.note ? `<p class="sub" style="margin:6px 0 0"><b>${esc(L.note)}</b></p>` : ""}<p class="sub" style="margin:6px 0 0">${L.jh ? "Technique first, supervised, scaled to each kid's size and experience. Bodyweight before dumbbells. Never HS loads by default." : "Light to moderate loads. Finish each set with 2–3 reps left in the tank. No max lifts, no going to failure."}${L.home||L.jh||L.gen?"":" Short on time? Do the two main lifts first, then the rest as a circuit."}</p>${prog}</div></details>`;
 }
 // Printed sheets: the lift list for any strength line on the sheet
 function liftPrint(items){
@@ -4270,6 +4278,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05d"></script>
+<script src="sprints.js?v=11-05e"></script>
 </body>
 </html>
