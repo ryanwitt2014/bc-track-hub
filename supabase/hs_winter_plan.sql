@@ -1,3 +1,7 @@
+-- ⚠️  DON'T RE-RUN THIS FILE TO MAKE CHANGES. It rebuilds whole weeks and can leave old lines behind
+-- (that's where the stray "5 miles easy" lines came from). Day-to-day edits go in the hub:
+-- Coaches → Post Workouts. Only run this again if the whole plan was intentionally regenerated,
+-- then run Coaches → Post Workouts → Plan check → Clean up.
 -- BC Track Hub: 2026-27 HS WINTER plan (Dec 1, 2026 to Feb 21, 2027) for Distance + Mid Distance.
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again (it replaces, never adds twice).
 -- For each day from Dec 1 to Feb 21 it replaces ONLY the HS lines in the Distance and Mid Distance groups,

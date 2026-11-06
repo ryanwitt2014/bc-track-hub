@@ -1,3 +1,7 @@
+-- ⚠️  DON'T RE-RUN THIS FILE TO MAKE CHANGES. It rebuilds whole weeks and can leave old lines behind
+-- (that's where the stray "5 miles easy" lines came from). Day-to-day edits go in the hub:
+-- Coaches → Post Workouts. Only run this again if the whole plan was intentionally regenerated,
+-- then run Coaches → Post Workouts → Plan check → Clean up.
 -- BC Track Hub: 2026-27 HS training plan. Distance (Dec 1 to State) + Mid-Distance (Dec 7 to State) + optional distance crossovers.
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again.
 -- Replaces only the HS lines in the Distance and Mid Distance groups for these weeks.

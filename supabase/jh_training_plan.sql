@@ -1,3 +1,7 @@
+-- ⚠️  DON'T RE-RUN THIS FILE TO MAKE CHANGES. It rebuilds whole weeks and can leave old lines behind
+-- (that's where the stray "5 miles easy" lines came from). Day-to-day edits go in the hub:
+-- Coaches → Post Workouts. Only run this again if the whole plan was intentionally regenerated,
+-- then run Coaches → Post Workouts → Plan check → Clean up.
 -- BC Track Hub: 2026-27 JUNIOR HIGH Distance + Mid-Distance plan (Dec 1, 2026 to the MS State Finals, May 22, 2027).
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again (it replaces, never adds twice).
 -- For each day it replaces ONLY the JH lines in the Distance and Mid Distance groups and sets the JH focus label + JH session info.
