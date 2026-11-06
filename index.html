@@ -809,7 +809,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06h";
+const HUB_VERSION = "11-06i";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1933,11 +1933,8 @@ function secOf(it){
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
   return "main";
 }
-let LI_CTX = "";
-// Which level option the toggles show (A Advanced / B Intermediate / C Developing); a runner's own level wins
-let LV_PICK = ""; try { LV_PICK = localStorage.getItem("hub-lvpick") || ""; } catch(e) {}
-function lvPick(){ const a = typeof meA==="function" && meA(); const own = a && (DTAGS[a.id]||{}).lv; return LV_PICK || own || "A"; }
-function setLvPick(l){ LV_PICK = l; try { localStorage.setItem("hub-lvpick", l); } catch(e) {} render(); }   // the group a list is for, when known (helps pick the right warm-up)
+let LI_CTX = "";     // the group a list is for, when known (helps pick the right warm-up)
+let LI_ATH = null;   // the runner a list is shown to (their level only, no labels); null = team/coach view
 const li = arr => liSimple(arr);   // one clean view for everyone (liFull kept for reference)
 // ---- Simple view (default for athletes): "Warm-up" → pop-up, main reps, "Strength A1 · View lifts", "Cool-down" → pop-up ----
 const S_DROP = /^(Outdoor plan|Indoor version|Coaching:|400\/800 hybrids|Event technique \(|General (?:strength|movement) & (?:conditioning|strength) only|Goal:)|→ full details/i;
@@ -1965,31 +1962,19 @@ function liSimple(arr){
     const s = sText(text, true); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; };
   const mainL = S.main.filter(it => !S_INL.test(splitTags(it.t).text)), mainS = S.main.filter(it => S_INL.test(splitTags(it.t).text));
   const many = mainL.length > 1;
-  // A/B/C versions of the same workout → one row with a level toggle
-  const isJH = arr.some(it => it.lv==="JH") && !arr.some(it => it.lv==="HS");
-  const LVN = isJH ? LEVEL_NAMES_JH : {A:"Advanced", B:"Intermediate", C:"Developing"};
-  const pick = lvPick();
-  const out = []; let grp = null;
-  const flush = () => { if (!grp) return;
-    const lvls = TAG_LV.filter(l => grp.by[l]);
-    if (lvls.length < 2) { grp.items.forEach(x => out.push(x.html)); grp = null; return; }
-    const sel = lvls.includes(pick) ? pick : lvls[0];
-    out.push(`<li class="abc"><div class="abc-top"><b class="no-abbr">${esc(grp.head || "Your version")}</b><div class="seg seg-sm abc-seg" role="group" aria-label="Level">${lvls.map(l=>`<button type="button" aria-pressed="${l===sel}" onclick="setLvPick('${l}')">${esc(LVN[l])}</button>`).join("")}</div></div>
-      <ul class="abc-v">${grp.by[sel].map(x => `<li>${x.body}</li>`).join("")}</ul></li>`);
-    grp = null; };
+  // Level versions ([A]/[B]/[C]): a runner sees only their own line, no labels; coaches/team view sees every version, labeled
+  const myLv = LI_ATH ? ((DTAGS[LI_ATH.id]||{}).lv || "B") : "";
+  const out = [];
   mainL.forEach(it => {
     const {tags, text} = splitTags(it.t); const s = sText(text, many); if (!s) return;
     const lv = tags.find(g => TAG_LV.includes(g));
-    if (!lv) { flush(); out.push(`<li>${itemHTML(rebuild(it, s))}</li>`); return; }
-    const hm = /^([^:·]{2,40}):\s*(.+)$/.exec(s), head = hm ? hm[1] : "", rest = hm ? hm[2] : s;
-    if (grp && head && grp.head !== head) flush();   // a level-only note with no heading joins the group above
-    if (!grp) grp = {head, by:{}, items:[]};
-    const other = tags.filter(g => !TAG_LV.includes(g));
-    const body = itemHTML(Object.assign({}, it, {t: other.map(g=>`[${g}]`).join(" ") + (other.length?" ":"") + rest}));
-    (grp.by[lv] = grp.by[lv] || []).push({body});
-    grp.items.push({html:`<li>${itemHTML(rebuild(it, s))}</li>`});
+    if (LI_ATH) {
+      if (lv && lv !== myLv) return;
+      if (!tagsFit(tags.filter(g=>!TAG_LV.includes(g)), LI_ATH)) return;
+      const keep = tags.filter(g => !TAG_LV.includes(g) && !TAG_PATH.includes(g));
+      out.push(`<li>${itemHTML(Object.assign({}, it, {t: keep.map(g=>`[${g}]`).join(" ") + (keep.length?" ":"") + s}))}</li>`);
+    } else out.push(`<li>${itemHTML(rebuild(it, s))}</li>`);
   });
-  flush();
   const main = out.join("");
   const wt = S.warm.map(it => splitTags(it.t).text).join(" | ");
   const hasS = /sprint warm-up|junior high warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
@@ -2564,7 +2549,7 @@ const paceAthletes = () => ATHLETES.filter(a=>a.cats.includes("Distance")||a.cat
 // A workout line can start with tags, e.g. "[B] 3 × 4 min Tempo" or "[Mid] [Hybrid] 4 × 200m at 800 pace".
 // No tag = everyone. Picking your name on the Workouts page hides lines tagged for other runners.
 let DTAGS = {}, dtDraft = null, dtMsg = {kind:"",text:""};
-const LEVEL_NAMES = {A:"A · Established", B:"B · Intermediate", C:"C · Developing"};
+const LEVEL_NAMES = {A:"Advanced", B:"Intermediate", C:"Developing"};
 const READY = {reduced:"Reduced: shorter workouts", easy:"Easy running only", out:"Not running right now"};
 const CHAMP_NAMES = {conf:"WCJC (conference)", reg:"Regional qualifier", state:"State qualifier"};
 const PATH_NAMES = {Distance:"Distance (1600/3200)", Hybrid:"Hybrid (800/1600)", Mid:"Mid-distance (400/800) · own plan"};
@@ -2700,7 +2685,7 @@ function myTitle(a, d){
 }
 const ctxOf = a => planGroup(a) || ((a.cats||[]).some(c=>SPR_CATS.includes(c)) ? "Sprints" : "");
 function hubWeekHTML(a){
-  LI_CTX = ctxOf(a);
+  LI_CTX = ctxOf(a); LI_ATH = a;
   const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
   if (!vw.length) return "";
   let base = vw.findIndex(w => { const s = parseD(w.start), e = new Date(s); e.setDate(s.getDate()+7); return today < e; });
@@ -2973,7 +2958,7 @@ function coachTodayHTML(s){
     </div></div>`;
 }
 function todayHTML(){
-  { const a0 = meA(); if (a0) LI_CTX = ctxOf(a0); }
+  { const a0 = meA(); if (a0) { LI_CTX = ctxOf(a0); LI_ATH = a0; } }
   const cs = meCoach(); if (cs) return coachTodayHTML(cs);
   const a = meA();
   if (!a) {
@@ -3061,7 +3046,7 @@ function checkHTML(a){
     ${msg ? `<p class="ed-msg ${msg.kind}" role="status" style="margin:0">${esc(msg.text)}</p>` : ""}</div>`;
 }
 function myWeekHTML(a){
-  LI_CTX = ctxOf(a);
+  LI_CTX = ctxOf(a); LI_ATH = a;
   if(!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
   const vw = visibleWeeks(); if(!vw.length) return "";
   const cw = currentWeek(), nw = nextWeek(), home = cw ? vw.indexOf(cw) : (nw ? vw.indexOf(nw) : vw.length-1);
@@ -3960,6 +3945,7 @@ const views = {
       <p class="note">Tap a workout name to open that week on Workouts, where you'll find warm-ups, cool-downs, indoor versions, paces and full lift tables. Meets are in gold.</p></div>`;
   },
   workouts(){
+    LI_ATH = meA();   // a runner who picked their name sees only their own version
     const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
     const postBtn = canPost ? `<a class="anet" href="#coaches" onclick="ctab='workouts'"><b>Post workouts</b> →</a>` : "";
     if(!vw.length) return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Spring 2027</div><h1>Workouts</h1></div>${postBtn}</div>
@@ -4882,7 +4868,7 @@ function render(){
   else { sub.hidden = true; sub.innerHTML = ""; }
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
   const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
-  thmIcon();
+  thmIcon(); LI_ATH = null;
   try { enhanceAbbr(document.getElementById("view")); } catch(e) { console.warn("abbr", e); }
 }
 let lastHash = location.hash;
