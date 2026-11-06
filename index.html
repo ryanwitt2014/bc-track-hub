@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("hub-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BC Track Hub</title>
 <meta name="description" content="Benton Central Track & Field: schedule, workouts, athletes, records, and more.">
-<meta name="theme-color" content="#0d3520">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -17,6 +18,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 html{color-scheme:light}
+.thm{margin-left:8px;flex:none;width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer}
+.thm:hover{background:rgba(255,255,255,.08)}
+.thm svg{width:18px;height:18px}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;font:14px/1.5 system-ui,sans-serif}
 img{max-width:100%}
@@ -25,8 +29,8 @@ img{max-width:100%}
 :root{
   --cold:#5b7fa6; --warm:#c8730a;
   --bg:#f5f5f2; --surface:#ffffff; --fg:#0e1611; --muted:#5e6661; --line:#e1e3de;
-  --accent:#123f25; --accent-ink:#ffffff; --gold:#f0b323; --gold-soft:#fcf3da;
-  --brand:#0d3520; --brand-2:#072315; --on-brand:#ffffff; --gold-ink:#1a1405;
+  --accent:#004631; --accent-ink:#ffffff; --gold:#fcb827; --gold-soft:#fff4d9;
+  --brand:#0c0f0e; --brand-2:#050706; --on-brand:#ffffff; --gold-ink:#1a1405; --green:#004631; --green-2:#00281c;
   --track:#b5452f; --chip:#eff0ec;
   --shadow:0 1px 2px rgba(10,20,14,.05),0 10px 30px -18px rgba(10,20,14,.25);
   --radius:12px;
@@ -35,15 +39,15 @@ img{max-width:100%}
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0a0e0b; --surface:#121915; --fg:#f1f3f0; --muted:#9aa29c; --line:#232b25;
-  --accent:#f0b323; --accent-ink:#161105; --gold:#f2bd3a; --gold-soft:#2b2410;
-  --brand:#0c2a18; --brand-2:#06170d; --on-brand:#ffffff; --gold-ink:#161105;
-  --track:#e0735c; --chip:#1b231e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}}
+  --bg:#08090a; --surface:#121414; --fg:#f3f4f3; --muted:#9da3a0; --line:#252928;
+  --accent:#fcb827; --accent-ink:#161105; --gold:#fcb827; --gold-soft:#2a2210;
+  --brand:#000000; --brand-2:#000000; --on-brand:#ffffff; --gold-ink:#161105; --green:#004631; --green-2:#00281c;
+  --track:#e0735c; --chip:#1c1f1e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0a0e0b; --surface:#121915; --fg:#f1f3f0; --muted:#9aa29c; --line:#232b25;
-  --accent:#f0b323; --accent-ink:#161105; --gold:#f2bd3a; --gold-soft:#2b2410;
-  --brand:#0c2a18; --brand-2:#06170d; --on-brand:#ffffff; --gold-ink:#161105;
-  --track:#e0735c; --chip:#1b231e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}
+  --bg:#08090a; --surface:#121414; --fg:#f3f4f3; --muted:#9da3a0; --line:#252928;
+  --accent:#fcb827; --accent-ink:#161105; --gold:#fcb827; --gold-soft:#2a2210;
+  --brand:#000000; --brand-2:#000000; --on-brand:#ffffff; --gold-ink:#161105; --green:#004631; --green-2:#00281c;
+  --track:#e0735c; --chip:#1c1f1e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
@@ -571,7 +575,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 header.top{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 100%);background-image:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 100%);border-bottom:3px solid var(--gold);box-shadow:0 6px 20px -12px rgba(0,0,0,.5)}
 header.top .wrap{padding-block:12px}
 .brand{display:flex;align-items:center;gap:10px;font-size:24px;letter-spacing:.04em}
-.brand .mark{flex:none;width:36px;height:36px;border-radius:9px;background:var(--gold);color:var(--brand);display:grid;place-items:center;font:800 18px/1 var(--display);letter-spacing:.02em;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+.brand .mark{flex:none;width:auto;height:44px;filter:drop-shadow(0 0 1px rgba(255,255,255,.55)) drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 .brand .wm{display:block}
 nav.tabs a{border-radius:999px;padding:7px 14px;opacity:.8;transition:background .15s,opacity .15s}
 nav.tabs a:hover{background:rgba(255,255,255,.08)}
@@ -589,7 +593,7 @@ h1{letter-spacing:.005em}
 th{background:color-mix(in srgb,var(--chip) 60%,var(--surface))}
 .tile{border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s}
 .tile:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 14px 30px -18px rgba(10,20,14,.45)}
-.tile .lane{border-radius:10px;background:var(--brand);color:var(--gold);font-size:24px}
+.tile .lane{border-radius:10px;background:var(--green);color:var(--gold);font-size:24px}
 .ath{border-left:4px solid var(--gold);box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
 .ath:hover{transform:translateY(-1px);border-color:var(--gold)}
 .btn{border-radius:999px;padding:9px 16px;transition:transform .1s,background .15s,border-color .15s}
@@ -604,7 +608,7 @@ th{background:color-mix(in srgb,var(--chip) 60%,var(--surface))}
 :root[data-theme="dark"] .seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}}
 .chip{border-radius:999px;padding:2px 9px}
-.nextmeet{border-radius:var(--radius);border-top:0;background:radial-gradient(120% 140% at 100% 0%,#1a5a35 0%,var(--brand) 45%,var(--brand-2) 100%);box-shadow:0 20px 40px -24px rgba(7,35,21,.8)}
+.nextmeet{border-radius:var(--radius);border-top:0;background:radial-gradient(120% 140% at 100% 0%,#0a6146 0%,var(--green) 45%,var(--green-2) 100%);box-shadow:0 20px 40px -24px rgba(0,40,28,.8)}
 .nextmeet .lanes{opacity:.14;background:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 22px)}
 .wk-count{color:var(--fg)}
 .mepick select,select,input[type="text"],input[type="password"],input[type="email"],input[type="number"],textarea{border-radius:10px}
@@ -615,12 +619,12 @@ a{text-underline-offset:3px}
 .today{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
 @media (max-width:820px){.today{grid-template-columns:1fr}}
 .td-hi{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.td-hi h1 span{color:var(--gold)}
+.td-hi h1 span{color:var(--accent)}
 .td-who{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .td-work{position:relative;overflow:hidden}
 .td-work::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--gold)}
 .td-when{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.td-when b{background:var(--brand);color:var(--gold);border-radius:999px;padding:3px 10px;letter-spacing:.1em}
+.td-when b{background:var(--green);color:var(--gold);border-radius:999px;padding:3px 10px;letter-spacing:.1em}
 .td-work h2{margin:8px 0 4px;font-size:32px}
 .td-work ul{margin:10px 0 0;padding-left:18px}
 .td-work li{margin:3px 0}
@@ -636,7 +640,7 @@ a{text-underline-offset:3px}
 .chase{display:grid;gap:8px;margin:0;padding:0;list-style:none}
 .chase li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .chase .bar-in{grid-column:1/-1;height:6px;border-radius:999px;background:var(--chip);overflow:hidden}
-.chase .bar-in i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--gold));border-radius:inherit}
+.chase .bar-in i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:inherit}
 .chase small{color:var(--muted)}
 
 /* Menu page */
@@ -673,8 +677,9 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <body>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#hub"><span class="mark" aria-hidden="true">BC</span><span class="wm">BC Track Hub<small>Benton Central · Spring 2027</small></span></a>
+    <a class="brand" href="#hub"><img class="mark" src="icons/logo-192.png" alt="" width="38" height="40"><span class="wm">BC Track Hub<small>Benton Central · Spring 2027</small></span></a>
     <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+    <button type="button" class="thm" id="thm" aria-label="Switch light or dark" onclick="toggleTheme()"></button>
   </div>
   <nav class="subnav" id="subnav" aria-label="Pages in this section" hidden></nav>
 </header>
@@ -684,7 +689,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05g";
+const HUB_VERSION = "11-05h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2537,6 +2542,10 @@ const ICO = {
   me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
   more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
 };
+function toggleTheme(){ const n = document.documentElement.dataset.theme==="light" ? "dark" : "light"; document.documentElement.dataset.theme = n; try { localStorage.setItem("hub-theme", n); } catch(e) {} thmIcon(); }
+function thmIcon(){ const b = document.getElementById("thm"); if (!b) return; const dark = document.documentElement.dataset.theme!=="light";
+  b.innerHTML = dark ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>';
+  b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode"); }
 function botnavHTML(key, isAth){
   const meHref = me ? `#a-${me}` : "#athletes";
   const items = [["hub","Today",ICO.today,"#hub"],["workouts","Workouts",ICO.work,"#workouts"],["schedule","Meets",ICO.cal,"#schedule"],["me","Me",ICO.me,meHref],["menu","More",ICO.more,"#menu"]];
@@ -4382,6 +4391,7 @@ function render(){
   else { sub.hidden = true; sub.innerHTML = ""; }
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
   const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
+  thmIcon();
 }
 let lastHash = location.hash;
 window.addEventListener("hashchange", () => { if(location.hash!==lastHash){ lastHash=location.hash; awIdx=null; fmp=false; window.scrollTo(0,0); lk={id:null,msg:{kind:"",text:""}}; } render(); });
@@ -4498,6 +4508,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05p"></script>
+<script src="sprints.js?v=11-05q"></script>
 </body>
 </html>

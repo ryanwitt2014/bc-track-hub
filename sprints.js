@@ -10,7 +10,7 @@
 /* ---------- styles ---------- */
 const css = `
 .sp-grp{display:inline-block;font:700 11px var(--body);letter-spacing:.03em;border-radius:3px;padding:1px 6px;margin-right:4px;white-space:nowrap;background:var(--chip);color:var(--fg)}
-.sp-grp.S1{background:#0d3520;color:#fff}.sp-grp.S2{background:#f0b323;color:#161105}.sp-grp.S3{background:#6b4fa3;color:#fff}.sp-grp.H{background:#b4472b;color:#fff}.sp-grp.J{background:#2f4f8f;color:#fff}.sp-grp.MD{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.sp-grp.S1{background:#004631;color:#fff}.sp-grp.S2{background:#fcb827;color:#161105}.sp-grp.S3{background:#6b4fa3;color:#fff}.sp-grp.H{background:#b4472b;color:#fff}.sp-grp.J{background:#2f4f8f;color:#fff}.sp-grp.MD{background:transparent;border:1px solid var(--line);color:var(--muted)}
 .sp-rows{width:100%;border-collapse:collapse;font-size:14px}
 .sp-rows td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
 .sp-rows tr:first-child td{border-top:0}
