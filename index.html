@@ -809,7 +809,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06i";
+const HUB_VERSION = "11-06j";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2840,7 +2840,8 @@ function calCell(dt, x, meets, inMonth){
   const iso = isoD(dt), mt = meets.filter(m=>m.date===iso), isToday = iso===isoD(today);
   const dn = `<div class="cal-dn"><b>${dt.getDate()}</b><span class="cal-dow">${dt.toLocaleDateString("en-US",{weekday:"short"})}</span>${x && x.sess==="coach" || (x && /coach/i.test(x.sess)) ? '<span class="cal-tag cl">Coach-led</span>' : x && x.sess && x.sess!=="meet" ? `<span class="cal-tag">${esc((SESS_K[x.sess]||[x.sess])[0])}</span>` : ""}${x && x.hdr ? `<span class="cal-tag">${esc(x.hdr)}</span>` : ""}</div>`;
   if (!x) return `<div class="cal-d ${inMonth?"":"out"} empty">${dn}</div>`;
-  const tagp = tags => { tags = tags.filter(y=>y!=="Crossover"); return tags.length ? `<b class="cal-tg">${esc(tags.join(" · "))}</b> ` : ""; };
+  const jh = calInit().lv==="JH";
+  const tagp = tags => { tags = tags.filter(y=>y!=="Crossover"); return tags.length ? `<b class="cal-tg">${esc(tags.map(x=>(jh && TAG_CHIP_JH[x]) || TAG_CHIP[x] || x).join(" · "))}</b> ` : ""; };
   const lines = [...x.sec.main.map(it=>tagp(it.tags)+esc(it.text))];
   if (x.sec.str.length) lines.push(`<span class="cal-lift">Lift: ${esc(x.sec.str[0].text.replace(/^(Weight room|Strength|Home strength):\s*/i,"").replace(/\s*\([^)]*min\)\s*$/,""))}</span>`);
   x.sec.opt.slice(0,2).forEach(it=>lines.push(`<span class="cal-opt">${tagp(it.tags)}${esc(it.text)}</span>`));
