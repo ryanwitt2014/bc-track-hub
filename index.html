@@ -759,6 +759,23 @@ li.abc{list-style:none;margin:6px 0 8px -18px}
 .abc-top b{font-weight:700}
 .abc-seg button{padding:4px 10px;font-size:12.5px}
 ul.abc-v{margin:6px 0 0;padding-left:18px}
+
+/* Opening splash: bison + wind farm (once per visit; tap to skip; off for reduced motion) */
+#splash{position:fixed;inset:0;z-index:100;background:radial-gradient(90% 70% at 50% 40%,#0a3d2b 0%,#03140d 55%,#000 100%);display:grid;place-items:center;align-content:center;gap:12px;overflow:hidden;transition:opacity .45s ease}
+#splash.out{opacity:0;pointer-events:none}
+.sp-glow{position:absolute;width:70vmin;height:70vmin;border-radius:50%;background:radial-gradient(circle,rgba(252,184,39,.22),transparent 62%);top:calc(50% - 50vmin);animation:spGlow 2s ease-out both}
+.sp-logo{position:relative;width:min(34vmin,180px);height:auto;filter:drop-shadow(0 0 2px rgba(255,255,255,.6)) drop-shadow(0 18px 30px rgba(0,0,0,.6));animation:spLogo 1s cubic-bezier(.2,1.4,.4,1) both}
+.sp-word{position:relative;font:800 clamp(22px,5vw,40px)/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:#fff;animation:spUp .6s .45s ease-out both}
+.sp-rule{position:relative;height:4px;width:min(46vmin,260px);background:#fcb827;border-radius:2px;transform-origin:center;animation:spRule .7s .6s cubic-bezier(.3,.9,.3,1) both}
+.sp-farm{position:absolute;left:0;right:0;bottom:0;width:100%;height:32vh;fill:#178a5f;animation:spUp .9s .15s ease-out both}
+.sp-farm rect{fill:#fcb827;opacity:.6}
+.sp-farm .bl{animation:spSpin linear infinite}
+@keyframes spSpin{to{transform:rotate(360deg)}}
+@keyframes spLogo{0%{opacity:0;transform:translateY(30px) scale(.6) rotate(-8deg)}100%{opacity:1;transform:none}}
+@keyframes spUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+@keyframes spRule{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+@keyframes spGlow{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+@media print{#splash{display:none}}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -797,6 +814,14 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <div class="sp-glow"></div>
+  <img class="sp-logo" src="icons/logo-full.png" alt="">
+  <div class="sp-word">BC Track &amp; Field</div><div class="sp-rule"></div>
+  <svg class="sp-farm" viewBox="0 0 600 160" preserveAspectRatio="xMidYMax slice"><g class="tb" transform="translate(40 0)" opacity="0.35"><path d="M-1.6 160 L-0.7 90 L0.7 90 L1.6 160Z"/><g transform="translate(0 90)"><g class="bl" style="animation-duration:5.5s;animation-delay:-1s"><path d="M0 0 L-1.3 -2 L0 -38 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -38 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -38 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(95 0)" opacity="0.55"><path d="M-1.6 160 L-0.7 65 L0.7 65 L1.6 160Z"/><g transform="translate(0 65)"><g class="bl" style="animation-duration:4.6s;animation-delay:-2s"><path d="M0 0 L-1.3 -2 L0 -52 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -52 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -52 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(160 0)" opacity="0.3"><path d="M-1.6 160 L-0.7 100 L0.7 100 L1.6 160Z"/><g transform="translate(0 100)"><g class="bl" style="animation-duration:6.2s;animation-delay:-0.5s"><path d="M0 0 L-1.3 -2 L0 -33 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -33 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -33 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(240 0)" opacity="0.75"><path d="M-1.6 160 L-0.7 50 L0.7 50 L1.6 160Z"/><g transform="translate(0 50)"><g class="bl" style="animation-duration:4.2s;animation-delay:-1.5s"><path d="M0 0 L-1.3 -2 L0 -61 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -61 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -61 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(330 0)" opacity="0.45"><path d="M-1.6 160 L-0.7 80 L0.7 80 L1.6 160Z"/><g transform="translate(0 80)"><g class="bl" style="animation-duration:5.0s;animation-delay:-3s"><path d="M0 0 L-1.3 -2 L0 -44 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -44 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -44 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(410 0)" opacity="0.6"><path d="M-1.6 160 L-0.7 60 L0.7 60 L1.6 160Z"/><g transform="translate(0 60)"><g class="bl" style="animation-duration:4.8s;animation-delay:-0.2s"><path d="M0 0 L-1.3 -2 L0 -55 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -55 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -55 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(480 0)" opacity="0.35"><path d="M-1.6 160 L-0.7 95 L0.7 95 L1.6 160Z"/><g transform="translate(0 95)"><g class="bl" style="animation-duration:6.0s;animation-delay:-2.2s"><path d="M0 0 L-1.3 -2 L0 -36 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -36 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -36 L1.3 -2Z"/></g></g><circle r="2"/></g></g><g class="tb" transform="translate(560 0)" opacity="0.5"><path d="M-1.6 160 L-0.7 70 L0.7 70 L1.6 160Z"/><g transform="translate(0 70)"><g class="bl" style="animation-duration:4.4s;animation-delay:-1.1s"><path d="M0 0 L-1.3 -2 L0 -50 L1.3 -2Z"/><g transform="rotate(120)"><path d="M0 0 L-1.3 -2 L0 -50 L1.3 -2Z"/></g><g transform="rotate(240)"><path d="M0 0 L-1.3 -2 L0 -50 L1.3 -2Z"/></g></g><circle r="2"/></g></g><rect y="158" width="600" height="2"/></svg>
+</div>
+<script>(function(){var s=document.getElementById("splash");var skip=false;try{skip=sessionStorage.getItem("hub-splash")==="1"||matchMedia("(prefers-reduced-motion: reduce)").matches;sessionStorage.setItem("hub-splash","1");}catch(e){}
+if(skip||/[?&]nosplash/.test(location.search)){s.remove();return;}var done=function(){if(!s.parentNode)return;s.classList.add("out");setTimeout(function(){s.remove();},450);};s.addEventListener("click",done);setTimeout(done,2100);})();</script>
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#hub"><img class="mark" src="icons/logo-192.png" alt="" width="38" height="40"><span class="wm">BC Track Hub<small>Benton Central · Spring 2027</small></span></a>
@@ -811,7 +836,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06k";
+const HUB_VERSION = "11-06l";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
