@@ -803,7 +803,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06f";
+const HUB_VERSION = "11-06g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1021,6 +1021,28 @@ let WARMUPS = {
     {t:"High knees", d:"2 x 20m", url:V("high knees drill")},{t:"Butt kicks", d:"2 x 20m"},
     {t:"A-skips", d:"2 x 20m", url:V("A skip drill")},{t:"B-skips", d:"2 x 20m", url:V("B skip drill")},
     {t:"Carioca", d:"2 x 20m each way", url:V("carioca drill")},{t:"Strides", d:"4 x 80m @ 80%"},
+  ],
+  // Group warm-ups (the "Warm-up" button on each workout opens the one for that group)
+  distance:[
+    {t:"Easy jog", d:"10–15 min (JH 5–10 min)"},
+    {t:"Leg swings, front & side", d:"10 each", url:V("leg swings warm up runners")},
+    {t:"Walking lunge with a twist", d:"10 each leg"},
+    {t:"A-skips", d:"2 x 20m", url:V("A skip drill")},{t:"B-skips", d:"2 x 20m", url:V("B skip drill")},
+    {t:"High knees", d:"2 x 20m", url:V("high knees drill")},{t:"Butt kicks", d:"2 x 20m"},
+    {t:"Carioca", d:"2 x 20m each way", url:V("carioca drill")},
+    {t:"Pogo hops (quick, stiff ankles)", d:"2 x 10", url:V("pogo hops runners")},
+    {t:"Strides", d:"4 x 80m @ 80%"},
+  ],
+  sprint:[
+    {t:"Easy movement: jog, skip, shuffle", d:"400m"},
+    {t:"Dynamic mobility: leg swings, walking lunges, inchworms", d:"5 min", url:V("sprinter dynamic warm up")},
+    {t:"A-march → A-skip", d:"2 x 20m each", url:V("A skip drill")},
+    {t:"Ankling", d:"2 x 15m", url:V("ankling drill sprinters")},
+    {t:"Dribbles", d:"2 x 20m", url:V("dribble drill sprinters")},
+    {t:"Pogo hops", d:"2 x 10", url:V("pogo hops plyometric")},
+    {t:"Skips for height", d:"2 x 20m", url:V("power skips drill")},
+    {t:"Build-ups (70 → 90%)", d:"3 x 40m"},
+    {t:"Event prep: starts, hurdle walkovers, or approach run", d:"5 min"},
   ],
   // Field event warm-ups: done after the Practice warm-up
   field:{
@@ -1905,6 +1927,7 @@ function secOf(it){
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
   return "main";
 }
+let LI_CTX = "";   // the group a list is for, when known (helps pick the right warm-up)
 const li = arr => liSimple(arr);   // one clean view for everyone (liFull kept for reference)
 // ---- Simple view (default for athletes): "Warm-up" → pop-up, main reps, "Strength A1 · View lifts", "Cool-down" → pop-up ----
 const S_DROP = /^(Outdoor plan|Indoor version|Coaching:|400\/800 hybrids|Event technique \(|General (?:strength|movement) & (?:conditioning|strength) only|Goal:)|→ full details/i;
@@ -1933,7 +1956,11 @@ function liSimple(arr){
   const mainL = S.main.filter(it => !S_INL.test(splitTags(it.t).text)), mainS = S.main.filter(it => S_INL.test(splitTags(it.t).text));
   const many = mainL.length > 1;
   const main = mainL.map(it => { const s = sText(splitTags(it.t).text, many); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; }).join("");
-  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:p">Warm-up</button></li>` : "")
+  const wt = S.warm.map(it => splitTags(it.t).text).join(" | ");
+  const hasS = /sprint warm-up|junior high warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
+  const wk = hasS && hasD ? (["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "d") : hasS ? "s" : hasD ? "d"
+    : ["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "p";
+  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wk}">Warm-up</button></li>` : "")
     + main + [...mainS, ...S.str].map(strHTML).join("")
     + S.opt.map(it => { const s = sText(splitTags(it.t).text, true); return s ? `<li class="s-opt">${itemHTML(rebuild(it, s))}</li>` : ""; }).join("")
     + (S.cool.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
@@ -1943,6 +1970,7 @@ const liFull = arr => { const s = arr.map(secOf), k = new Set(s);
   return SECS.filter(([c])=>k.has(c)).map(([c,l]) => `<li class="wsec">${l}</li>` + arr.filter((it,i)=>s[i]===c).map(it=>`<li>${itemHTML(it)}</li>`).join("")).join(""); };
 function blockHTML(name, arr, combo){
   if(!arr || !arr.length) return "";
+  LI_CTX = /Sprints|Hurdles|Jump|Vault/.test(name||"") ? "Sprints" : (name||"");
 
   const cls = combo ? "evblock combo" : "evblock";
   if(wlv!=="Both"){
@@ -2226,10 +2254,10 @@ const wuToText = arr => (arr||[]).map(s=>[s.t, s.d||"", s.url||s.link||""].filte
 const wuFromText = txt => String(txt||"").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
   const [t,d,u] = l.split("|").map(x=>(x||"").trim()); const it = {t:t||"Step", d:d||""};
   if(u){ if(u.startsWith("#")) it.link=u; else it.url=u; } return it; });
-function wuStart(){ wu = {practice:wuToText(WARMUPS.practice), cooldown:wuToText(WARMUPS.cooldown), field:Object.entries(WARMUPS.field).map(([ev,arr])=>({ev, txt:wuToText(arr)})),
+function wuStart(){ wu = {practice:wuToText(WARMUPS.practice), distance:wuToText(WARMUPS.distance), sprint:wuToText(WARMUPS.sprint), cooldown:wuToText(WARMUPS.cooldown), field:Object.entries(WARMUPS.field).map(([ev,arr])=>({ev, txt:wuToText(arr)})),
   stretch:(WARMUPS.stretch||STRETCH_DEFAULT).map(g=>({m:g.m, why:g.why||"", s:wuToText(g.s), x:wuToText(g.x)}))}; }
 async function wuSave(){
-  const next = {practice:wuFromText(wu.practice), cooldown:wuFromText(wu.cooldown), field:{}};
+  const next = {practice:wuFromText(wu.practice), distance:wuFromText(wu.distance), sprint:wuFromText(wu.sprint), cooldown:wuFromText(wu.cooldown), field:{}};
   wu.field.forEach(f=>{ const n=f.ev.trim(); if(n) next.field[n]=wuFromText(f.txt); });
   next.stretch = wu.stretch.filter(g=>g.m.trim()).map(g=>({m:g.m.trim(), why:g.why.trim(), s:wuFromText(g.s), x:wuFromText(g.x)}));
   const err = await publishFiles({"warmups.json": JSON.stringify(next, null, 1)});
@@ -2635,7 +2663,9 @@ function myTitle(a, d){
   const pg = planGroup(a), sp = (a.cats||[]).find(c=>SPR_CATS.includes(c));
   return (pg && gFocus(d, pg, a.level)) || (sp && gFocus(d, "Sprints", a.level)) || focusFor(d, a.level) || "";
 }
+const ctxOf = a => planGroup(a) || ((a.cats||[]).some(c=>SPR_CATS.includes(c)) ? "Sprints" : "");
 function hubWeekHTML(a){
+  LI_CTX = ctxOf(a);
   const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
   if (!vw.length) return "";
   let base = vw.findIndex(w => { const s = parseD(w.start), e = new Date(s); e.setDate(s.getDate()+7); return today < e; });
@@ -2724,10 +2754,11 @@ function abbrBody(k){
   const [kind, id] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":")+1)];
   if (kind==="lift") { const L = LIFTS[id]; if (!L) return null;
     return {eye: L.jh ? "Junior high strength" : L.home ? "Home strength" : "Strength", title: L.name, html: (L.when?`<p class="lede" style="margin:0 0 10px">${esc(L.when)}</p>`:"") + liftHTML(id).replace('<details class="lift">','<details class="lift" open>') }; }
-  if (kind==="wu" || kind==="cd") { const L = kind==="wu" ? WARMUPS.practice : WARMUPS.cooldown;
-    return {eye: kind==="wu" ? "Every practice" : "End of practice", title: kind==="wu" ? "Warm-up" : "Cool-down",
+  if (kind==="wu" || kind==="cd") { const WU = {d:[WARMUPS.distance,"Distance & mid-distance"], s:[WARMUPS.sprint,"Sprints, hurdles & jumps"], p:[WARMUPS.practice,"Every practice"]}[id] || [WARMUPS.practice,"Every practice"];
+    const L = kind==="wu" ? (WU[0] || WARMUPS.practice) : WARMUPS.cooldown;
+    return {eye: kind==="wu" ? WU[1] : "End of practice", title: kind==="wu" ? "Warm-up" : "Cool-down",
       html: `<ol class="steps">${(L||[]).map(s=>`<li><span>${itemHTML(s)}</span><em>${esc(s.d||"")}</em></li>`).join("")}</ol>
-        <p class="note" style="margin:10px 0 0">${kind==="wu" ? "Sprinters, hurdlers and jumpers add your event warm-up after this. " : ""}<a href="#warmups" onclick="document.getElementById('abbrDlg').close()">Warm-ups &amp; stretching page →</a></p>` }; }
+        <p class="note" style="margin:10px 0 0">${kind==="wu" && id==="s" ? "Jumpers: add your event warm-up from the Warm-ups page. " : ""}<a href="#warmups" onclick="document.getElementById('abbrDlg').close()">Warm-ups &amp; stretching page →</a></p>` }; }
   if (kind==="inl") { const x = INL_REG[+id]; if (!x) return null;
     return {eye:"Strength", title:"Today's lifts", html: liftInlineHTML(x).replace('<details class="lift">','<details class="lift" open>') || `<p>${esc(x)}</p>`}; }
   if (kind==="md") { const x = (MD.lib||[]).find(y=>y.c===id); if (!x) return null;
@@ -2907,6 +2938,7 @@ function coachTodayHTML(s){
     </div></div>`;
 }
 function todayHTML(){
+  { const a0 = meA(); if (a0) LI_CTX = ctxOf(a0); }
   const cs = meCoach(); if (cs) return coachTodayHTML(cs);
   const a = meA();
   if (!a) {
@@ -2994,6 +3026,7 @@ function checkHTML(a){
     ${msg ? `<p class="ed-msg ${msg.kind}" role="status" style="margin:0">${esc(msg.text)}</p>` : ""}</div>`;
 }
 function myWeekHTML(a){
+  LI_CTX = ctxOf(a);
   if(!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
   const vw = visibleWeeks(); if(!vw.length) return "";
   const cw = currentWeek(), nw = nextWeek(), home = cw ? vw.indexOf(cw) : (nw ? vw.indexOf(nw) : vw.length-1);
@@ -3936,7 +3969,9 @@ const views = {
     const area = (id,label,key,rows) => `<label class="ed-g all" for="${id}"><span>${label}</span><textarea id="${id}" rows="${rows}" oninput="${key}=this.value">${esc(eval(key))}</textarea></label>`;
     return `<div class="panel ed-help"><b>How to write it.</b> One step per line: <code>Step | reps | link</code>. Reps and link are optional. A link can be a video (becomes a ▶ Video button) or a page in the hub like <code>#warmups</code>.<br>Example: <code>A-skips | 2 x 20m | https://youtu.be/…</code></div>
       <div class="panel ed">
-        ${area("wu-p","Practice warm-up (A)","wu.practice",9)}
+        ${area("wu-d","Distance & mid-distance warm-up","wu.distance",10)}
+        ${area("wu-s","Sprints, hurdles & jumps warm-up","wu.sprint",10)}
+        ${area("wu-p","General warm-up (everyone else / days with no group)","wu.practice",9)}
         ${area("wu-c","Cool-down","wu.cooldown",4)}
         <div class="ed-day"><h3>Field events</h3></div>
         ${wu.field.map((f,i)=>`<div class="ed-fe">
@@ -4267,7 +4302,8 @@ const views = {
           <p class="inj-flag"><b>See the athletic trainer:</b> ${esc(i.flag)}</p></div>`).join("")}</div>
         <p class="note">Wondering why ice isn't front and center? See <a href="#warmups" onclick="wtab='ice';render();return false">Ice: the research</a>.</p>${tellCoach}`;
     } else {
-      body = `<div class="cols">${block("Practice (A)", WARMUPS.practice, "Everyone, every practice")}${block("Cool-down", WARMUPS.cooldown, "Everyone, end of practice")}</div>
+      body = `<div class="cols">${block("Distance &amp; Mid-Distance", WARMUPS.distance||WARMUPS.practice, "Every distance and 400/800 practice")}${block("Sprints, Hurdles &amp; Jumps", WARMUPS.sprint||WARMUPS.practice, "Every sprint, hurdle and jump practice")}</div>
+        <div class="cols">${block("General", WARMUPS.practice, "Throwers, combined days, or no group yet")}${block("Cool-down", WARMUPS.cooldown, "Everyone, end of practice")}</div>
         <div><h2>Field events</h2><p class="note" style="margin:4px 0 0">After the Practice warm-up, go to your event.</p></div>
         <div class="cols">${Object.entries(WARMUPS.field).map(([ev,arr])=>block(ev,arr)).join("")}</div>
         <p class="note">After practice, hit the <a href="#warmups" onclick="wtab='stretch';render();return false">Stretching</a> tab for your event's muscles.</p>`;
