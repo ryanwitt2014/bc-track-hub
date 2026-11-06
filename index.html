@@ -651,6 +651,51 @@ a{text-underline-offset:3px}
 .menu-list a b{font-weight:600}
 .menu-list a span{font-size:13px;color:var(--muted)}
 
+
+/* Calendar */
+.cal-head{align-items:flex-end}
+.cal-nav{display:flex;gap:6px}
+.cal-filters{display:flex;gap:10px;flex-wrap:wrap}
+.cal{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.cal-wh{display:grid;grid-template-columns:repeat(7,1fr);background:var(--green);color:#fff;font:700 11px var(--body);letter-spacing:.14em;text-transform:uppercase}
+.cal-wh div{padding:7px 8px}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal-d{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 7px 8px;min-height:150px;font-size:12px;line-height:1.3;min-width:0}
+.cal-d:nth-child(7n){border-right:0}
+.cal-d.out{opacity:.45}
+.cal-d.empty{background:color-mix(in srgb,var(--chip) 50%,transparent)}
+.cal-d.rest{background:color-mix(in srgb,var(--chip) 60%,transparent);color:var(--muted)}
+.cal-d.meet{background:var(--gold-soft)}
+.cal-d.today{box-shadow:inset 0 0 0 2px var(--gold)}
+.cal-dn{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:3px}
+.cal-dn b{font:800 18px/1 var(--display);color:var(--accent)}
+.cal-dow{display:none}
+.cal-tag{font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:6px;padding:0 4px;color:var(--muted)}
+.cal-tag.cl{background:var(--green);border-color:var(--green);color:#fff}
+.cal-ti{display:block;font:700 13px/1.15 var(--display);text-transform:uppercase;letter-spacing:.02em;color:var(--fg);text-decoration:none;margin:2px 0 3px}
+.cal-ti:hover{color:var(--accent);text-decoration:underline}
+.cal-mt{font-weight:700;font-size:12px;background:var(--gold);color:var(--gold-ink);border-radius:5px;padding:2px 5px;margin:2px 0 4px}
+.cal-ls div{margin:0 0 3px;overflow-wrap:anywhere}
+.cal-tg{color:var(--accent)}
+.cal-lift{color:var(--accent);font-weight:600}
+.cal-opt{color:var(--muted);font-style:italic}
+@media (max-width:900px){
+  .cal-wh{display:none}
+  .cal-g{grid-template-columns:1fr}
+  .cal-d{border-right:0;min-height:0}
+  .cal-d.out{display:none}
+  .cal-dow{display:inline;font:700 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+  .cal-dn b{font-size:20px}
+}
+@media print{
+  @page{size:landscape;margin:.3in}
+  header.top,.subnav,.botnav,.cal-nav,.cal-filters,.cal-head + .note,.stack > .note:last-child{display:none!important}
+  main{padding:0!important}
+  .cal{box-shadow:none;border-color:#bbb}
+  .cal-d{min-height:1.2in;font-size:8px;break-inside:avoid}
+  .cal-wh{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cal-d.meet .cal-mt,.cal-tag.cl{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -703,7 +748,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05i";
+const HUB_VERSION = "11-06a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1561,6 +1606,7 @@ const SECTIONS = [
   {id:"signups", g:"team", name:"Sign-ups", blurb:"Final Forms and Google Form checklist"},
   {id:"team", g:"team", name:"Coaches & Program", blurb:"Coaching staff, program philosophy, expectations, practice flow"},
   {id:"workouts", g:"train", name:"Workouts", blurb:"Week-by-week plan with drill videos"},
+  {id:"calendar", g:"train", name:"Calendar", blurb:"Every date's workout for your group, a month at a time"},
   {id:"middistance", g:"train", name:"Distance & Mid", blurb:"Distance + mid-distance program: philosophy, calendar, strength, workout library, 800 pace"},
   {id:"paces", g:"train", name:"Paces", blurb:"Training paces for distance and mid-distance runners"},
   {id:"form", g:"train", name:"Form", blurb:"Technique for every event and relay handoffs"},
@@ -2492,6 +2538,61 @@ function fmpHTML(key){
     <button type="button" class="btn" onclick="fmp=false;render()">Close</button></div>`;
 }
 
+
+// ---- Calendar: every date's workout for one level + group, a month at a time ----
+const CAL_GROUPS = {HS:[["Distance","Distance"],["Mid Distance","Mid-Distance"],["Sprints","Sprints, Hurdles & Jumps"]], JH:[["Distance","Distance (800/1600)"],["Mid Distance","Mid-Distance (400/800)"],["Sprints","Sprints, Hurdles & Jumps"]]};
+const SPR_CATS = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
+let calS = null;
+function calInit(){
+  if (calS) return calS;
+  const a = meA(); let lv = "HS", g = "Distance";
+  if (a) { lv = a.level; const pg = planGroup(a); g = pg==="Mid Distance" ? "Mid Distance" : pg==="Distance" ? "Distance" : (a.cats||[]).some(c=>SPR_CATS.includes(c)) ? "Sprints" : "Distance"; }
+  const t0 = today < new Date(2026,11,1) ? new Date(2026,11,1) : today;
+  calS = {lv, g, y:t0.getFullYear(), m:t0.getMonth()};
+  return calS;
+}
+const CAL_DROP = /^(Outdoor plan|Event technique \(|Coaching:|400\/800 hybrids|Junior high warm-up|Standard sprint warm-up|Indoor version|Spring break \(Mar|Check-in|MEET:|Meet:)/i;
+let calCache = {key:"", map:{}};
+function calDays(lv, g){
+  const key = lv+"|"+g+"|"+RAW_STARTS.length+"|"+(WORKOUTS.length);
+  if (calCache.key === key) return calCache.map;
+  const map = {};
+  const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
+  vw.forEach((w0, wi) => { const w = window.SP && SP.inject ? SP.inject(w0, {print:true}) : w0;
+    w.days.forEach(d => { const dt = dayDate(w, d.day);
+      let items = [...(d.all||[])];
+      (d.combos||[]).filter(cb=>cb.groups.includes(g)).forEach(cb=>items.push(...cb.items));
+      items.push(...((d.groups||{})[g]||[]));
+      items = forLv(items, lv);
+      const sec = {main:[], str:[], opt:[]}; let hdr = "";
+      items.forEach(it => { const s = secOf(it); if (s==="warm"||s==="cool") return; const {tags, text} = splitTags(it.t);
+        const m = /^Coach-Led [^·]+·\s*(.+?)\s*·\s*([\d–-]+ min)$/.exec(text); if (m) { hdr = m[2]; return; }
+        if (CAL_DROP.test(text)) return; (sec[s]||sec.main).push({tags, text}); });
+      const title = g==="Sprints" ? gFocus(d, g, lv) : (gFocus(d, g, lv) || focusFor(d, lv) || "");
+      const ss = typeof sessOf==="function" ? sessOf(d, lv) : null;
+      map[isoD(dt)] = {title, sess: ss && ss.kind ? ss.kind : "", hdr, sec, wi, day:d.day};
+    }); });
+  calCache = {key, map};
+  return map;
+}
+const isoD = dt => dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");
+function calGo(wi){ weekIdx = wi; location.hash = "#workouts"; }
+function calCell(dt, x, meets, inMonth){
+  const iso = isoD(dt), mt = meets.filter(m=>m.date===iso), isToday = iso===isoD(today);
+  const dn = `<div class="cal-dn"><b>${dt.getDate()}</b><span class="cal-dow">${dt.toLocaleDateString("en-US",{weekday:"short"})}</span>${x && x.sess==="coach" || (x && /coach/i.test(x.sess)) ? '<span class="cal-tag cl">Coach-led</span>' : x && x.sess && x.sess!=="meet" ? `<span class="cal-tag">${esc((SESS_K[x.sess]||[x.sess])[0])}</span>` : ""}${x && x.hdr ? `<span class="cal-tag">${esc(x.hdr)}</span>` : ""}</div>`;
+  if (!x) return `<div class="cal-d ${inMonth?"":"out"} empty">${dn}</div>`;
+  const tagp = tags => { tags = tags.filter(y=>y!=="Crossover"); return tags.length ? `<b class="cal-tg">${esc(tags.join(" · "))}</b> ` : ""; };
+  const lines = [...x.sec.main.map(it=>tagp(it.tags)+esc(it.text))];
+  if (x.sec.str.length) lines.push(`<span class="cal-lift">Lift: ${esc(x.sec.str[0].text.replace(/^(Weight room|Strength|Home strength):\s*/i,"").replace(/\s*\([^)]*min\)\s*$/,""))}</span>`);
+  x.sec.opt.slice(0,2).forEach(it=>lines.push(`<span class="cal-opt">${tagp(it.tags)}${esc(it.text)}</span>`));
+  const rest = /^(rest|full rest|off)/i.test(x.title) && lines.length<=1;
+  return `<div class="cal-d ${inMonth?"":"out"}${mt.length?" meet":""}${rest?" rest":""}${isToday?" today":""}">${dn}
+    ${mt.map(m=>`<div class="cal-mt">★ ${esc(m.meet)}</div>`).join("")}
+    ${x.title && !(mt.length && /^meet/i.test(x.title)) ? `<a class="cal-ti" href="#workouts" onclick="calGo(${x.wi});return false;">${esc(x.title)}</a>` : ""}
+    <div class="cal-ls">${lines.map(l=>`<div>${l}</div>`).join("")}</div></div>`;
+}
+function calSet(k, v){ const s = calInit(); if (k==="m") { let m = s.m + v, y = s.y; if (m<0) { m=11; y--; } if (m>11) { m=0; y++; } s.m = m; s.y = y; } else s[k] = v;
+  if (k==="lv" && !CAL_GROUPS[v].some(([g])=>g===s.g)) s.g = "Distance"; render(); }
 // ---- "Me": the athlete this device belongs to (picked on the hub, saved on this device only) ----
 const meA = () => ATHLETES.find(a => a.id === me) || null;   // "me" / setMe live with Recruiting's "Who are you?"
 // My next day with something on it (today first), using the same lines as my athlete page, sprint sessions included
@@ -3562,6 +3663,24 @@ const views = {
         <div>${a.cats.map(c=>`<span class="chip ${c===cat?"on":""}">${esc(c)}</span>`).join("")}</div></a>`).join("")}</div>`
       :`<p class="note">No athletes match these filters.</p>`}
       <p class="note">Track marks are spring 2026 bests. Cross country times are from this fall (JH 3000m, HS 5000m). <b>#</b> is the athlete's best rank on their team. <span class="hs-tag">★ Top 3 overall</span> means a JH athlete is top 3 in that event among all boys or girls, HS and JH combined (flat races and jumps only, since hurdles, shot, and discus use different heights and weights).</p></div>`;
+  },
+  calendar(){
+    const s = calInit(), map = calDays(s.lv, s.g);
+    const first = new Date(s.y, s.m, 1), last = new Date(s.y, s.m+1, 0);
+    const start = new Date(first); start.setDate(first.getDate() - ((first.getDay()+6)%7));
+    const end = new Date(last); end.setDate(last.getDate() + (6-((last.getDay()+6)%7)));
+    const meets = SCHEDULE.filter(m=>m.level===s.lv);
+    const cells = []; for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) { const dd = new Date(d); cells.push(calCell(dd, map[isoD(dd)], meets, dd.getMonth()===s.m)); }
+    const gname = (CAL_GROUPS[s.lv].find(([g])=>g===s.g)||[,""])[1];
+    const minM = new Date(2026,11,1), maxM = new Date(2027,5,1), cur = new Date(s.y, s.m, 1);
+    const sprNote = s.g==="Sprints" && cur >= new Date(2027,2,1) ? `<p class="note">The spring sprint plan (March to State) is still being built. Meets are shown; daily workouts will fill in once it's posted.</p>` : "";
+    return `<div class="stack"><div class="bar cal-head"><div><div class="eyebrow">${s.lv==="JH"?"Junior High":"High School"} · ${esc(gname)}</div><h1>${first.toLocaleDateString("en-US",{month:"long",year:"numeric"})}</h1></div>
+      <div class="cal-nav"><button type="button" class="btn sm" ${cur<=minM?"disabled":""} onclick="calSet('m',-1)" aria-label="Previous month">←</button><button type="button" class="btn sm" ${cur>=maxM?"disabled":""} onclick="calSet('m',1)" aria-label="Next month">→</button><button type="button" class="btn sm" onclick="window.print()">Print</button></div></div>
+      <div class="cal-filters"><div class="seg" role="group" aria-label="Level">${[["HS","High School"],["JH","Junior High"]].map(([k,l])=>`<button type="button" aria-pressed="${s.lv===k}" onclick="calSet('lv','${k}')">${l}</button>`).join("")}</div>
+        <div class="seg" role="group" aria-label="Group">${CAL_GROUPS[s.lv].map(([g,l])=>`<button type="button" aria-pressed="${s.g===g}" onclick="calSet('g','${g}')">${esc(l)}</button>`).join("")}</div></div>
+      ${sprNote}
+      <div class="cal"><div class="cal-wh">${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>`<div>${d}</div>`).join("")}</div><div class="cal-g">${cells.join("")}</div></div>
+      <p class="note">Tap a workout name to open that week on Workouts, where you'll find warm-ups, cool-downs, indoor versions, paces and full lift tables. Meets are in gold.</p></div>`;
   },
   workouts(){
     const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
