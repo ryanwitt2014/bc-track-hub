@@ -655,6 +655,20 @@ a{text-underline-offset:3px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
 .inst h3{margin-top:4px}
+.has-coach .hero{display:none}
+.td-todo h2{font-size:30px}
+.todos{list-style:none;margin:6px 0 12px;padding:0;display:grid;gap:6px}
+.todo{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface)}
+.todo label{display:flex;gap:10px;align-items:flex-start;flex:1;cursor:pointer}
+.todo input{width:20px;height:20px;margin-top:2px;accent-color:var(--gold);flex:none}
+.todo.done span{text-decoration:line-through;color:var(--muted)}
+.todo-go{flex:none;text-decoration:none;font-weight:700;color:var(--accent);padding:2px 6px}
+.todo-x{flex:none;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.todo-new{display:flex;gap:8px}
+.todo-new input{flex:1;font:15px var(--body);padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);min-width:0}
+.td-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.td-links a{text-decoration:none;font-weight:600;font-size:14px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--fg)}
+.td-links a:hover{border-color:var(--gold)}
 .botnav{display:none}
 .has-me .hero,.has-me .fires{display:none}
 body:has(.sheets-wrap) .botnav{display:none!important}
@@ -689,7 +703,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05h";
+const HUB_VERSION = "11-05i";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2507,14 +2521,82 @@ async function doInstall(){ if (!instEvt) return; instEvt.prompt(); try { await 
 function hideInstall(){ instHide = true; try { localStorage.setItem("hub-inst-hide","1"); } catch(e) {} render(); }
 function myMeet(a){ return SCHEDULE.filter(m => (m.level===a.level || !m.level) && parseD(m.date) >= today).sort((x,y)=>x.date.localeCompare(y.date))[0] || null; }
 const relDay = dt => { const n = Math.round((dt - today)/864e5); return n===0 ? "Today" : n===1 ? "Tomorrow" : dt.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}); };
+
+// ---- Coach mode on the hub: pick a coach name and Today becomes your to-do list ----
+const meCoach = () => (me||"").startsWith("coach:") ? (STAFF.find(s=>s.name===me.slice(6)) || null) : null;
+const coachLast = s => s.name.split(" ").slice(-1)[0];
+// One-time items from planning chats, per coach (check them off; added tasks save the same way)
+const TODO_SEED = {"Ryan Witt":[
+  {id:"sb-sql", t:"Run spring_break.sql in Supabase (spring break week = on your own)", href:"https://github.com/ryanwitt2014/bc-track-hub/blob/main/supabase/spring_break.sql"},
+  {id:"if-1105", t:"Paste the Nov 5 evening interest-form batch into Sign-ups → Interest form responses"},
+  {id:"jh-sprint-ok", t:"Approve the JH sprint plan doc so the Mar–May JH program can be built"},
+  {id:"jh-jumps", t:"Send the rest of the JH program doc (Section 10: jumps)"},
+  {id:"hill", t:"Pick the hill for hill workouts (short ~50m steep, long 250–350m)"},
+  {id:"goal-pace", t:"Decide: coach-only goal times per athlete for the Broken Race last rep?"},
+  {id:"angela-hs", t:"Review Angela's HS spring sprint plan when it's drafted"}
+]};
+let TODOS = {}; try { TODOS = JSON.parse(localStorage.getItem("hub-todos")||"{}"); } catch(e) { TODOS = {}; }
+let tdMsg = "";
+async function saveTodos(){
+  try { localStorage.setItem("hub-todos", JSON.stringify(TODOS)); } catch(e) {}
+  render();
+}
+function todoToggle(name, id){ const T = TODOS[name] = TODOS[name] || {done:{}, add:[]}; T.done = T.done || {}; if (T.done[id]) delete T.done[id]; else T.done[id] = new Date().toISOString().slice(0,10); saveTodos(); }
+function todoAdd(name){ const el = document.getElementById("td-add"); const v = (el && el.value || "").trim(); if (!v) return;
+  const T = TODOS[name] = TODOS[name] || {done:{}, add:[]}; T.add = T.add || []; T.add.push({id:"u"+Date.now().toString(36), t:v}); saveTodos(); }
+function todoDel(name, id){ const T = TODOS[name]; if (!T) return; T.add = (T.add||[]).filter(x=>x.id!==id); if (T.done) delete T.done[id]; saveTodos(); }
+// Things the hub can see need doing, for this coach's groups and role
+function coachAuto(s){
+  const out = [], head = /Head Coach/.test(s.role), cats = staffGroups(s), lv = staffLv(s);
+  const lvOK = a => lv==="Both" || a.level===lv;
+  if (head) { const n = (typeof planIssues==="function" ? planIssues() : []).length;
+    if (n) out.push({id:"auto-plan", t:`Clean up ${n} old workout line${n===1?"":"s"} (Coaches → Post Workouts → Plan check)`, go:"workouts"}); }
+  if (head) Object.entries(WINTER.follow||{}).forEach(([id,note]) => { const a = ATHLETES.find(x=>x.id===id); if (a) out.push({id:"auto-f-"+id, t:`Check in with ${a.name}: ${note}`, href:"#a-"+id}); });
+  if (window.SP && SP.groups && cats.some(c=>["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"].includes(c))) {
+    const n = ATHLETES.filter(a => lvOK(a) && (a.cats||[]).some(c=>["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"].includes(c)) && !SP.groups[a.id]).length;
+    if (n) out.push({id:"auto-sg", t:`Assign sprint/hurdle/jump groups for ${n} athlete${n===1?"":"s"} (Coaches → Sprints)`, go:"sgroups"}); }
+  if (head) { const n = ATHLETES.filter(a => a.isNew && !(SIGN[a.id]||{}).ff).length;
+    if (n) out.push({id:"auto-ff", t:`${n} new athlete${n===1?"":"s"} not on Final Forms yet`, href:"#signups"}); }
+  if (/Recruit/i.test(s.also||"") || head) hotRecruits(3).forEach(({r}) => out.push({id:"auto-r-"+r.id, t:`Follow up with recruit ${r.name}`, href:"#recruiting"}));
+  if (head || cats.length) { const g = coverageGaps().reduce((n,x)=>n + x.gaps.filter(y=>!y.n).length, 0);
+    if (head && g) out.push({id:"auto-cov", t:`${g} event${g===1?"":"s"} with nobody entered yet`, href:"#coverage"}); }
+  return out;
+}
+function coachTodayHTML(s){
+  const name = s.name, T = TODOS[name] || {done:{}, add:[]}, done = T.done || {};
+  const go = x => x.go ? `href="#coaches" onclick="ctab='${x.go}'"` : x.href ? `href="${esc(x.href)}"${/^https?:/.test(x.href)?' target="_blank" rel="noopener"':""}` : "";
+  const row = (x, kind) => `<li class="todo ${done[x.id]?"done":""}"><label><input type="checkbox" ${done[x.id]?"checked":""} onchange="todoToggle('${esc(name)}','${x.id}')"><span>${esc(x.t)}</span></label>
+      ${x.go||x.href ? `<a class="todo-go" ${go(x)} aria-label="Open">→</a>` : ""}${kind==="add" ? `<button type="button" class="todo-x" aria-label="Remove" onclick="todoDel('${esc(name)}','${x.id}')">×</button>` : ""}</li>`;
+  const auto = coachAuto(s), seed = TODO_SEED[name] || [], add = T.add || [];
+  const open = [...auto, ...seed, ...add].filter(x=>!done[x.id]).length;
+  const lv = staffLv(s), cats = staffGroups(s);
+  const nx = (()=>{ for (const L of (lv==="Both"?["HS","JH"]:[lv])) { for (const w of visibleWeeks()) for (const d of w.days) { const dt = dayDate(w, d.day); if (dt >= today && dayHas(d, L)) return {d, dt, L}; } } return null; })();
+  const nm = SCHEDULE.filter(m => parseD(m.date) >= today && (lv==="Both" || m.level===lv)).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  return `<div class="today">
+    <div class="panel td-todo"><div class="bar"><div><div class="eyebrow">Your list</div><h2>${open ? `${open} thing${open===1?"":"s"} to do` : "All caught up"}</h2></div></div>
+      ${auto.length ? `<div class="mlabel">From the hub</div><ul class="todos">${auto.map(x=>row(x,"auto")).join("")}</ul>` : ""}
+      ${seed.length || add.length ? `<div class="mlabel">On your plate</div><ul class="todos">${seed.map(x=>row(x,"seed")).join("")}${add.map(x=>row(x,"add")).join("")}</ul>` : ""}
+      <div class="todo-new"><label class="sr-only" for="td-add">Add a task</label><input id="td-add" type="text" placeholder="Add a task…" onkeydown="if(event.key==='Enter')todoAdd('${esc(name)}')"><button type="button" class="btn primary" onclick="todoAdd('${esc(name)}')">Add</button></div>
+      <p class="note" style="margin:8px 0 0">Checks and added tasks are saved on this device only, so nobody else can see them. The "From the hub" items update themselves.</p></div>
+    <div class="td-side">
+      ${nx ? `<div class="panel td-work"><div class="td-when"><b>${esc(relDay(nx.dt))}</b>${lv==="Both"?(nx.L==="JH"?"Junior High":"High School"):""}</div><h3 style="margin-top:6px">${esc(focusFor(nx.d, nx.L) || "Practice")}</h3>${sessBadge(nx.d, nx.L)}
+        <div class="ed-save" style="border:0;padding-top:10px"><a class="btn primary" href="#workouts">Workouts</a><a class="btn" href="#coaches" onclick="ctab='sheets'">Practice sheets</a></div></div>` : ""}
+      ${nm ? `<div class="nextmeet"><div class="lanes"></div><div class="eyebrow nm-eye">Next meet · ${nm.level==="JH"?"Junior High":"High School"}</div><h2 class="nm-name">${esc(nm.meet)}</h2>
+        <div class="count">${Math.round((parseD(nm.date)-today)/864e5)}<span>days away</span></div><a class="nm-link" href="#schedule">Schedule →</a></div>` : ""}
+      <div class="panel"><div class="eyebrow">Quick links</div><div class="td-links">
+        <a href="#coaches" onclick="ctab='workouts'">Post workouts</a><a href="#coaches" onclick="ctab='sgroups'">Sprint groups</a><a href="#coaches" onclick="ctab='tags'">Runner tags</a>
+        <a href="#signups">Sign-ups</a><a href="#recruiting">Recruiting</a><a href="#coverage">Coverage</a></div></div>
+    </div></div>`;
+}
 function todayHTML(){
+  const cs = meCoach(); if (cs) return coachTodayHTML(cs);
   const a = meA();
   if (!a) {
     const opt = l => ATHLETES.filter(x=>x.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
     return `<div class="panel td-pick"><div class="eyebrow">Make it yours</div><h2>Pick your name</h2>
       <p class="lede" style="margin:0">Your hub will open on your workout for today, your next meet, and your bests. Saved on this device only.</p>
       <label class="sr-only" for="td-me">Your name</label>
-      <select id="td-me" onchange="setMe(this.value)"><option value="">Choose your name…</option><optgroup label="High School">${opt("HS")}</optgroup><optgroup label="Junior High">${opt("JH")}</optgroup></select></div>`;
+      <select id="td-me" onchange="setMe(this.value)"><option value="">Choose your name…</option><optgroup label="Coaches">${STAFF.filter(s=>s.name).map(s=>`<option value="coach:${esc(s.name)}">Coach ${esc(s.name)}</option>`).join("")}</optgroup><optgroup label="High School">${opt("HS")}</optgroup><optgroup label="Junior High">${opt("JH")}</optgroup></select></div>`;
   }
   const nx = myNext(a), m = myMeet(a);
   const first = a.name.split(" ")[0];
@@ -2547,7 +2629,7 @@ function thmIcon(){ const b = document.getElementById("thm"); if (!b) return; co
   b.innerHTML = dark ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>';
   b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode"); }
 function botnavHTML(key, isAth){
-  const meHref = me ? `#a-${me}` : "#athletes";
+  const meHref = meCoach() ? "#coaches" : me ? `#a-${me}` : "#athletes";
   const items = [["hub","Today",ICO.today,"#hub"],["workouts","Workouts",ICO.work,"#workouts"],["schedule","Meets",ICO.cal,"#schedule"],["me","Me",ICO.me,meHref],["menu","More",ICO.more,"#menu"]];
   const cur = isAth && location.hash===`#a-${me}` ? "me" : key==="athletes" && !me ? "me" : key;
   return items.map(([k,l,ic,h])=>`<a href="${h}" ${cur===k?'aria-current="page"':""}>${ic}<span>${l}</span></a>`).join("");
@@ -3362,11 +3444,11 @@ const views = {
     const nm = upcoming[0];
     const days = nm ? Math.round((parseD(nm.date) - today)/864e5) : null;
     const vw = visibleWeeks(); const wk = vw[vw.length-1];
-    const meX = meA();
-    return `<div class="stack${meX ? " has-me" : ""}">
+    const meX = meA(), meC = meCoach();
+    return `<div class="stack${meX ? " has-me" : meC ? " has-coach" : ""}">
       <div class="td-hi"><div><div class="eyebrow">${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})} · ${SEASON}</div>
-      <h1>${meX ? `Hey, <span>${esc(meX.name.split(" ")[0])}</span>` : "Track &amp; Field Hub"}</h1>
-      ${meX ? `<div class="td-who"><span class="chip">${meX.level==="JH"?"Junior High":"High School"}</span>${(meX.cats||[]).slice(0,3).map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>`
+      <h1>${meX ? `Hey, <span>${esc(meX.name.split(" ")[0])}</span>` : meC ? `Hey, <span>Coach ${esc(coachLast(meC))}</span>` : "Track &amp; Field Hub"}</h1>
+      ${meC ? `<div class="td-who"><span class="chip">${esc(meC.role)}</span>${meC.groups?`<span class="chip">${esc(meC.groups)}</span>`:""}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>` : meX ? `<div class="td-who"><span class="chip">${meX.level==="JH"?"Junior High":"High School"}</span>${(meX.cats||[]).slice(0,3).map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>`
         : `<p class="lede">Everything for the season in one place: meets, rosters, workouts, warm-ups, records, and each athlete's data page.</p>`}</div></div>
       ${todayHTML()}
       <div>
