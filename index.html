@@ -751,6 +751,12 @@ li.s-str{list-style:none;margin:8px 0 4px -18px;display:flex;align-items:center;
 button.abbr.vl{border:1px solid var(--gold);border-bottom-width:1px;border-radius:999px;padding:3px 10px;font-size:13px;color:var(--accent);background:transparent}
 button.abbr.vl::after{content:""}
 li.s-opt{color:var(--muted);font-style:italic}
+
+li.abc{list-style:none;margin:6px 0 8px -18px}
+.abc-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.abc-top b{font-weight:700}
+.abc-seg button{padding:4px 10px;font-size:12.5px}
+ul.abc-v{margin:6px 0 0;padding-left:18px}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -803,7 +809,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06g";
+const HUB_VERSION = "11-06h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1927,7 +1933,11 @@ function secOf(it){
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
   return "main";
 }
-let LI_CTX = "";   // the group a list is for, when known (helps pick the right warm-up)
+let LI_CTX = "";
+// Which level option the toggles show (A Advanced / B Intermediate / C Developing); a runner's own level wins
+let LV_PICK = ""; try { LV_PICK = localStorage.getItem("hub-lvpick") || ""; } catch(e) {}
+function lvPick(){ const a = typeof meA==="function" && meA(); const own = a && (DTAGS[a.id]||{}).lv; return LV_PICK || own || "A"; }
+function setLvPick(l){ LV_PICK = l; try { localStorage.setItem("hub-lvpick", l); } catch(e) {} render(); }   // the group a list is for, when known (helps pick the right warm-up)
 const li = arr => liSimple(arr);   // one clean view for everyone (liFull kept for reference)
 // ---- Simple view (default for athletes): "Warm-up" → pop-up, main reps, "Strength A1 · View lifts", "Cool-down" → pop-up ----
 const S_DROP = /^(Outdoor plan|Indoor version|Coaching:|400\/800 hybrids|Event technique \(|General (?:strength|movement) & (?:conditioning|strength) only|Goal:)|→ full details/i;
@@ -1955,7 +1965,32 @@ function liSimple(arr){
     const s = sText(text, true); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; };
   const mainL = S.main.filter(it => !S_INL.test(splitTags(it.t).text)), mainS = S.main.filter(it => S_INL.test(splitTags(it.t).text));
   const many = mainL.length > 1;
-  const main = mainL.map(it => { const s = sText(splitTags(it.t).text, many); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; }).join("");
+  // A/B/C versions of the same workout → one row with a level toggle
+  const isJH = arr.some(it => it.lv==="JH") && !arr.some(it => it.lv==="HS");
+  const LVN = isJH ? LEVEL_NAMES_JH : {A:"Advanced", B:"Intermediate", C:"Developing"};
+  const pick = lvPick();
+  const out = []; let grp = null;
+  const flush = () => { if (!grp) return;
+    const lvls = TAG_LV.filter(l => grp.by[l]);
+    if (lvls.length < 2) { grp.items.forEach(x => out.push(x.html)); grp = null; return; }
+    const sel = lvls.includes(pick) ? pick : lvls[0];
+    out.push(`<li class="abc"><div class="abc-top"><b class="no-abbr">${esc(grp.head || "Your version")}</b><div class="seg seg-sm abc-seg" role="group" aria-label="Level">${lvls.map(l=>`<button type="button" aria-pressed="${l===sel}" onclick="setLvPick('${l}')">${esc(LVN[l])}</button>`).join("")}</div></div>
+      <ul class="abc-v">${grp.by[sel].map(x => `<li>${x.body}</li>`).join("")}</ul></li>`);
+    grp = null; };
+  mainL.forEach(it => {
+    const {tags, text} = splitTags(it.t); const s = sText(text, many); if (!s) return;
+    const lv = tags.find(g => TAG_LV.includes(g));
+    if (!lv) { flush(); out.push(`<li>${itemHTML(rebuild(it, s))}</li>`); return; }
+    const hm = /^([^:·]{2,40}):\s*(.+)$/.exec(s), head = hm ? hm[1] : "", rest = hm ? hm[2] : s;
+    if (grp && head && grp.head !== head) flush();   // a level-only note with no heading joins the group above
+    if (!grp) grp = {head, by:{}, items:[]};
+    const other = tags.filter(g => !TAG_LV.includes(g));
+    const body = itemHTML(Object.assign({}, it, {t: other.map(g=>`[${g}]`).join(" ") + (other.length?" ":"") + rest}));
+    (grp.by[lv] = grp.by[lv] || []).push({body});
+    grp.items.push({html:`<li>${itemHTML(rebuild(it, s))}</li>`});
+  });
+  flush();
+  const main = out.join("");
   const wt = S.warm.map(it => splitTags(it.t).text).join(" | ");
   const hasS = /sprint warm-up|junior high warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
   const wk = hasS && hasD ? (["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "d") : hasS ? "s" : hasD ? "d"
@@ -2548,7 +2583,7 @@ const CODE_TY = {A:"speed", B:"aero", C:"speed", D:"race", E:"str"};
 const CODE_NAME = {A:"Acceleration / max velocity", B:"Aerobic", C:"Speed endurance", D:"800-specific", E:"Strength / athletic development"};
 const CODE_ADAPT = {A:"Maximum velocity and acceleration", B:"Aerobic development", C:"Speed endurance", D:"Event-specific (800) endurance", E:"Strength, coordination, mechanics"};
 const FOCUS_TY = f => /meet|sectional|regional|state/i.test(f) ? "meet" : /recovery|rest/i.test(f) ? "rec" : /800|sharpen|race/i.test(f) ? "race" : /speed|velocity/i.test(f) ? "speed" : /aerobic|easy/i.test(f) ? "aero" : "";
-const TAG_CHIP = {A:"Level A", B:"Level B", C:"Level C", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
+const TAG_CHIP = {A:"Advanced", B:"Intermediate", C:"Developing", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
 const TAG_CHIP_JH = {A:"Advanced", B:"Development", C:"Foundation", Distance:"800/1600", Mid:"Mid 400/800", Hybrid:"800/1600"};
 const LEVEL_NAMES_JH = {A:"Advanced", B:"Development", C:"Foundation"};
 const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
