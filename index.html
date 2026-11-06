@@ -1666,7 +1666,7 @@ const itemHTML = it => {
 const SECS = [["warm","Warm-up"],["main","Main workout"],["str","Strength"],["cool","Cool-down"],["opt","Optional"]];
 function secOf(it){
   const {tags, text: x} = splitTags(it.t);
-  if (/^(check-in|warm-?up|standard (sprint )?warm-?up|dynamic warm|drills\b)/i.test(x)) return "warm";
+  if (/^(check-in|warm-?up|standard (sprint |junior high )?warm-?up|dynamic warm|drills\b)/i.test(x)) return "warm";
   if (/^(cool-?down|cool down)/i.test(x)) return "cool";
   if ((liftCode(x) && !isRunLine(it.t)) || inlineLifts(x) || /^(weight room|strength|home strength|jh strength|first day in the weight room)/i.test(x)) return "str";
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
@@ -1687,8 +1687,8 @@ function blockHTML(name, arr, combo){
   return `<div class="${cls}"><div class="evname">${esc(name)}</div><div>
     ${sh.length?`<ul>${li(sh)}</ul>`:""}
     ${jh.length||hs.length?`<div class="lvsplit">
-      <div class="lvcol"><div class="lvhead">JH</div><ul>${li(jh)||`<li class="muted">Same as above</li>`}</ul></div>
-      <div class="lvcol"><div class="lvhead">HS</div><ul>${li(hs)||`<li class="muted">Same as above</li>`}</ul></div></div>`:""}
+      <div class="lvcol"><div class="lvhead">JH</div><ul>${li(jh)||`<li class="muted">${sh.length ? "Same as above" : "No session"}</li>`}</ul></div>
+      <div class="lvcol"><div class="lvhead">HS</div><ul>${li(hs)||`<li class="muted">${sh.length ? "Same as above" : "No session"}</li>`}</ul></div></div>`:""}
   </div></div>`;
 }
 function dayHTML(d){
@@ -4289,6 +4289,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05e"></script>
+<script src="sprints.js?v=11-05m"></script>
 </body>
 </html>

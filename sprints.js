@@ -1141,8 +1141,11 @@ SP.inject = function(w, opt){
     } else if (i.k==="meet") items.push({t:"Meet day: follow your coach's meet-day plan. No extra workout.", lv:LV});
     else if (P) items = [{t:"Rest: no assigned workout. Optional comfortable walk." + (i.note?" " + i.note:""), lv:LV}];
     else items.push({t:"No assigned workout. Optional comfortable walk or normal daily activity." + (i.note?" " + i.note:""), lv:LV});
-    d.combos.push({groups:SG, name:"Sprints · Hurdles · Jumps", items});
-    SG.forEach(g => { if (!d.gfocus[g]) d.gfocus[g] = P ? `${L[0]}: ${dayTitle(i)}` : L[0]; });
+    // one shared block per day so JH and HS sit side by side
+    const ex = d.combos.find(c => c.sp);
+    if (ex) { ex.items = ex.items.concat(items); ex.groups = [...new Set(ex.groups.concat(SG))]; }
+    else d.combos.push({groups:[...SG], name:"Sprints · Hurdles · Jumps", items, sp:true});
+    SG.forEach(g => { const gk = (JHL ? "JH " : "") + g; if (!d.gfocus[gk]) d.gfocus[gk] = P ? `${L[0]}: ${dayTitle(i)}` : L[0]; });
     if (d.focus && typeof d.focus==="object") { if (!d.focus[LV]) d.focus = Object.assign({}, d.focus, {[LV]: dayTitle(i)}); }
     else if (!d.focus) d.focus = {HS: "", JH: "", [LV]: dayTitle(i)};
   });
