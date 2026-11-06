@@ -10,7 +10,7 @@
 /* ---------- styles ---------- */
 const css = `
 .sp-grp{display:inline-block;font:700 11px var(--body);letter-spacing:.03em;border-radius:3px;padding:1px 6px;margin-right:4px;white-space:nowrap;background:var(--chip);color:var(--fg)}
-.sp-grp.S1{background:#1e4d2f;color:#fff}.sp-grp.S2{background:#2f6f45;color:#fff}.sp-grp.S3{background:#6b4fa3;color:#fff}.sp-grp.H{background:#b4472b;color:#fff}.sp-grp.J{background:#2f4f8f;color:#fff}.sp-grp.MD{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.sp-grp.S1{background:#0d3520;color:#fff}.sp-grp.S2{background:#f0b323;color:#161105}.sp-grp.S3{background:#6b4fa3;color:#fff}.sp-grp.H{background:#b4472b;color:#fff}.sp-grp.J{background:#2f4f8f;color:#fff}.sp-grp.MD{background:transparent;border:1px solid var(--line);color:var(--muted)}
 .sp-rows{width:100%;border-collapse:collapse;font-size:14px}
 .sp-rows td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
 .sp-rows tr:first-child td{border-top:0}
@@ -591,8 +591,9 @@ function withLv(lv, fn){ const keep = CUR_LV; useLv(lv); try { return fn(); } fi
 /* ---------- state ---------- */
 const SP = window.SP = {lv:"HS", jl:"All", tab:"cal", sel:null, edits:{}, edraft:null, ewi:null, etab:"groups", emsg:{kind:"",text:""}, wi:null, env:"out", g:"All", me:"", groups:{}, draft:null, msg:{kind:"",text:""}, gq:"", gshow:"all"};
 try { const e = localStorage.getItem("sp-env"); if (e==="in"||e==="out") SP.env = e; } catch(e){}
-try { SP.me = localStorage.getItem("sp-me") || ""; } catch(e){}
+try { SP.me = localStorage.getItem("sp-me") || ""; if (!SP.me) { const h = localStorage.getItem("hub-me") || ""; const ha = h && ATHLETES.find(x=>x.id===h); if (ha && (ha.cats||[]).some(c=>["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"].includes(c))) { SP.me = h; SP.lv = ha.level; } } } catch(e){}
 try { const l = localStorage.getItem("sp-lv"); if (l==="JH"||l==="HS") SP.lv = l; } catch(e){}
+{ const _a = SP.me && ATHLETES.find(x=>x.id===SP.me); if (_a) SP.lv = _a.level; }
 useLv(SP.lv);
 
 /* ---------- helpers ---------- */

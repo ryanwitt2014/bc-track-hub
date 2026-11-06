@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BC Track Hub</title>
 <meta name="description" content="Benton Central Track & Field: schedule, workouts, athletes, records, and more.">
-<meta name="theme-color" content="#1b4429">
+<meta name="theme-color" content="#0d3520">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BC Track">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -17,24 +24,26 @@ img{max-width:100%}
 /* Layout: sticky lane-stripe nav over one view at a time; hub = tile grid of sections, each view a lane-numbered sheet */
 :root{
   --cold:#5b7fa6; --warm:#c8730a;
-  --bg:#f4f5ee; --surface:#ffffff; --fg:#16211a; --muted:#5a685d; --line:#d7ddcf;
-  --accent:#1e4d2f; --accent-ink:#ffffff; --gold:#e2ad12; --gold-soft:#fbf0c9;
-  --brand:#1b4429; --on-brand:#ffffff; --gold-ink:#1d2a12;
-  --track:#b5452f; --chip:#e8ecdf;
+  --bg:#f5f5f2; --surface:#ffffff; --fg:#0e1611; --muted:#5e6661; --line:#e1e3de;
+  --accent:#123f25; --accent-ink:#ffffff; --gold:#f0b323; --gold-soft:#fcf3da;
+  --brand:#0d3520; --brand-2:#072315; --on-brand:#ffffff; --gold-ink:#1a1405;
+  --track:#b5452f; --chip:#eff0ec;
+  --shadow:0 1px 2px rgba(10,20,14,.05),0 10px 30px -18px rgba(10,20,14,.25);
+  --radius:12px;
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --body:"Barlow","Segoe UI",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1511; --surface:#17211a; --fg:#eaefe6; --muted:#9ba897; --line:#2a3829;
-  --accent:#63bb7f; --accent-ink:#0b140d; --gold:#f2c230; --gold-soft:#2f2a12;
-  --brand:#163a22; --on-brand:#ffffff; --gold-ink:#1d2a12;
-  --track:#e0735c; --chip:#223024; --cold:#86a9cf; --warm:#f0a040; color-scheme:dark}}
+  --bg:#0a0e0b; --surface:#121915; --fg:#f1f3f0; --muted:#9aa29c; --line:#232b25;
+  --accent:#f0b323; --accent-ink:#161105; --gold:#f2bd3a; --gold-soft:#2b2410;
+  --brand:#0c2a18; --brand-2:#06170d; --on-brand:#ffffff; --gold-ink:#161105;
+  --track:#e0735c; --chip:#1b231e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f1511; --surface:#17211a; --fg:#eaefe6; --muted:#9ba897; --line:#2a3829;
-  --accent:#63bb7f; --accent-ink:#0b140d; --gold:#f2c230; --gold-soft:#2f2a12;
-  --brand:#163a22; --on-brand:#ffffff; --gold-ink:#1d2a12;
-  --track:#e0735c; --chip:#223024; --cold:#86a9cf; --warm:#f0a040; color-scheme:dark}
+  --bg:#0a0e0b; --surface:#121915; --fg:#f1f3f0; --muted:#9aa29c; --line:#232b25;
+  --accent:#f0b323; --accent-ink:#161105; --gold:#f2bd3a; --gold-soft:#2b2410;
+  --brand:#0c2a18; --brand-2:#06170d; --on-brand:#ffffff; --gold-ink:#161105;
+  --track:#e0735c; --chip:#1b231e; --cold:#86a9cf; --warm:#f0a040; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -18px rgba(0,0,0,.7); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
@@ -114,11 +123,11 @@ td a{font-weight:600}
 .cf-yr.top{border-color:var(--gold);background:var(--gold-soft)}
 .cf-ch{text-align:right;white-space:nowrap}
 .cf-d,.cf-p{display:inline-block;font:700 12px var(--mono);border-radius:3px;padding:1px 5px;margin-left:4px;color:var(--muted)}
-.cf-d.up,.cf-p.up{color:#1f7a3d;background:#e3f3e8}.cf-d.dn,.cf-p.dn{color:#b3261e;background:#fbe7e5}
+.cf-d.up,.cf-p.up{color:#145a30;background:#eef1ec}.cf-d.dn,.cf-p.dn{color:#b3261e;background:#fbe7e5}
 .cf-d.new{color:var(--gold-ink);background:var(--gold-soft)}
 .cf-yd{margin-top:4px}.cf-yd .cf-d:first-child{margin-left:0}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cf-d.up,:root:not([data-theme="light"]) .cf-p.up{color:#7fd69a;background:#163a22}:root:not([data-theme="light"]) .cf-d.dn,:root:not([data-theme="light"]) .cf-p.dn{color:#ff9b91;background:#3a1714}}
-:root[data-theme="dark"] .cf-d.up,:root[data-theme="dark"] .cf-p.up{color:#7fd69a;background:#163a22}:root[data-theme="dark"] .cf-d.dn,:root[data-theme="dark"] .cf-p.dn{color:#ff9b91;background:#3a1714}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cf-d.up,:root:not([data-theme="light"]) .cf-p.up{color:#f2bd3a;background:#2b2410}:root:not([data-theme="light"]) .cf-d.dn,:root:not([data-theme="light"]) .cf-p.dn{color:#ff9b91;background:#3a1714}}
+:root[data-theme="dark"] .cf-d.up,:root[data-theme="dark"] .cf-p.up{color:#f2bd3a;background:#2b2410}:root[data-theme="dark"] .cf-d.dn,:root[data-theme="dark"] .cf-p.dn{color:#ff9b91;background:#3a1714}
 .cf-sub{font:700 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:12px}
 .cf-card .bar{margin-bottom:6px}
 tr.cf-bc td{background:var(--gold-soft);font-weight:700}
@@ -556,23 +565,126 @@ a.btn{text-decoration:none;display:inline-block}
 .split{font-family:var(--mono);font-size:13px;color:var(--muted)}
 .note{font-size:14px;color:var(--muted);max-width:70ch}
 @media (prefers-reduced-motion:reduce){.tile{transition:none}.tile:hover{transform:none}}
+
+/* ===== Elevated look (Nov 2026): forest green + gold, crisp surfaces ===== */
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+header.top{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 100%);background-image:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 100%);border-bottom:3px solid var(--gold);box-shadow:0 6px 20px -12px rgba(0,0,0,.5)}
+header.top .wrap{padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font-size:24px;letter-spacing:.04em}
+.brand .mark{flex:none;width:36px;height:36px;border-radius:9px;background:var(--gold);color:var(--brand);display:grid;place-items:center;font:800 18px/1 var(--display);letter-spacing:.02em;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+.brand .wm{display:block}
+nav.tabs a{border-radius:999px;padding:7px 14px;opacity:.8;transition:background .15s,opacity .15s}
+nav.tabs a:hover{background:rgba(255,255,255,.08)}
+nav.tabs a[aria-current="page"]{background:var(--gold);color:var(--gold-ink)}
+.subnav{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.subnav a{border-radius:999px;color:var(--muted);transition:color .15s,background .15s}
+.subnav a:hover{color:var(--fg)}
+.subnav a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+main{padding-block:28px 72px}
+h1{letter-spacing:.005em}
+.eyebrow{letter-spacing:.16em}
+.panel,.tbl,.tile,.ath,.seg,.cf-yr{border-radius:var(--radius)}
+.panel{box-shadow:var(--shadow);border-color:var(--line)}
+.tbl{box-shadow:var(--shadow)}
+th{background:color-mix(in srgb,var(--chip) 60%,var(--surface))}
+.tile{border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s}
+.tile:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 14px 30px -18px rgba(10,20,14,.45)}
+.tile .lane{border-radius:10px;background:var(--brand);color:var(--gold);font-size:24px}
+.ath{border-left:4px solid var(--gold);box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.ath:hover{transform:translateY(-1px);border-color:var(--gold)}
+.btn{border-radius:999px;padding:9px 16px;transition:transform .1s,background .15s,border-color .15s}
+.btn:active{transform:scale(.98)}
+.btn.sm{border-radius:999px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg{border-radius:14px;padding:3px;gap:2px;background:var(--chip);border-color:transparent}
+.seg button{border-radius:11px;padding:7px 14px;color:var(--muted)}
+.subnav-in{flex-wrap:nowrap!important}
+.subnav a{flex:none!important}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}}
+.chip{border-radius:999px;padding:2px 9px}
+.nextmeet{border-radius:var(--radius);border-top:0;background:radial-gradient(120% 140% at 100% 0%,#1a5a35 0%,var(--brand) 45%,var(--brand-2) 100%);box-shadow:0 20px 40px -24px rgba(7,35,21,.8)}
+.nextmeet .lanes{opacity:.14;background:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 22px)}
+.wk-count{color:var(--fg)}
+.mepick select,select,input[type="text"],input[type="password"],input[type="email"],input[type="number"],textarea{border-radius:10px}
+a{text-underline-offset:3px}
+::selection{background:var(--gold);color:var(--gold-ink)}
+
+/* Today card */
+.today{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+@media (max-width:820px){.today{grid-template-columns:1fr}}
+.td-hi{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.td-hi h1 span{color:var(--gold)}
+.td-who{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.td-work{position:relative;overflow:hidden}
+.td-work::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--gold)}
+.td-when{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.td-when b{background:var(--brand);color:var(--gold);border-radius:999px;padding:3px 10px;letter-spacing:.1em}
+.td-work h2{margin:8px 0 4px;font-size:32px}
+.td-work ul{margin:10px 0 0;padding-left:18px}
+.td-work li{margin:3px 0}
+.td-side{display:grid;gap:16px;align-content:start}
+.td-prs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.td-pr{display:grid;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:92px}
+.td-pr span{font:600 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.td-pr b{font:800 24px/1.1 var(--display)}
+.td-pick{display:grid;gap:10px;background:linear-gradient(135deg,var(--surface) 0%,var(--surface) 60%,var(--gold-soft) 100%)}
+.td-pick select{font:16px var(--body);padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);max-width:420px}
+
+/* Records: chasing list */
+.chase{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.chase li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.chase .bar-in{grid-column:1/-1;height:6px;border-radius:999px;background:var(--chip);overflow:hidden}
+.chase .bar-in i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--gold));border-radius:inherit}
+.chase small{color:var(--muted)}
+
+/* Menu page */
+.menu-g{display:grid;gap:10px}
+.menu-g h2{font-size:22px;margin-top:6px}
+.menu-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.menu-list a{display:grid;gap:2px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
+.menu-list a b{font-weight:600}
+.menu-list a span{font-size:13px;color:var(--muted)}
+
+/* Bottom tab bar (phones) */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.inst{border-top:3px solid var(--gold)}
+.inst h3{margin-top:4px}
+.botnav{display:none}
+.has-me .hero,.has-me .fires{display:none}
+body:has(.sheets-wrap) .botnav{display:none!important}
+@media (max-width:760px){
+  nav.tabs{display:none}
+  .botnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+  .botnav a{display:grid;justify-items:center;gap:2px;text-decoration:none;color:var(--muted);font:600 11px var(--body);letter-spacing:.02em;padding:4px 0;border-radius:12px}
+  .botnav a svg{width:24px;height:24px}
+  .botnav a[aria-current="page"]{color:var(--accent)}
+  .botnav a[aria-current="page"] svg{transform:translateY(-1px)}
+  main{padding-bottom:110px}
+  .ed-save.sticky{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  header.top .wrap{padding-block:10px}
+  .brand{font-size:22px}
+}
+@media print{.botnav{display:none!important}}
 </style>
 
 </head>
 <body>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#hub">BC Track Hub<small>Benton Central · Spring 2027</small></a>
+    <a class="brand" href="#hub"><span class="mark" aria-hidden="true">BC</span><span class="wm">BC Track Hub<small>Benton Central · Spring 2027</small></span></a>
     <nav class="tabs" id="tabs" aria-label="Sections"></nav>
   </div>
   <nav class="subnav" id="subnav" aria-label="Pages in this section" hidden></nav>
 </header>
 <main class="wrap" id="view" tabindex="-1"></main>
+<nav class="botnav" id="botnav" aria-label="Quick links"></nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-05f";
+const HUB_VERSION = "11-05g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2360,6 +2472,77 @@ function fmpHTML(key){
     ${["HS","JH"].map(l=>`<optgroup label="${l==="HS"?"High School":"Junior High"}">${paceAthletes().map(x=>x.a).filter(a=>a.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("")}</optgroup>`).join("")}</select>
     <button type="button" class="btn" onclick="fmp=false;render()">Close</button></div>`;
 }
+
+// ---- "Me": the athlete this device belongs to (picked on the hub, saved on this device only) ----
+const meA = () => ATHLETES.find(a => a.id === me) || null;   // "me" / setMe live with Recruiting's "Who are you?"
+// My next day with something on it (today first), using the same lines as my athlete page, sprint sessions included
+function myNext(a){
+  const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
+  for (const w of vw) {
+    const wx = window.SP && SP.inject ? SP.inject(w) : w;
+    for (const d of wx.days) { const dt = dayDate(wx, d.day); if (dt < today) continue;
+      const items = myItems(a, d); if (items.length) return {w:wx, d, dt, items}; }
+  }
+  return null;
+}
+// "Get the app": install prompt on Android/desktop Chrome, instructions on iPhone. Hidden once installed or dismissed.
+let instEvt = null, instHide = false; try { instHide = localStorage.getItem("hub-inst-hide")==="1"; } catch(e) {}
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); instEvt = e; render(); });
+const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+function installHTML(){
+  if (isStandalone() || instHide) return "";
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!instEvt && !ios) return "";
+  return `<div class="panel inst"><div class="eyebrow">Get the app</div><h3>Put BC Track on your home screen</h3>
+    ${instEvt ? `<p class="note" style="margin:6px 0 10px">One tap, opens full-screen like an app.</p><button type="button" class="btn primary" onclick="doInstall()">Install</button>`
+      : `<p class="note" style="margin:6px 0 10px">In Safari, tap <b>Share</b> <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>.</p>`}
+    <button type="button" class="btn sm" onclick="hideInstall()">Not now</button></div>`;
+}
+async function doInstall(){ if (!instEvt) return; instEvt.prompt(); try { await instEvt.userChoice; } catch(e) {} instEvt = null; render(); }
+function hideInstall(){ instHide = true; try { localStorage.setItem("hub-inst-hide","1"); } catch(e) {} render(); }
+function myMeet(a){ return SCHEDULE.filter(m => (m.level===a.level || !m.level) && parseD(m.date) >= today).sort((x,y)=>x.date.localeCompare(y.date))[0] || null; }
+const relDay = dt => { const n = Math.round((dt - today)/864e5); return n===0 ? "Today" : n===1 ? "Tomorrow" : dt.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}); };
+function todayHTML(){
+  const a = meA();
+  if (!a) {
+    const opt = l => ATHLETES.filter(x=>x.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
+    return `<div class="panel td-pick"><div class="eyebrow">Make it yours</div><h2>Pick your name</h2>
+      <p class="lede" style="margin:0">Your hub will open on your workout for today, your next meet, and your bests. Saved on this device only.</p>
+      <label class="sr-only" for="td-me">Your name</label>
+      <select id="td-me" onchange="setMe(this.value)"><option value="">Choose your name…</option><optgroup label="High School">${opt("HS")}</optgroup><optgroup label="Junior High">${opt("JH")}</optgroup></select></div>`;
+  }
+  const nx = myNext(a), m = myMeet(a);
+  const first = a.name.split(" ")[0];
+  const prs = Object.entries(a.prs||{}).filter(([e])=>e!=="400 split").slice(0,4);
+  const mdays = m ? Math.round((parseD(m.date) - today)/864e5) : null;
+  const work = nx ? `<div class="panel td-work"><div class="td-when"><b>${esc(relDay(nx.dt))}</b>${Math.round((nx.dt - today)/864e5) < 2 ? nx.dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) : ""}</div>
+      <h2>${esc(focusFor(nx.d, a.level) || "Workout")}</h2>${sessBadge(nx.d, a.level)}
+      <ul>${li(nx.items)}</ul>
+      <div class="ed-save" style="border:0;padding-top:12px"><a class="btn primary" href="#a-${a.id}">My week →</a><a class="btn" href="#workouts">Team workouts</a></div></div>`
+    : `<div class="panel td-work"><div class="td-when"><b>Up next</b></div><h2>Nothing posted yet</h2><p class="note" style="margin:0">Your next workout shows up here as soon as it's posted.</p></div>`;
+  return `<div class="today">${work}
+    <div class="td-side">
+      ${m ? `<div class="nextmeet"><div class="lanes"></div><div class="eyebrow nm-eye">Your next meet</div><h2 class="nm-name">${esc(m.meet)}</h2>
+        <div class="count">${mdays}<span>${mdays===1?"day away":"days away"}</span></div>
+        <dl class="nm-facts"><dt>Date</dt><dd>${parseD(m.date).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</dd><dt>Where</dt><dd>${m.home?"Home":esc(m.loc||"TBD")}</dd></dl>
+        <a class="nm-link" href="#schedule">Schedule →</a></div>` : ""}
+      ${installHTML()}
+      ${prs.length ? `<div class="panel"><div class="eyebrow">Your bests</div><div class="td-prs">${prs.map(([e,mk])=>`<div class="td-pr"><span>${esc(evn(e))}</span><b class="mono">${esc(mk)}</b></div>`).join("")}</div></div>` : ""}
+    </div></div>`;
+}
+const ICO = {
+  today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>',
+  work:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M7 22l3-6 3 2v4"/><path d="M6 12l3-3 4 1 3 4 3 1"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
+};
+function botnavHTML(key, isAth){
+  const meHref = me ? `#a-${me}` : "#athletes";
+  const items = [["hub","Today",ICO.today,"#hub"],["workouts","Workouts",ICO.work,"#workouts"],["schedule","Meets",ICO.cal,"#schedule"],["me","Me",ICO.me,meHref],["menu","More",ICO.more,"#menu"]];
+  const cur = isAth && location.hash===`#a-${me}` ? "me" : key==="athletes" && !me ? "me" : key;
+  return items.map(([k,l,ic,h])=>`<a href="${h}" ${cur===k?'aria-current="page"':""}>${ic}<span>${l}</span></a>`).join("");
+}
 // Date of a posted day, and the next posted workout day from today on
 function nextWorkout(){
   const find = lv => { for (const w of visibleWeeks()) for (const d of w.days) { const dt = dayDate(w, d.day); if (dt >= today && dayHas(d, lv)) return {w, d, dt, lv}; } return null; };
@@ -3170,9 +3353,14 @@ const views = {
     const nm = upcoming[0];
     const days = nm ? Math.round((parseD(nm.date) - today)/864e5) : null;
     const vw = visibleWeeks(); const wk = vw[vw.length-1];
-    return `<div class="stack">
-      <div><div class="eyebrow">${SEASON}</div><h1>Track &amp; Field Hub</h1>
-      <p class="lede">Everything for the season in one place: meets, rosters, workouts, warm-ups, records, and each athlete's data page.</p>
+    const meX = meA();
+    return `<div class="stack${meX ? " has-me" : ""}">
+      <div class="td-hi"><div><div class="eyebrow">${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})} · ${SEASON}</div>
+      <h1>${meX ? `Hey, <span>${esc(meX.name.split(" ")[0])}</span>` : "Track &amp; Field Hub"}</h1>
+      ${meX ? `<div class="td-who"><span class="chip">${meX.level==="JH"?"Junior High":"High School"}</span>${(meX.cats||[]).slice(0,3).map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>`
+        : `<p class="lede">Everything for the season in one place: meets, rosters, workouts, warm-ups, records, and each athlete's data page.</p>`}</div></div>
+      ${todayHTML()}
+      <div>
       <div class="anetrow">${["JH","HS"].map(l=>`<a class="anet" href="${anetTeam(l)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${ANET_TEAMS[l].name} ↗</a>`).join("")}</div></div>
       <div class="hero">
         <div class="nextmeet"><div class="lanes"></div>
@@ -3234,6 +3422,13 @@ const views = {
             <a class="fire-link" href="#records">Records →</a></div>
         </div></section>`; })()}
       <p class="note">Roster from the 2027 coaches packet, with track bests from spring 2026 and XC times from this fall.</p>
+    </div>`;
+  },
+  menu(){
+    const G = [["team","Team"],["train","Train"],["results","Results"],["more","More"]];
+    return `<div class="stack"><div><div class="eyebrow">Benton Central Track &amp; Field</div><h1>Everything</h1></div>
+      ${G.map(([g,l])=>`<section class="menu-g"><h2>${l}</h2><div class="menu-list">${SECTIONS.filter(x=>x.g===g && (!x.coach || canPost)).map(x=>`<a href="#${x.id}"><b>${esc(x.name)}</b><span>${esc(x.blurb||"")}</span></a>`).join("")}</div></section>`).join("")}
+      <section class="menu-g"><h2>Coaches</h2><div class="menu-list"><a href="#coaches"><b>${canPost?"Coach tools":"Coach login"}</b><span>Post workouts, practice sheets, groups and more</span></a></div></section>
     </div>`;
   },
   schedule(){
@@ -3694,7 +3889,14 @@ const views = {
         <div><h2 style="margin-bottom:10px">Top returning marks</h2><div class="tbl"><table><thead><tr><th>Event</th><th>Athlete</th><th>Mark</th></tr></thead><tbody>
           ${evs.map(ev=>top[ev].sort(better(ev)).slice(0,5).map((x,i)=>`<tr><td>${i?"":`<span class="lvl">${esc(evn(ev))}</span>`}</td><td><a href="#a-${x.a.id}">${esc(x.a.name)}</a> <span class="muted">${x.a.grade}</span></td><td class="mono">${esc(x.mk)}</td></tr>`).join("")).join("")}
         </tbody></table></div><p class="note">Top 5 per event. Track from spring 2026, XC from fall 2026.</p></div>
-      </div></div>`;
+      </div>
+      ${(()=>{ const ch = recordWatch(999).filter(x=>x.lv===level && x.g===gsel);
+        if (!ch.length) return "";
+        return `<section class="panel"><div class="bar"><div><div class="eyebrow">${level} ${GN[gsel]}</div><h2>Chasing the record</h2></div><span class="muted">${ch.length} within reach</span></div>
+          <ul class="chase" style="margin-top:12px">${ch.map(x=>{ const lim = x.field ? 0.10 : 0.06, fill = Math.max(4, Math.round((1 - Math.max(x.pct,0)/lim)*100));
+            return `<li><span><b><a href="#a-${x.a.id}">${esc(x.a.name)}</a></b> <small>${esc(x.r.ev)} · ${esc(x.a.prs[x.r.key])} vs record ${esc(x.r.mk)} (${esc(x.r.who)}, ${esc(String(x.r.yr))})</small></span><span class="rw-gap">${gapText(x)}</span><span class="bar-in"><i style="width:${fill}%"></i></span></li>`; }).join("")}</ul>
+          <p class="note" style="margin:10px 0 0">Within 6% of a running record or 10% of a field record. Incoming 9th graders show up once they have a high school mark.</p></section>`; })()}
+      </div>`;
   },
   coverage(){
     const lv = level;
@@ -4179,6 +4381,7 @@ function render(){
   if (curG) { sub.hidden = false; sub.innerHTML = `<div class="wrap subnav-in">${SECTIONS.filter(x=>x.g===curG && (!x.coach || canPost)).map(x=>`<a href="#${x.id}" ${x.id===key?'aria-current="page"':""}>${x.name}</a>`).join("")}</div>`; }
   else { sub.hidden = true; sub.innerHTML = ""; }
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
+  const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
 }
 let lastHash = location.hash;
 window.addEventListener("hashchange", () => { if(location.hash!==lastHash){ lastHash=location.hash; awIdx=null; fmp=false; window.scrollTo(0,0); lk={id:null,msg:{kind:"",text:""}}; } render(); });
@@ -4295,6 +4498,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05n"></script>
+<script src="sprints.js?v=11-05p"></script>
 </body>
 </html>
