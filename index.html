@@ -617,6 +617,8 @@ a{text-underline-offset:3px}
 
 /* Today card */
 .today{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+.today-a{grid-template-columns:1fr}
+.today-a .td-side{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:stretch}
 @media (max-width:820px){.today{grid-template-columns:1fr}}
 .td-hi{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .td-hi h1 span{color:var(--accent)}
@@ -716,6 +718,28 @@ button.abbr::after{content:"ⓘ";font-size:.75em;margin-left:2px;color:var(--gol
 .ab-dl dd{margin:0}
 @media (max-width:600px){.ab-dl{grid-template-columns:1fr}.ab-dl dt{margin-top:6px}.ab-dlg{max-height:90vh;margin:auto 3vw}}
 @media print{button.abbr{border:0}button.abbr::after{content:""}}
+
+/* Athlete hub: my week */
+.myweek h2{font-size:28px}
+.wkds{display:grid;gap:6px;margin-top:12px}
+.wkd{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.wkd > summary{list-style:none;display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer}
+.wkd > summary::-webkit-details-marker{display:none}
+.wkd-d{display:grid;justify-items:center;min-width:48px;line-height:1.1}
+.wkd-d b{font:800 18px var(--display);text-transform:uppercase;color:var(--accent)}
+.wkd-d span{font-size:12px;color:var(--muted)}
+.wkd-t{flex:1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.wkd-t > b{font:700 15px/1.2 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.wkd-mt{font-weight:700;font-size:12px;background:var(--gold);color:var(--gold-ink);border-radius:5px;padding:2px 6px}
+.wkd-now{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;background:var(--gold);color:var(--gold-ink);border-radius:999px;padding:3px 9px}
+.wkd-chev{font-size:22px;color:var(--muted);transition:transform .15s}
+.wkd[open] .wkd-chev{transform:rotate(90deg)}
+.wkd.today{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.wkd.meet{background:var(--gold-soft)}
+.wkd.past{opacity:.6}
+.wkd-b{padding:0 14px 12px 72px}
+.wkd-b ul.wl{margin:0;padding-left:18px}
+@media (max-width:600px){.wkd-b{padding:0 12px 12px 14px}}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -768,7 +792,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06b";
+const HUB_VERSION = "11-06c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2560,6 +2584,42 @@ function fmpHTML(key){
 
 
 
+
+// ---- Athlete hub: my 7-day week (tap a day to open the full workout) ----
+let hubWk = 0;   // weeks from the current/next week
+function myTitle(a, d){
+  const pg = planGroup(a), sp = (a.cats||[]).find(c=>SPR_CATS.includes(c));
+  return (pg && gFocus(d, pg, a.level)) || (sp && gFocus(d, "Sprints", a.level)) || focusFor(d, a.level) || "";
+}
+function hubWeekHTML(a){
+  const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
+  if (!vw.length) return "";
+  let base = vw.findIndex(w => { const s = parseD(w.start), e = new Date(s); e.setDate(s.getDate()+7); return today < e; });
+  if (base < 0) base = vw.length - 1;
+  const wi = Math.max(0, Math.min(vw.length-1, base + hubWk));
+  const w = window.SP && SP.inject ? SP.inject(vw[wi]) : vw[wi];
+  const meets = SCHEDULE.filter(m => m.level===a.level);
+  const s0 = parseD(vw[wi].start); const days = [];
+  for (let k=0; k<7; k++) { const dt = new Date(s0); dt.setDate(s0.getDate()+k); days.push(dt); }
+  const DN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  let openSet = false;
+  const rows = days.map((dt, k) => {
+    const d = w.days.find(x => x.day===DN[k]); const iso = isoD(dt);
+    const mt = meets.filter(m=>m.date===iso), items = d ? myItems(a, d) : [], isT = iso===isoD(today), past = dt < today && !isT;
+    const title = d ? myTitle(a, d) : "";
+    const open = !openSet && !past && items.length; if (open) openSet = true;
+    const mainN = items.filter(it=>secOf(it)==="main").length;
+    return `<details class="wkd${isT?" today":""}${past?" past":""}${mt.length?" meet":""}" ${open?"open":""}>
+      <summary><span class="wkd-d"><b>${DN[k]}</b><span>${dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span></span>
+        <span class="wkd-t">${mt.map(m=>`<span class="wkd-mt">★ ${esc(m.meet)}</span>`).join("")}<b>${esc(title || (items.length ? "Workout" : d ? "Nothing for your group" : "No workout"))}</b>${d ? sessBadge(d, a.level) : ""}</span>
+        ${isT?'<span class="wkd-now">Today</span>':""}<span class="wkd-chev" aria-hidden="true">›</span></summary>
+      <div class="wkd-b">${items.length ? `<ul class="wl">${li(items)}</ul>` : `<p class="note" style="margin:0">${d ? "Rest or nothing assigned for your group." : "Not posted yet."}</p>`}</div></details>`; }).join("");
+  const a0 = s0, a1 = days[6];
+  return `<section class="panel myweek"><div class="bar"><div><div class="eyebrow">Your week</div><h2>${a0.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${a1.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</h2></div>
+    <div class="cal-nav"><button type="button" class="btn sm" ${wi<=0?"disabled":""} onclick="hubWk--;render()" aria-label="Previous week">←</button>${hubWk?`<button type="button" class="btn sm" onclick="hubWk=0;render()">This week</button>`:""}<button type="button" class="btn sm" ${wi>=vw.length-1?"disabled":""} onclick="hubWk++;render()" aria-label="Next week">→</button></div></div>
+    <div class="wkds">${rows}</div>
+    <div class="ed-save" style="border:0;padding-top:10px"><a class="btn" href="#calendar">Full calendar</a><a class="btn" href="#a-${a.id}">My page</a></div></section>`;
+}
 // ---- Tap any workout code anywhere (Strength A1, H2 strength, D1 800 rhythm, BC Michigan…) for a pop-up of exactly what to do ----
 const SIG = {
   "BC Michigan": {what:"Threshold work that turns into race speed while tired. The team's benchmark day.",
@@ -2815,7 +2875,7 @@ function todayHTML(){
       <ul>${li(nx.items)}</ul>
       <div class="ed-save" style="border:0;padding-top:12px"><a class="btn primary" href="#a-${a.id}">My week →</a><a class="btn" href="#workouts">Team workouts</a></div></div>`
     : `<div class="panel td-work"><div class="td-when"><b>Up next</b></div><h2>Nothing posted yet</h2><p class="note" style="margin:0">Your next workout shows up here as soon as it's posted.</p></div>`;
-  return `<div class="today">${work}
+  return `<div class="today today-a">
     <div class="td-side">
       ${m ? `<div class="nextmeet"><div class="lanes"></div><div class="eyebrow nm-eye">Your next meet</div><h2 class="nm-name">${esc(m.meet)}</h2>
         <div class="count">${mdays}<span>${mdays===1?"day away":"days away"}</span></div>
@@ -3659,9 +3719,10 @@ const views = {
       ${meC ? `<div class="td-who"><span class="chip">${esc(meC.role)}</span>${meC.groups?`<span class="chip">${esc(meC.groups)}</span>`:""}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>` : meX ? `<div class="td-who"><span class="chip">${meX.level==="JH"?"Junior High":"High School"}</span>${(meX.cats||[]).slice(0,3).map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>`
         : `<p class="lede">Everything for the season in one place: meets, rosters, workouts, warm-ups, records, and each athlete's data page.</p>`}</div></div>
       ${todayHTML()}
-      <div>
-      <div class="anetrow">${["JH","HS"].map(l=>`<a class="anet" href="${anetTeam(l)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${ANET_TEAMS[l].name} ↗</a>`).join("")}</div></div>
-      <div class="hero">
+      ${meX ? hubWeekHTML(meX) : ""}
+      ${meX ? "" : `<div>
+      <div class="anetrow">${["JH","HS"].map(l=>`<a class="anet" href="${anetTeam(l)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${ANET_TEAMS[l].name} ↗</a>`).join("")}</div></div>`}
+      ${meX || meC ? "" : `<div class="hero">
         <div class="nextmeet"><div class="lanes"></div>
                     ${nm ? `<div class="eyebrow nm-eye">Next meet · ${nm.level==="JH"?"Junior High":"High School"}</div>
             <h2 class="nm-name">${esc(nm.meet)}</h2>
@@ -3694,14 +3755,14 @@ const views = {
             <div class="nw">${groups.map(([n,it])=>`${groups.length>1&&n?`<div class="nw-g">${esc(n)}</div>`:""}<ul>${it.map(x=>`<li>${itemHTML(x)}</li>`).join("")}</ul>`).join("")}</div>
             ${fmpHTML("top")}`;
         })()}</div>
-      </div>
-      ${(()=>{ const nx = nextWorkout(); const w = (nx && nx.w) || currentWeek() || nextWeek(); if (!w) return "";
+      </div>`}
+      ${meX ? "" : (()=>{ const nx = nextWorkout(); const w = (nx && nx.w) || currentWeek() || nextWeek(); if (!w) return "";
         const rest = w.days.filter(d => dayDate(w,d.day) >= today && !(nx && nx.w===w && nx.d===d));
         if (!rest.length) return "";
         return `<section class="hub-week" id="hub-week"><div class="bar"><div><div class="eyebrow">Weekly outlook</div><h2>Rest of the ${esc(weekLabel(w).replace(/^Week of/,"week of"))}</h2></div>
           <a class="anet" href="#workouts"><b>Workouts</b> →</a></div>
           ${outlookHTML(w, rest)}</section>`; })()}
-      ${(()=>{ const cg = coverageGaps(), hr = hotRecruits(5), rw = recordWatch(5);
+      ${!(meC || canPost) ? "" : (()=>{ const cg = coverageGaps(), hr = hotRecruits(5), rw = recordWatch(5);
         const totalGaps = cg.reduce((a,t)=>a+t.gaps.length,0);
         return `<section class="fires"><div class="fires-head"><div class="eyebrow">What needs attention</div><h2>Fires to Put Out</h2></div>
         <div class="fires-grid">
@@ -3720,7 +3781,7 @@ const views = {
               :`<p class="fire-empty">Nobody within striking distance yet.</p>`}
             <a class="fire-link" href="#records">Records →</a></div>
         </div></section>`; })()}
-      <p class="note">Roster from the 2027 coaches packet, with track bests from spring 2026 and XC times from this fall.</p>
+      ${meX ? "" : `<p class="note">Roster from the 2027 coaches packet, with track bests from spring 2026 and XC times from this fall.</p>`}
     </div>`;
   },
   menu(){
