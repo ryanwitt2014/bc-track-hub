@@ -980,7 +980,7 @@ SP.editor = function(){
         <td>${c.p==="S3"?`<select aria-label="S3 plan for ${esc(a.name)}" onchange="SP.setG('${a.id}','s3',this.value)"><option value="mid" ${(c.s3||"mid")==="mid"?"selected":""}>Mid-Distance plan</option><option value="sprint" ${c.s3==="sprint"?"selected":""}>Sprint plan</option></select>`:`<span class="muted">—</span>`}</td>
         <td>${saved?"":`<span class="sp-sug">suggested</span>`}</td></tr>`; }).join("")}
     </tbody></table></div>
-    <div class="ed-save"><button type="button" class="btn primary" onclick="SP.saveGroups(false)" ${saving?"disabled":""}>${saving?"Saving…":"Save groups"}</button>
+    <div class="ed-save sticky"><button type="button" class="btn primary" onclick="SP.saveGroups(false)" ${saving?"disabled":""}>${saving?"Saving…":"Save groups"}</button>
       <button type="button" class="btn" onclick="SP.saveGroups(true)" ${saving?"disabled":""}>Accept all suggestions + save</button></div>
     <p class="ed-msg ${SP.msg.kind}" role="status" style="margin:0">${esc(SP.msg.text)}</p>`;
 };
