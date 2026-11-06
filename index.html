@@ -740,6 +740,17 @@ button.abbr::after{content:"ⓘ";font-size:.75em;margin-left:2px;color:var(--gol
 .wkd-b{padding:0 14px 12px 72px}
 .wkd-b ul.wl{margin:0;padding-left:18px}
 @media (max-width:600px){.wkd-b{padding:0 12px 12px 14px}}
+
+/* Simple view */
+.seg-sm button{padding:5px 11px;font-size:13px}
+li.s-wu{list-style:none;margin:4px 0 6px -18px}
+li.s-wu + li.s-wu{margin-top:0}
+button.abbr.s-pill{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:14px;background:var(--chip)}
+button.abbr.s-pill::after{content:"›";font-size:1.1em;vertical-align:baseline;margin-left:6px;color:var(--gold)}
+li.s-str{list-style:none;margin:8px 0 4px -18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700}
+button.abbr.vl{border:1px solid var(--gold);border-bottom-width:1px;border-radius:999px;padding:3px 10px;font-size:13px;color:var(--accent);background:transparent}
+button.abbr.vl::after{content:""}
+li.s-opt{color:var(--muted);font-style:italic}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -792,7 +803,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06c";
+const HUB_VERSION = "11-06e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1894,7 +1905,44 @@ function secOf(it){
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
   return "main";
 }
-const li = arr => { const s = arr.map(secOf), k = new Set(s);
+const li = arr => simpleOn() ? liSimple(arr) : liFull(arr);
+// ---- Simple view (default for athletes): "Warm-up" → pop-up, main reps, "Strength A1 · View lifts", "Cool-down" → pop-up ----
+let SIMPLE_PREF = null; try { SIMPLE_PREF = localStorage.getItem("hub-simple"); } catch(e) {}
+const simpleOn = () => SIMPLE_PREF !== null ? SIMPLE_PREF === "1" : !((typeof meCoach==="function" && meCoach()) || canPost);
+function setSimple(on){ SIMPLE_PREF = on ? "1" : "0"; try { localStorage.setItem("hub-simple", SIMPLE_PREF); } catch(e) {} render(); }
+const simpleSeg = () => `<div class="seg seg-sm" role="group" aria-label="Detail">${[[1,"Simple"],[0,"Full detail"]].map(([v,l])=>`<button type="button" aria-pressed="${simpleOn()===!!v}" onclick="setSimple(${v})">${l}</button>`).join("")}</div>`;
+const S_DROP = /^(Outdoor plan|Indoor version|Coaching:|400\/800 hybrids|Event technique \(|General (?:strength|movement) & (?:conditioning|strength) only|Goal:)|→ full details/i;
+const S_SIG = /^(BC (?:Michigan|7-Minute Ladder|Threshold 1000s|1000s|Flyers|Short Hills|Long Hills|Event Reps|Broken Race|Mystery Workout)|JH Michigan)\b/;
+const S_INL = /^((?:E\d+\s+)?(?:Basic |JH |Home )?strength)\b[^:]*:\s*(.+\d.*)$/i;
+const INL_REG = [];
+function sText(x, many){
+  const sg = S_SIG.exec(x); if (sg) return sg[1];
+  x = x.replace(/\s*·\s*Technical\b/g, "").replace(/^(Technique: .*?)\s*·\s*\d+(?:–\d+)?\s*min$/, "$1");
+  x = x.split(/\s+·\s+/).filter((seg, i) => i===0 || /\d/.test(seg) || seg.length <= 25).join(" · ");   // drop prose after "·"
+  x = x.replace(/\s*\((?![^)]*\d)[^)]{18,}\)/g, "");                                                  // drop long wordy (…) asides
+  const parts = x.split(/(?<=[.!?])\s+(?=[A-Z(])/);
+  if (many && !/\d/.test(parts[0]) && !/^[^.]{1,40}:/.test(parts[0])) return "";                      // advice lines ("Floats are jogs…")
+  return parts[0] + parts.slice(1).filter(p => /\d/.test(p) && /\d\s*(×|x|m\b|min|sec|s\b|set|rep)/i.test(p)).map(p => " " + p).join("");
+}
+function liSimple(arr){
+  const S = {warm:[], main:[], str:[], opt:[], cool:[]};
+  arr.forEach(it => { const sc = secOf(it); if (sc!=="warm" && sc!=="cool" && S_DROP.test(splitTags(it.t).text)) return; (S[sc] || S.main).push(it); });
+  const rebuild = (it, txt) => Object.assign({}, it, {t: splitTags(it.t).tags.map(g=>`[${g}]`).join(" ") + (splitTags(it.t).tags.length ? " " : "") + txt});
+  const strHTML = it => { const {text} = splitTags(it.t), opt = /^optional/i.test(text);
+    const c = liftCode(text);
+    if (c && LIFTS[c]) return `<li class="s-str"><span class="no-abbr">${opt?"Optional: ":""}${esc(LIFTS[c].name.split(" · ")[0])}</span> <button type="button" class="abbr vl" data-k="lift:${c}">View lifts</button></li>`;
+    const m = S_INL.exec(text);
+    if (m) { const i = INL_REG.push("Strength: " + m[2]) - 1; return `<li class="s-str"><span class="no-abbr">${opt?"Optional: ":""}Strength</span> <button type="button" class="abbr vl" data-k="inl:${i}">View lifts</button></li>`; }
+    const s = sText(text, true); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; };
+  const mainL = S.main.filter(it => !S_INL.test(splitTags(it.t).text)), mainS = S.main.filter(it => S_INL.test(splitTags(it.t).text));
+  const many = mainL.length > 1;
+  const main = mainL.map(it => { const s = sText(splitTags(it.t).text, many); return s ? `<li>${itemHTML(rebuild(it, s))}</li>` : ""; }).join("");
+  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:p">Warm-up</button></li>` : "")
+    + main + [...mainS, ...S.str].map(strHTML).join("")
+    + S.opt.map(it => { const s = sText(splitTags(it.t).text, true); return s ? `<li class="s-opt">${itemHTML(rebuild(it, s))}</li>` : ""; }).join("")
+    + (S.cool.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
+}
+const liFull = arr => { const s = arr.map(secOf), k = new Set(s);
   if (k.size < 2) return arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
   return SECS.filter(([c])=>k.has(c)).map(([c,l]) => `<li class="wsec">${l}</li>` + arr.filter((it,i)=>s[i]===c).map(it=>`<li>${itemHTML(it)}</li>`).join("")).join(""); };
 function blockHTML(name, arr, combo){
@@ -2617,6 +2665,7 @@ function hubWeekHTML(a){
   const a0 = s0, a1 = days[6];
   return `<section class="panel myweek"><div class="bar"><div><div class="eyebrow">Your week</div><h2>${a0.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${a1.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</h2></div>
     <div class="cal-nav"><button type="button" class="btn sm" ${wi<=0?"disabled":""} onclick="hubWk--;render()" aria-label="Previous week">←</button>${hubWk?`<button type="button" class="btn sm" onclick="hubWk=0;render()">This week</button>`:""}<button type="button" class="btn sm" ${wi>=vw.length-1?"disabled":""} onclick="hubWk++;render()" aria-label="Next week">→</button></div></div>
+    <div style="margin-top:8px">${simpleSeg()}</div>
     <div class="wkds">${rows}</div>
     <div class="ed-save" style="border:0;padding-top:10px"><a class="btn" href="#calendar">Full calendar</a><a class="btn" href="#a-${a.id}">My page</a></div></section>`;
 }
@@ -2680,6 +2729,12 @@ function abbrBody(k){
   const [kind, id] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":")+1)];
   if (kind==="lift") { const L = LIFTS[id]; if (!L) return null;
     return {eye: L.jh ? "Junior high strength" : L.home ? "Home strength" : "Strength", title: L.name, html: (L.when?`<p class="lede" style="margin:0 0 10px">${esc(L.when)}</p>`:"") + liftHTML(id).replace('<details class="lift">','<details class="lift" open>') }; }
+  if (kind==="wu" || kind==="cd") { const L = kind==="wu" ? WARMUPS.practice : WARMUPS.cooldown;
+    return {eye: kind==="wu" ? "Every practice" : "End of practice", title: kind==="wu" ? "Warm-up" : "Cool-down",
+      html: `<ol class="steps">${(L||[]).map(s=>`<li><span>${itemHTML(s)}</span><em>${esc(s.d||"")}</em></li>`).join("")}</ol>
+        <p class="note" style="margin:10px 0 0">${kind==="wu" ? "Sprinters, hurdlers and jumpers add your event warm-up after this. " : ""}<a href="#warmups" onclick="document.getElementById('abbrDlg').close()">Warm-ups &amp; stretching page →</a></p>` }; }
+  if (kind==="inl") { const x = INL_REG[+id]; if (!x) return null;
+    return {eye:"Strength", title:"Today's lifts", html: liftInlineHTML(x).replace('<details class="lift">','<details class="lift" open>') || `<p>${esc(x)}</p>`}; }
   if (kind==="md") { const x = (MD.lib||[]).find(y=>y.c===id); if (!x) return null;
     return {eye:"Workout library · " + id, title: x.n, html: `<dl class="ab-dl"><dt>Reps</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>`
       + (x.prog?`<div class="mlabel">Progression</div><ul>${x.prog.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:"") + (x.tech?`<div class="mlabel">Technique</div><ul>${x.tech.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:"") }; }
@@ -2956,7 +3011,7 @@ function myWeekHTML(a){
     const lt = lastTime(a, text, dayDate(w, curDay));
     return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}${lt?`<div class="mylast">Last time · ${esc(lastShort(lt))}</div>`:""}</li>`;
   };
-  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.path] : TAG_CHIP[t.path])}</span>`:""}</span></div>
+  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><div style="margin:6px 0">${simpleSeg()}</div><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.path] : TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
     ${weekObj(w, a.level)}
@@ -3856,7 +3911,7 @@ const views = {
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="weekIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===cur?"disabled":""} onclick="weekIdx=${i+1};render()">›</button></div>${postBtn}</div>
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
-      <div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>
+      <div class="bar" style="justify-content:flex-start;gap:10px;flex-wrap:wrap"><div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>${simpleSeg()}</div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
       ${fmpHTML("w")}
       ${wlv!=="Both" && !wx.days.some(d=>dayHas(d,wlv)) ? `<div class="panel"><p style="margin:0">No ${wlv==="JH"?"Junior High":"High School"} workouts are posted for this week yet.</p>
