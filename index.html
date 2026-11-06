@@ -741,6 +741,8 @@ button.abbr::after{content:"ⓘ";font-size:.75em;margin-left:2px;color:var(--gol
 .wkd-b ul.wl{margin:0;padding-left:18px}
 @media (max-width:600px){.wkd-b{padding:0 12px 12px 14px}}
 
+.exv-in{width:100%;min-width:220px;font:14px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.exv-in:focus{outline:2px solid var(--gold);outline-offset:1px}
 /* Simple view */
 .seg-sm button{padding:5px 11px;font-size:13px}
 li.s-wu{list-style:none;margin:4px 0 6px -18px}
@@ -809,7 +811,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06j";
+const HUB_VERSION = "11-06k";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1861,17 +1863,28 @@ function inlineLifts(text){
   const rows = m[1].split(/,\s*(?![^()]*\))/).map(p => p.trim().replace(/\.$/,"")).filter(Boolean).map(p => { const q = p.match(/^(.*?)\s+(\d.*)$/); const name = q ? q[1] : p; return {name, dose: q ? q[2] : "", key: exKey(name)}; });
   return rows.length >= 2 ? rows : null;
 }
+// ---- Lift videos: coaches paste a link per exercise (Coaches → Lift Videos); a ▶ Video button shows in every lift table ----
+let EXV = {}, exvDraft = null, exvMsg = {kind:"", text:""};
+const exVid = n => { const u = (EXV[n] || (EX[n]||{}).url || "").trim(); return u ? ` <a class="vid" href="${esc(u)}" target="_blank" rel="noopener"><i>▶</i>Video</a>` : ""; };
+const exUsed = () => { const s = new Set(); Object.values(LIFTS).forEach(L => L.ex.forEach(([n]) => s.add(n)));
+  const lifts = [...s].sort((a,b)=>a.localeCompare(b)), more = Object.keys(EX).filter(n => !s.has(n)).sort((a,b)=>a.localeCompare(b)); return [...lifts, ...more]; };
+async function exvSave(){
+  const next = {}; Object.entries(exvDraft||{}).forEach(([k,v]) => { v = String(v||"").trim(); if (v) next[k] = v; });
+  const err = await publishFiles({"exvideos.json": JSON.stringify(next)});
+  if (err) { exvMsg = {kind:"err", text:err}; render(); return; }
+  EXV = next; exvDraft = null; exvMsg = {kind:"ok", text:"Lift videos saved. ▶ Video buttons are live in every lift table."}; render();
+}
 function liftInlineHTML(text){
   const rows = inlineLifts(text); if (!rows) return "";
   const light = /light/i.test(text);
   return `<details class="lift"><summary>See the lifts</summary><div class="lb"><table><thead><tr><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th class="hide-sm">Equipment</th></tr></thead><tbody>${rows.map(r => { const e = EX[r.key]||{};
-    return `<tr><td><b>${esc(r.name.charAt(0).toUpperCase()+r.name.slice(1))}</b>${e.cue?`<div class="sub">${esc(e.cue)}</div>`:""}</td><td class="mono" style="white-space:nowrap">${esc(r.dose||"as written")}</td><td class="sub">${light ? "30–45 sec" : "45–75 sec"}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("")}</tbody></table>
+    return `<tr><td><b>${esc(r.name.charAt(0).toUpperCase()+r.name.slice(1))}</b>${r.key?exVid(r.key):""}${e.cue?`<div class="sub">${esc(e.cue)}</div>`:""}</td><td class="mono" style="white-space:nowrap">${esc(r.dose||"as written")}</td><td class="sub">${light ? "30–45 sec" : "45–75 sec"}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("")}</tbody></table>
     <p class="sub" style="margin:6px 0 0">${light ? "Light: smooth reps, nothing heavy." : "Light to moderate loads, 2–3 reps left in the tank."} Never to failure. Stop if your form slips.</p></div></details>`;
 }
 const liftRest = (L, main) => L.rest || (L.home ? "30–45 sec" : main ? "60–90 sec" : "Circuit, 30–45 sec");
 function liftHTML(code){
   const L = LIFTS[code]; if (!L) return "";
-  const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
+  const rows = L.ex.map(([n,sr,main]) => { const e = EX[n]||{}; return `<tr><td><b>${esc(n)}</b>${main?` <span class="tag">main lift</span>`:""}${exVid(n)}<div class="sub">${esc(e.cue||"")}</div></td><td class="mono" style="white-space:nowrap">${esc(sr)}</td>
     <td class="sub">${esc(liftRest(L, main))}</td><td class="sub hide-sm">${esc(e.eq||"")}${e.alt?`<br>Easier: ${esc(e.alt)}`:""}</td></tr>`; }).join("");
   const ORD = L.jh ? LIFT_ORDER_JH : LIFT_ORDER;
   const prog = L.home || L.gen ? "" : `<p class="sub" style="margin:6px 0 0">Progression: ${ORD.map(k=>k===code?`<b>${esc(LIFTS[k].name.split(" · ")[0])}</b>`:esc(LIFTS[k].name.split(" · ")[0])).join(" → ")} (this one: ${esc(L.when)})</p>`;
@@ -3980,11 +3993,26 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["liftvid","Lift Videos"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
+    const body = ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
+  },
+  _liftVid(){
+    if (!exvDraft) exvDraft = JSON.parse(JSON.stringify(EXV));
+    const inLift = n => Object.entries(LIFTS).filter(([c,L]) => L.ex.some(([x]) => x===n)).map(([c]) => c);
+    const rows = exUsed().map((n,i) => { const v = exvDraft[n] || "", codes = inLift(n);
+      return `<tr><td><b>${esc(n)}</b><div class="muted" style="font-size:12px">${codes.length ? esc(codes.map(c=>LIFTS[c].name.split(" · ")[0]).join(", ")) : "Drills and other strength lines"}</div></td>
+        <td><input type="url" id="exv-${i}" aria-label="Video link for ${esc(n)}" class="exv-in" placeholder="Paste a YouTube or Drive link" value="${esc(v)}" oninput="exvDraft[${JSON.stringify(n).replace(/"/g,"&quot;")}]=this.value"></td>
+        <td style="white-space:nowrap">${v ? `<a class="vid" href="${esc(v)}" target="_blank" rel="noopener"><i>▶</i>Test</a>` : `<a class="muted" href="https://www.youtube.com/results?search_query=${encodeURIComponent(n + " exercise form")}" target="_blank" rel="noopener">Find one ↗</a>`}</td></tr>`; }).join("");
+    const nSet = Object.values(exvDraft).filter(v => String(v||"").trim()).length;
+    return `<p class="lede" style="margin:0">Paste a short how-to video for any lift. It shows as a <span class="vid" style="pointer-events:none"><i>▶</i>Video</span> button next to that exercise everywhere: the View lifts pop-ups, workouts, and athlete pages.</p>
+      <div class="panel ed"><div class="bar"><h2>Exercises</h2><span class="muted">${nSet} of ${exUsed().length} have a video</span></div>
+        <div class="tbl"><table><thead><tr><th>Exercise (used in)</th><th>Video link</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+      <div class="ed-save sticky"><button type="button" class="btn primary" onclick="exvSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save lift videos"}</button>
+        <button type="button" class="btn sm" onclick="exvDraft=null;exvMsg={kind:'',text:''};render()">Undo changes</button>
+        <span class="ed-msg ${exvMsg.kind}" role="status">${esc(exvMsg.text)}</span></div>`;
   },
   _warmEdit(){
     if(!wu) wuStart();
@@ -4900,6 +4928,7 @@ async function loadAll(){
   if (INTEREST["hs-ezreall-roberson"]) INTEREST["hs-ezreall-roberson"].name = "Ezreall Roberson";
   applyLogs();
   applySelfSignups();
+  if (byKey.exvideos && typeof byKey.exvideos === "object") { EXV = byKey.exvideos; exvDraft = null; }
   window.HUB_BYKEY = byKey; if (window.SP && SP.onData) SP.onData(byKey);
   render();
 }
