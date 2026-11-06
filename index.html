@@ -696,6 +696,26 @@ a{text-underline-offset:3px}
   .cal-wh{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .cal-d.meet .cal-mt,.cal-tag.cl{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* Tap-for-details codes + pop-up */
+button.abbr{all:unset;cursor:pointer;color:inherit;font-weight:700;border-bottom:1.5px dotted var(--gold);padding:0 1px;border-radius:3px}
+button.abbr:hover,button.abbr:focus-visible{background:var(--gold-soft);outline:none}
+button.abbr::after{content:"ⓘ";font-size:.75em;margin-left:2px;color:var(--gold);vertical-align:super}
+.ab-dlg{border:0;padding:0;border-radius:16px;max-width:min(720px,94vw);width:100%;max-height:86vh;background:var(--surface);color:var(--fg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
+.ab-dlg::backdrop{background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.ab-in{display:flex;flex-direction:column;max-height:86vh}
+.ab-hd{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:16px 18px 12px;border-bottom:3px solid var(--gold);background:var(--brand);color:#fff}
+.ab-hd .eyebrow{color:var(--gold)}
+.ab-hd h2{margin:2px 0 0;color:#fff;font-size:26px}
+.ab-x{flex:none;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer}
+.ab-x:hover{background:rgba(255,255,255,.1)}
+.ab-bd{padding:14px 18px 18px;overflow:auto}
+.ab-bd details.lift > summary{display:none}
+.ab-dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0}
+.ab-dl dt{font-weight:700;color:var(--accent)}
+.ab-dl dd{margin:0}
+@media (max-width:600px){.ab-dl{grid-template-columns:1fr}.ab-dl dt{margin-top:6px}.ab-dlg{max-height:90vh;margin:auto 3vw}}
+@media print{button.abbr{border:0}button.abbr::after{content:""}}
 /* Bottom tab bar (phones) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .inst{border-top:3px solid var(--gold)}
@@ -748,7 +768,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06a";
+const HUB_VERSION = "11-06b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2539,6 +2559,84 @@ function fmpHTML(key){
 }
 
 
+
+// ---- Tap any workout code anywhere (Strength A1, H2 strength, D1 800 rhythm, BC Michigan…) for a pop-up of exactly what to do ----
+const SIG = {
+  "BC Michigan": {what:"Threshold work that turns into race speed while tired. The team's benchmark day.",
+    rows:[["HS Distance A","1600 Tempo · 2 min jog · 1200 Interval · 2 min jog · 800 Interval (last 200 quicker) · 3 min jog · 400 at 1600 pace · 3–4 min walk/jog · 200 at Rep pace"],
+      ["HS Distance B","Start at the 1200: 1200 Tempo · 800 Interval · 400 at 1600 pace · 200 at Rep pace"],["HS C","800 Tempo · 400 Interval · 200 at Rep pace"],
+      ["Hybrid","1200 Tempo · 800 Interval · 400 at 1600 pace · 200 at 800 pace"],["Mid (800)","800 Tempo · 400 at 1600 pace · 300 at 800 pace · 200 at Rep pace"],
+      ["Mid (400)","400 Tempo · 300 at 800 pace · 200 at Rep pace · 150 fast and relaxed"],["JH","800 / 600 / 400 Steady · 400 or 300 at 1600 pace (800 pathway: 300 at 800 pace) · 200 relaxed fast"]],
+    cues:["Every rep a little faster than the last","Record every split","Nobody races the 1600"]},
+  "BC 7-Minute Ladder": {what:"Aerobic power and changing pace mid-race. Continuous, 7:00 total.",
+    rows:[["Surges","15 – 30 – 45 – 60 – 45 – 30 – 15 sec, 30 sec float jog between"],["Effort","15–30 sec at 1600 effort, 45–60 sec at 3200 effort (Mid: 1600 to 800 effort)"],["Sets","1 set. HS Distance A: 2 sets, 5 min Easy between"],["JH / 400s","5-minute ladder: 15 – 30 – 45 – 30 – 15 sec"]],
+    cues:["Floats are jogs, never walks","If the last 15 sec isn't your fastest, you started too hard"]},
+  "BC Threshold 1000s": {what:"Threshold (comfortably hard) volume you can track.",
+    rows:[["Pace","Tempo (JH B/C: Steady)"],["Recovery","60–75 sec jog (JH 90 sec)"],["Reps","A 5–6 · B 4–5 × 1000m · C 3 × 800m–1000m · JH A 3 × 1000m, B 3 × 800m, C 2–3 × 600m"]],
+    cues:["Keep splits within 2 sec of each other","Faster than Tempo is not a better workout"]},
+  "BC 1000s": {alias:"BC Threshold 1000s"},
+  "BC Flyers": {what:"Max velocity, Feed the Cats style.",
+    rows:[["Build","2 × 30m accelerations (JH 20m)"],["Flys","3 × flying 30m (Mid/JH 20m) after a 20–30m build-up"],["Recovery","Full: 4–5 min walk back (JH 3–4 min)"]],
+    cues:["Time the flys if you can","Stop the set when times drop off more than 3%","Never paired with a hard aerobic day"]},
+  "BC Short Hills": {what:"Power and stride mechanics with less pounding than flat sprints.",
+    rows:[["Reps","6–8 × 10 sec on a steep hill (JH 4–6 × 8–10 sec)"],["Effort","Near max"],["Recovery","Walk down + 60–90 sec (full)"]], cues:["Run tall, quick arms, no grinding","Effort counts, not pace"]},
+  "BC Long Hills": {what:"Strength endurance on a moderate hill (250–350m).",
+    rows:[["HS Distance","4–6 × 60–75 sec at 3200 effort"],["Hybrid","4–5 × 45–60 sec at 1600 effort"],["JH","3–4 × 30–45 sec, steady-hard"],["Recovery","Jog back down"]], cues:["Run tall","Effort counts, not pace"]},
+  "BC Event Reps": {what:"Race rhythm at current race pace (Paces page), never goal pace.",
+    rows:[["800","3 × 300m at 800 pace, 4–5 min recovery"],["1600","4 × 400m at 1600 pace, 2 min recovery"],["3200","4 × 600m at 3200 pace, 2–3 min recovery"]], cues:["Even splits","Same pace on the last rep as the first"]},
+  "BC Broken Race": {what:"Race rhythm and confidence before the championship stretch. One set only.",
+    rows:[["800","500m + 300m at current 800 pace, 3 min rest"],["400","300m + 100m at season-best 400 pace, 60 sec rest"],["1600","4 × 400m at current 1600 pace, 60 sec standing rest"],["3200","1600m + 800m + 400m at current 3200 pace, 2 min then 90 sec rest"],["Goal pace","A-level only, last rep, only if the earlier reps were on target"]],
+    cues:["Raced 2+ hard events in the last 48 hours? Run Easy instead"]},
+  "BC Mystery Workout": {what:"Pick (or draw) one of three options. Every option is the same work, so none is the easy one.",
+    rows:[["HS Distance A","(a) 3 × 6 min Tempo, 90 sec jog · (b) 4 × 1000m Tempo, 75 sec · (c) 6 × 600m Tempo, 45 sec"],["HS B","3 × 5 min · 3 × 1000m · 5 × 600m"],["HS C","2 × 6 min · 3 × 800m · 4 × 600m"],
+      ["JH 800/1600","3 × 400m · 4 × 300m · 6 × 200m at 1600 pace"],["JH 400/800","4 × 150m relaxed fast · 3 × 200m at 800 pace · 6 × 100m fast"]], cues:["Pick before you warm up, then stick with it"]}
+};
+const ABBR_RE = new RegExp([
+  "\\bJH General Strength\\s*A[12]\\b", "\\bGeneral Strength\\s*A[12]\\b", "\\bJH Strength (?:A|B|Light|Maintenance)\\b",
+  "\\bStrength\\s*[-–]?\\s*(?:A1|A2|B1|B2|Deload|M)\\b", "\\bHome strength\\s*H[12]\\b", "\\bH[12](?=\\s+(?:home\\s+)?strength\\b)", "\\bStrength\\s+H[12]\\b",
+  "\\b[A-E][1-3](?=\\s+(?:Max|Maximum|Speed|Easy|Controlled|Aerobic|800|Strength|Athletic|Foundation|Introductory|Race|Advanced)\\b)",
+  "\\bBC (?:Michigan|7-Minute Ladder|Threshold 1000s|1000s|Flyers|Short Hills|Long Hills|Event Reps|Broken Race|Mystery Workout)\\b", "\\bJH Michigan\\b"
+].join("|"), "g");
+function abbrKey(s){
+  if (/^BC |^JH Michigan/.test(s)) return "sig:" + (s==="JH Michigan" ? "BC Michigan" : s);
+  if (/^[A-E][1-3]$/.test(s)) return "md:" + s;
+  if (/^H[12]$/.test(s)) return "lift:" + s;
+  const c = liftCode(s.replace(/^Strength\s+(H[12])$/i, "Home strength $1")); return c ? "lift:" + c : "";
+}
+function enhanceAbbr(root){
+  if (!root) return;
+  const skip = n => n.closest && n.closest("a,button,input,textarea,select,script,style,summary,.abbr,.no-abbr,h1,.cal-ti,.nm-name");
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode: n => (!n.nodeValue.trim() || skip(n.parentElement)) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  const nodes = []; while (tw.nextNode()) nodes.push(tw.currentNode);
+  nodes.forEach(n => { const s = n.nodeValue; ABBR_RE.lastIndex = 0; if (!ABBR_RE.test(s)) return; ABBR_RE.lastIndex = 0;
+    const frag = document.createDocumentFragment(); let last = 0, m;
+    while ((m = ABBR_RE.exec(s))) { const k = abbrKey(m[0]); if (!k) continue;
+      frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+      const b = document.createElement("button"); b.type = "button"; b.className = "abbr"; b.dataset.k = k; b.textContent = m[0]; b.setAttribute("aria-haspopup", "dialog");
+      frag.appendChild(b); last = m.index + m[0].length; }
+    if (!last) return; frag.appendChild(document.createTextNode(s.slice(last))); n.parentNode.replaceChild(frag, n); });
+}
+function abbrBody(k){
+  const [kind, id] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":")+1)];
+  if (kind==="lift") { const L = LIFTS[id]; if (!L) return null;
+    return {eye: L.jh ? "Junior high strength" : L.home ? "Home strength" : "Strength", title: L.name, html: (L.when?`<p class="lede" style="margin:0 0 10px">${esc(L.when)}</p>`:"") + liftHTML(id).replace('<details class="lift">','<details class="lift" open>') }; }
+  if (kind==="md") { const x = (MD.lib||[]).find(y=>y.c===id); if (!x) return null;
+    return {eye:"Workout library · " + id, title: x.n, html: `<dl class="ab-dl"><dt>Reps</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>`
+      + (x.prog?`<div class="mlabel">Progression</div><ul>${x.prog.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:"") + (x.tech?`<div class="mlabel">Technique</div><ul>${x.tech.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:"") }; }
+  if (kind==="sig") { let x = SIG[id]; if (x && x.alias) x = SIG[x.alias]; if (!x) return null;
+    return {eye:"BC signature workout", title: id==="BC 1000s" ? "BC Threshold 1000s" : id, html: `<p class="lede" style="margin:0 0 10px">${esc(x.what)}</p><dl class="ab-dl">${x.rows.map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>`
+      + (x.cues?`<div class="mlabel">Coach cues</div><ul>${x.cues.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:"") + `<p class="note" style="margin:8px 0 0">Warm-up: HS 15 min Easy + drills + 4 strides, JH 10–15 min. Cool-down: HS 10–15 min, JH 5–10 min Easy.</p>` }; }
+  return null;
+}
+function openAbbr(k){
+  const b = abbrBody(k); if (!b) return;
+  let d = document.getElementById("abbrDlg");
+  if (!d) { d = document.createElement("dialog"); d.id = "abbrDlg"; d.className = "ab-dlg"; document.body.appendChild(d);
+    d.addEventListener("click", e => { if (e.target === d) d.close(); }); }
+  d.innerHTML = `<div class="ab-in"><div class="ab-hd"><div><div class="eyebrow">${esc(b.eye)}</div><h2>${esc(b.title)}</h2></div><button type="button" class="ab-x" aria-label="Close" onclick="document.getElementById('abbrDlg').close()">×</button></div><div class="ab-bd">${b.html}</div></div>`;
+  if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+}
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("button.abbr"); if (b) { e.preventDefault(); e.stopPropagation(); openAbbr(b.dataset.k); } });
 // ---- Calendar: every date's workout for one level + group, a month at a time ----
 const CAL_GROUPS = {HS:[["Distance","Distance"],["Mid Distance","Mid-Distance"],["Sprints","Sprints, Hurdles & Jumps"]], JH:[["Distance","Distance (800/1600)"],["Mid Distance","Mid-Distance (400/800)"],["Sprints","Sprints, Hurdles & Jumps"]]};
 const SPR_CATS = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
@@ -4603,6 +4701,7 @@ function render(){
   document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : views[key]();
   const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
   thmIcon();
+  try { enhanceAbbr(document.getElementById("view")); } catch(e) { console.warn("abbr", e); }
 }
 let lastHash = location.hash;
 window.addEventListener("hashchange", () => { if(location.hash!==lastHash){ lastHash=location.hash; awIdx=null; fmp=false; window.scrollTo(0,0); lk={id:null,msg:{kind:"",text:""}}; } render(); });
