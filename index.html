@@ -1633,7 +1633,7 @@ function drillHTML(text){
   return `<details class="lift"><summary>How to</summary><div class="lb">${list.map(n=>`<div style="margin:0 0 4px"><b>${esc(n)}</b>: <span class="sub">${esc(EX[n].cue)}</span></div>`).join("")}</div></details>`;
 }
 // Session info on a day (Dec–Feb winter plan): coach-led vs on your own, voluntary, session type
-const SESS_K = {coach:["Coach-led · voluntary","ss-coach"], coachq:["Coach-led if school is open","ss-coach"], indep:["On your own · voluntary","ss-indep"], break:["Winter break · optional","ss-break"], official:["Official practice","ss-off"], meet:["Meet day","ss-meet"], rest:["Rest day","ss-rest"]};
+const SESS_K = {coach:["Coach-led · voluntary","ss-coach"], coachq:["Coach-led if school is open","ss-coach"], indep:["On your own · voluntary","ss-indep"], break:["Winter break · optional","ss-break"], spring:["Spring break · on your own","ss-break"], official:["Official practice","ss-off"], meet:["Meet day","ss-meet"], rest:["Rest day","ss-rest"]};
 const sessOf = (d, lv) => (d && d.sess && d.sess[lv==="Both"?"HS":lv]) || null;
 const isCoachLed = (d, lv) => { const s = sessOf(d, lv); return !!s && (s.kind==="coach" || s.kind==="coachq" || s.kind==="official"); };
 function sessBadge(d, lv){
@@ -2723,7 +2723,7 @@ function buildPacket(){
   const out = [coverHTML(w, lvs)];
   lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
     const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
-    const ss = sessOf(d, lv); if (ss && ["indep","break","rest","meet"].includes(ss.kind)) return;   // not a practice: on the cover page only
+    const ss = sessOf(d, lv); if (ss && ["indep","break","spring","rest","meet"].includes(ss.kind)) return;   // not a practice: on the cover page only
     const od = (w0.days||[]).find(x=>x.day===d.day);
     if (window.SP && SP.printSkip && SP.printSkip(w.start, d.day, lv) && !sheetItems(od, cat, lv).length) return;   // sprint home day: cover page only
     const date = dayDate(w, d.day);
