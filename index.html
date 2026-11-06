@@ -803,7 +803,7 @@ body:has(.sheets-wrap) .botnav{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06e";
+const HUB_VERSION = "11-06f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1905,12 +1905,8 @@ function secOf(it){
   if (/^(optional|\(optional\))/i.test(x) || tags.includes("Crossover")) return "opt";
   return "main";
 }
-const li = arr => simpleOn() ? liSimple(arr) : liFull(arr);
+const li = arr => liSimple(arr);   // one clean view for everyone (liFull kept for reference)
 // ---- Simple view (default for athletes): "Warm-up" → pop-up, main reps, "Strength A1 · View lifts", "Cool-down" → pop-up ----
-let SIMPLE_PREF = null; try { SIMPLE_PREF = localStorage.getItem("hub-simple"); } catch(e) {}
-const simpleOn = () => SIMPLE_PREF !== null ? SIMPLE_PREF === "1" : !((typeof meCoach==="function" && meCoach()) || canPost);
-function setSimple(on){ SIMPLE_PREF = on ? "1" : "0"; try { localStorage.setItem("hub-simple", SIMPLE_PREF); } catch(e) {} render(); }
-const simpleSeg = () => `<div class="seg seg-sm" role="group" aria-label="Detail">${[[1,"Simple"],[0,"Full detail"]].map(([v,l])=>`<button type="button" aria-pressed="${simpleOn()===!!v}" onclick="setSimple(${v})">${l}</button>`).join("")}</div>`;
 const S_DROP = /^(Outdoor plan|Indoor version|Coaching:|400\/800 hybrids|Event technique \(|General (?:strength|movement) & (?:conditioning|strength) only|Goal:)|→ full details/i;
 const S_SIG = /^(BC (?:Michigan|7-Minute Ladder|Threshold 1000s|1000s|Flyers|Short Hills|Long Hills|Event Reps|Broken Race|Mystery Workout)|JH Michigan)\b/;
 const S_INL = /^((?:E\d+\s+)?(?:Basic |JH |Home )?strength)\b[^:]*:\s*(.+\d.*)$/i;
@@ -2665,7 +2661,6 @@ function hubWeekHTML(a){
   const a0 = s0, a1 = days[6];
   return `<section class="panel myweek"><div class="bar"><div><div class="eyebrow">Your week</div><h2>${a0.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${a1.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</h2></div>
     <div class="cal-nav"><button type="button" class="btn sm" ${wi<=0?"disabled":""} onclick="hubWk--;render()" aria-label="Previous week">←</button>${hubWk?`<button type="button" class="btn sm" onclick="hubWk=0;render()">This week</button>`:""}<button type="button" class="btn sm" ${wi>=vw.length-1?"disabled":""} onclick="hubWk++;render()" aria-label="Next week">→</button></div></div>
-    <div style="margin-top:8px">${simpleSeg()}</div>
     <div class="wkds">${rows}</div>
     <div class="ed-save" style="border:0;padding-top:10px"><a class="btn" href="#calendar">Full calendar</a><a class="btn" href="#a-${a.id}">My page</a></div></section>`;
 }
@@ -3011,7 +3006,7 @@ function myWeekHTML(a){
     const lt = lastTime(a, text, dayDate(w, curDay));
     return `<li>${itemHTML({...it, t:text})}${ps.length?`<div class="mypace">${ps.map(([k,v])=>`<span><b>${esc(k)}</b> ${v}</span>`).join("")}</div>`:""}${lt?`<div class="mylast">Last time · ${esc(lastShort(lt))}</div>`:""}</li>`;
   };
-  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><div style="margin:6px 0">${simpleSeg()}</div><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.path] : TAG_CHIP[t.path])}</span>`:""}</span></div>
+  return `<div class="panel"><div class="bar"><div><h2>My workouts</h2><span class="muted">${esc(weekLabel(w))}${t.lv||t.path?" · ":""}${t.lv?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.lv] : TAG_CHIP[t.lv])}</span>`:""}${t.path?`<span class="tchip">${esc(a.level==="JH" ? TAG_CHIP_JH[t.path] : TAG_CHIP[t.path])}</span>`:""}</span></div>
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
     ${weekObj(w, a.level)}
@@ -3911,7 +3906,7 @@ const views = {
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="weekIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===cur?"disabled":""} onclick="weekIdx=${i+1};render()">›</button></div>${postBtn}</div>
       ${i!==home?`<p><a href="#workouts" onclick="weekIdx=null;render();return false">Jump to ${cw?"this week":"the coming week"} →</a></p>`:""}
-      <div class="bar" style="justify-content:flex-start;gap:10px;flex-wrap:wrap"><div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div>${simpleSeg()}</div>
+      <div class="bar" style="justify-content:flex-start;gap:10px;flex-wrap:wrap"><div class="seg" role="group" aria-label="Level">${["JH","HS","Both"].map(l=>`<button type="button" aria-pressed="${wlv===l}" onclick="setWlv('${l}')">${l==="Both"?"Side-by-side":l==="JH"?"Junior High":"High School"}</button>`).join("")}</div></div>
       <div class="filters" role="group" aria-label="Event group">${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${wcat===c}" onclick="setWcat('${c}')">${c}</button>`).join("")}</div>
       ${fmpHTML("w")}
       ${wlv!=="Both" && !wx.days.some(d=>dayHas(d,wlv)) ? `<div class="panel"><p style="margin:0">No ${wlv==="JH"?"Junior High":"High School"} workouts are posted for this week yet.</p>
