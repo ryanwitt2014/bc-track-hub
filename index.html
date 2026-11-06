@@ -2484,14 +2484,17 @@ let WINTER = {ids:[], maybe:{}, follow:{}, done:[]}, wQueue = Promise.resolve(),
 const isWinter = a => WINTER.ids.includes(a.id) || !!WINTER.maybe[a.id];
 const isWinterMaybe = a => !WINTER.ids.includes(a.id) && !!WINTER.maybe[a.id];
 // Coach decisions made in chat, applied once (they become permanent the next time the winter roster is saved; un-starring later sticks).
-const WINTER_DECISIONS = [{key:"2026-11-05-form", star:["hs-maya-morales"], maybe:{"hs-elizabeth-widmer":"Can do some sessions; mornings work best"}, follow:{"hs-kayden-wade":"Said no to winter conditioning without a reason. Check in."}}];
+const WINTER_DECISIONS = [{key:"2026-11-05-form", star:["hs-maya-morales"], maybe:{"hs-elizabeth-widmer":"Can do some sessions; mornings work best"}, follow:{"hs-kayden-wade":"Said no to winter conditioning without a reason. Check in."}}, {"key": "2026-11-05-form-all", "star": ["hs-landon-dennis", "hs-gabe-holt", "hs-kian-yeary", "jh-kaci-howard", "jh-wesley-weigle", "jh-claire-bauer", "jh-noah-akins", "hs-adler-payne", "hs-dominic-dean", "jh-tripp-johnson", "hs-cailey-jones", "jh-deklan-wisniewski", "jh-oakley-sparks", "hs-ethan-hood", "jh-lexi-dennis", "hs-harlo-holder", "jh-levis-juarez-fuentes", "hs-michael-williams", "jh-destiny-barrera", "hs-loralei-rayman", "hs-veda-duttlinger", "hs-laila-stewart", "hs-zoe-butzke", "hs-sam-fleming", "jh-mia-zimmerman", "jh-eva-morales", "jh-gabe-devers", "hs-sarah-lambeck", "hs-elijah-justice", "hs-addison-hopkins", "jh-noah-ellis", "hs-ella-stacy", "hs-donald-adams", "hs-parker-vanallen", "jh-luke-rayman", "jh-olivia-crowder", "jh-jorge-marcial", "jh-annabelle-thomas", "jh-celie-bush", "jh-adella-walker", "hs-delilah-fuller", "hs-lillian-weigle", "jh-aiden-budreau"], "maybe": {"jh-corinn-hughes": "Yes if it works with the wrestling schedule", "hs-bryce-floyd": "Said yes, potentially", "hs-riley-sowders": "Club volleyball Tue/Thu, so can't make coach-led days", "hs-jacob-pitstick": "In basketball; will come when he can", "hs-brianna-mendoza": "When her other winter sport allows", "hs-ezreall-roberson": "Will come if able", "jh-rocklyn-crisp": "Maybe, if no basketball", "jh-tynlee-becker": "Maybe; basketball may conflict"}}];
+let wDirty = false, wLoaded = false;
 function applyWinterDecisions(){
   WINTER.maybe = WINTER.maybe || {}; WINTER.follow = WINTER.follow || {}; WINTER.done = WINTER.done || [];
-  WINTER_DECISIONS.forEach(d => { if (WINTER.done.includes(d.key)) return;
+  WINTER_DECISIONS.forEach(d => { if (WINTER.done.includes(d.key)) return; wDirty = true;
     (d.star||[]).forEach(id => { if (!WINTER.ids.includes(id)) WINTER.ids.push(id); delete WINTER.maybe[id]; });
     Object.assign(WINTER.maybe, d.maybe||{}); Object.assign(WINTER.follow, d.follow||{}); WINTER.done.push(d.key); });
 }
 applyWinterDecisions();
+// Coach decisions are saved to the live roster automatically the first time a coach is signed in after they're added.
+function persistWinterDecisions(){ if (canPost && wLoaded && wDirty && SB) { wDirty = false; saveWinter("Winter roster updated from the interest form."); } }
 function saveWinter(okText){ wMsg = {kind:"",text:"Saving…"}; render();
   wQueue = wQueue.then(async()=>{ try { await saveKey("winter", WINTER); wMsg = {kind:"ok", text: okText || `Saved · ${WINTER.ids.length} starred, ${Object.keys(WINTER.maybe).length} maybe`}; } catch(e){ wMsg = {kind:"err", text:saveErr(e)}; } render(); }); }
 // Star cycle: ☆ not doing it → ★ doing winter conditioning → ◐ maybe / some sessions → ☆
@@ -4194,7 +4197,8 @@ async function loadAll(){
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
-  if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; applyWinterDecisions(); }
+  if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
+  wLoaded = true; persistWinterDecisions();
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
@@ -4219,6 +4223,7 @@ async function checkCoach(session){
   let data = null, error = null;
   try { ({data, error} = await withTimeout(SB.from("coaches").select("email").eq("email", coachEmail).maybeSingle(), 10000)); } catch(e) { error = e; }
   canPost = !!data && !error;
+  persistWinterDecisions();
   // Just came back from a sign-in link: go straight to the Coaches tab
   if (AUTH_RETURN && !checking) { checking = true; if (!/^#(coaches|post)$/.test(location.hash)) location.hash = "#coaches"; }
   render();
