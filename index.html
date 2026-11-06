@@ -859,7 +859,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06q";
+const HUB_VERSION = "11-06r";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1090,15 +1090,19 @@ let WARMUPS = {
     {t:"Strides", d:"4 x 80m @ 80%"},
   ],
   sprint:[
-    {t:"Easy movement: jog, skip, shuffle", d:"400m"},
-    {t:"Dynamic mobility: leg swings, walking lunges, inchworms", d:"5 min", url:V("sprinter dynamic warm up")},
-    {t:"A-march → A-skip", d:"2 x 20m each", url:V("A skip drill")},
-    {t:"Ankling", d:"2 x 15m", url:V("ankling drill sprinters")},
-    {t:"Dribbles", d:"2 x 20m", url:V("dribble drill sprinters")},
-    {t:"Pogo hops", d:"2 x 10", url:V("pogo hops plyometric")},
-    {t:"Skips for height", d:"2 x 20m", url:V("power skips drill")},
-    {t:"Build-ups (70 → 90%)", d:"3 x 40m"},
-    {t:"Event prep: starts, hurdle walkovers, or approach run", d:"5 min"},
+    {t:"Easy jog or walk", d:"3 min"},
+    {t:"Ankle rocks", d:"10 each side"},{t:"Leg swings, forward/back + side to side", d:"10 each", url:V("leg swings warm up sprinters")},
+    {t:"Walking lunge", d:"1 x 10m"},
+    {t:"A-march", d:"2 x 15m", url:V("A march drill")},{t:"A-skip", d:"2 x 15m", url:V("A skip drill")},
+    {t:"Low dribbles", d:"2 x 15m", url:V("dribble drill sprinters")},
+    {t:"Build-ups at about 60%, 75%, 85%", d:"3 x 30m, walk back"},
+    {t:"One more build-up if you need it before max work", d:"optional"},
+  ],
+  sprintjh:[
+    {t:"Easy movement", d:"3 min"},
+    {t:"Ankle rocks", d:"8 each side"},{t:"Leg swings", d:"8 each side"},
+    {t:"A-march", d:"2 x 10m", url:V("A march drill")},{t:"A-skip", d:"2 x 10m", url:V("A skip drill")},
+    {t:"Build-ups, getting faster", d:"2 x 20m"},
   ],
   // Field event warm-ups: done after the Practice warm-up
   field:{
@@ -1875,6 +1879,14 @@ const EX = {
   "Squat":{cue:"Bodyweight first. Sit back and down, chest tall, knees over toes, stand tall.", eq:"None (light dumbbell later)", alt:"Squat to a box"},
 };
 const LIFTS = {
+  SA:{name:"Sprint Strength A", when:"Spring · after Session A", spr:1, gen:1, rest:"60–90 sec", note:"Familiar lifts only, about 3 reps in reserve, never to failure. Congested meet week: 1 set each, or skip. No hard lower-body lifting within 48 hours of an important meet.",
+    ex:[["Goblet squat","2 × 5",1],["Dumbbell Romanian deadlift","2 × 6",1],["Dumbbell row","2 × 8"],["Push-up","2 × 6–10"],["Calf raise","2 × 10"],["Dead bug","2 × 6/side"]]},
+  SB:{name:"Sprint Strength B", when:"Spring · recovery day, if recovered", spr:1, gen:1, rest:"60–90 sec", note:"Familiar lifts only, about 3 reps in reserve, never to failure. Skip it in congested meet weeks.",
+    ex:[["Step-up","2 × 5/leg",1],["Glute bridge","2 × 8"],["Light resistance-band row","2 × 10"],["Incline push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
+  MSA:{name:"JH Sprint Strength A", when:"Spring · after Session A", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight or very light. Leave about 3 reps in reserve. Never to failure.",
+    ex:[["Bodyweight squat","2 × 6",1],["Hip hinge with dowel","2 × 6",1],["Incline push-up","2 × 6"],["Light resistance-band row","2 × 8"],["Calf raise","2 × 8"],["Dead bug","2 × 5/side"]]},
+  MSB:{name:"JH Sprint Strength B", when:"Spring · recovery day, if recovered", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight. Quality reps, never to failure.",
+    ex:[["Step-up","2 × 5/leg (low step)",1],["Glute bridge","2 × 8"],["Bird dog","2 × 5/side"],["Side plank","2 × 15 sec/side"]]},
   A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", rest:"45–75 sec, as needed", note:"Light weights. Technique first: learn the squat, hinge, lunge and calf raise. Stop each set with plenty left in the tank.", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6 each leg"],["Standing calf raise","2 × 12"],["Dead bug","2 × 8 each side"],["Front plank","2 × 20–30 sec"]]},
   A2:{name:"Strength A2 · Foundational Progression", when:"Weeks 3 and 6", ex:[["Goblet squat","3 × 6",1],["Dumbbell Romanian deadlift","3 × 8",1],["Step-up","2 × 8/leg"],["Standing calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
   B1:{name:"Strength B1 · Strength and Stability", when:"Week 7", ex:[["Dumbbell squat","3 × 6",1],["Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 10"],["Side plank","2 × 25 sec/side"]]},
@@ -1897,7 +1909,8 @@ const LIFTS = {
   H2:{name:"Home strength H2", when:"Winter break, week 2", home:1, ex:[["Bodyweight squat","2 × 10"],["Single-leg hip bridge","2 × 8/leg"],["Step-up","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 8"],["Dead bug","2 × 8/side"]]},
 };
 const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"], LIFT_ORDER_JH = ["JA","JB","JL","JM"];
-const liftCode = t => { const jg = String(t).match(/\bJH General Strength\s*(A1|A2)\b/i); if (jg) return "JG" + jg[1].toUpperCase();
+const liftCode = t => { const sp = String(t).match(/\b(JH )?Sprint Strength (A|B)\b/i); if (sp) return (sp[1] ? "MS" : "S") + sp[2].toUpperCase();
+  const jg = String(t).match(/\bJH General Strength\s*(A1|A2)\b/i); if (jg) return "JG" + jg[1].toUpperCase();
   const g = String(t).match(/\bGeneral Strength\s*(A1|A2)\b/i); if (g) return "G" + g[1].toUpperCase();
   const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
   const m = String(t).match(/\b(?:Strength\s*[-–]?\s*(A1|A2|B1|B2|Deload|M)|Home strength\s*(H1|H2))\b/i);
@@ -2069,16 +2082,17 @@ function liSimple(arr){
     if (LI_ATH) {
       if (lv && lv !== myLv) return;
       if (!tagsFit(tags.filter(g=>!TAG_LV.includes(g)), LI_ATH)) return;
-      const keep = tags.filter(g => !TAG_LV.includes(g) && !TAG_PATH.includes(g));
+      const keep = tags.filter(g => !TAG_LV.includes(g) && !TAG_PATH.includes(g) && g!=="Girls" && g!=="Boys");
       out.push(`<li>${itemHTML(Object.assign({}, it, {t: keep.map(g=>`[${g}]`).join(" ") + (keep.length?" ":"") + s}))}</li>`);
     } else out.push(`<li>${itemHTML(rebuild(it, s))}</li>`);
   });
   const main = out.join("");
   const wt = S.warm.map(it => splitTags(it.t).text).join(" | ");
-  const hasS = /sprint warm-up|junior high warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
+  const hasS = /sprint warm-up|junior high warm-up|fast-day warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
   const wk = hasS && hasD ? (["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "d") : hasS ? "s" : hasD ? "d"
     : ["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "p";
-  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wk}">Warm-up</button></li>` : "")
+  const wk2 = wk==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : wk;
+  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wk2}">Warm-up</button></li>` : "")
     + main + [...mainS, ...S.str].map(strHTML).join("")
     + S.opt.map(it => { const s = sText(splitTags(it.t).text, true); return s ? `<li class="s-opt">${itemHTML(rebuild(it, s))}</li>` : ""; }).join("")
     + (S.cool.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
@@ -2372,10 +2386,10 @@ const wuToText = arr => (arr||[]).map(s=>[s.t, s.d||"", s.url||s.link||""].filte
 const wuFromText = txt => String(txt||"").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
   const [t,d,u] = l.split("|").map(x=>(x||"").trim()); const it = {t:t||"Step", d:d||""};
   if(u){ if(u.startsWith("#")) it.link=u; else it.url=u; } return it; });
-function wuStart(){ wu = {practice:wuToText(WARMUPS.practice), distance:wuToText(WARMUPS.distance), sprint:wuToText(WARMUPS.sprint), cooldown:wuToText(WARMUPS.cooldown), field:Object.entries(WARMUPS.field).map(([ev,arr])=>({ev, txt:wuToText(arr)})),
+function wuStart(){ wu = {practice:wuToText(WARMUPS.practice), distance:wuToText(WARMUPS.distance), sprint:wuToText(WARMUPS.sprint), sprintjh:wuToText(WARMUPS.sprintjh), cooldown:wuToText(WARMUPS.cooldown), field:Object.entries(WARMUPS.field).map(([ev,arr])=>({ev, txt:wuToText(arr)})),
   stretch:(WARMUPS.stretch||STRETCH_DEFAULT).map(g=>({m:g.m, why:g.why||"", s:wuToText(g.s), x:wuToText(g.x)}))}; }
 async function wuSave(){
-  const next = {practice:wuFromText(wu.practice), distance:wuFromText(wu.distance), sprint:wuFromText(wu.sprint), cooldown:wuFromText(wu.cooldown), field:{}};
+  const next = {practice:wuFromText(wu.practice), distance:wuFromText(wu.distance), sprint:wuFromText(wu.sprint), sprintjh:wuFromText(wu.sprintjh), cooldown:wuFromText(wu.cooldown), field:{}};
   wu.field.forEach(f=>{ const n=f.ev.trim(); if(n) next.field[n]=wuFromText(f.txt); });
   next.stretch = wu.stretch.filter(g=>g.m.trim()).map(g=>({m:g.m.trim(), why:g.why.trim(), s:wuFromText(g.s), x:wuFromText(g.x)}));
   const err = await publishFiles({"warmups.json": JSON.stringify(next, null, 1)});
@@ -2666,7 +2680,7 @@ const CODE_TY = {A:"speed", B:"aero", C:"speed", D:"race", E:"str"};
 const CODE_NAME = {A:"Acceleration / max velocity", B:"Aerobic", C:"Speed endurance", D:"800-specific", E:"Strength / athletic development"};
 const CODE_ADAPT = {A:"Maximum velocity and acceleration", B:"Aerobic development", C:"Speed endurance", D:"Event-specific (800) endurance", E:"Strength, coordination, mechanics"};
 const FOCUS_TY = f => /meet|sectional|regional|state/i.test(f) ? "meet" : /recovery|rest/i.test(f) ? "rec" : /800|sharpen|race/i.test(f) ? "race" : /speed|velocity/i.test(f) ? "speed" : /aerobic|easy/i.test(f) ? "aero" : "";
-const TAG_CHIP = {A:"Advanced", B:"Intermediate", C:"Developing", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
+const TAG_CHIP = {S1:"100/200", S2:"200/400", S3:"400/800", Hurdles:"Hurdles", Jumps:"Jumps", "HSR qualifiers":"HSR qualifiers", A:"Advanced", B:"Intermediate", C:"Developing", Distance:"1600/3200", Hybrid:"Hybrid 800/1600", Mid:"Mid 400/800", Girls:"Girls", Boys:"Boys", Crossover:"Optional crossover", "HS-ready":"HS group invite"};
 const TAG_CHIP_JH = {A:"Advanced", B:"Development", C:"Foundation", Distance:"800/1600", Mid:"Mid 400/800", Hybrid:"800/1600"};
 const LEVEL_NAMES_JH = {A:"Advanced", B:"Development", C:"Foundation"};
 const TAG_LV = ["A","B","C"], TAG_PATH = ["Distance","Hybrid","Mid"];
@@ -2688,6 +2702,12 @@ function tagsFit(tags, a){
   if (pa.length && t.path && !pa.includes(t.path)) return false;
   if (g.length && !g.includes(a.g==="G"?"Girls":"Boys")) return false;
   if (tags.includes("HS-ready") && !t.hs) return false;
+  const sg = tags.filter(x=>/^S[123]$/.test(x));   // sprint groups: only once a coach has assigned one (Coaches → Sprints)
+  const mine = window.SP && SP.groups && SP.groups[a.id];
+  if (sg.length && mine && mine.p && !sg.includes(mine.p) && !(mine.s||[]).some(x=>sg.includes(x))) return false;
+  if (sg.length===1 && sg[0]==="S3" && !(mine && (mine.p==="S3" || (mine.s||[]).includes("S3")))) return false;   // 400/800 routing only for kids placed in S3
+  if (tags.includes("Hurdles") && !(a.cats||[]).includes("Hurdles")) return false;
+  if (tags.includes("Jumps") && !(a.cats||[]).some(c=>["Long Jump","High Jump","Pole Vault"].includes(c))) return false;
   return true;
 }
 const RACE_M = {"400":400, "800":800, "1600":1600, "3200":3200};
@@ -2844,7 +2864,7 @@ const SIG = {
       ["JH 800/1600","3 × 400m · 4 × 300m · 6 × 200m at 1600 pace"],["JH 400/800","4 × 150m relaxed fast · 3 × 200m at 800 pace · 6 × 100m fast"]], cues:["Pick before you warm up, then stick with it"]}
 };
 const ABBR_RE = new RegExp([
-  "\\bJH General Strength\\s*A[12]\\b", "\\bGeneral Strength\\s*A[12]\\b", "\\bJH Strength (?:A|B|Light|Maintenance)\\b",
+  "\\b(?:JH )?Sprint Strength [AB]\\b", "\\bJH General Strength\\s*A[12]\\b", "\\bGeneral Strength\\s*A[12]\\b", "\\bJH Strength (?:A|B|Light|Maintenance)\\b",
   "\\bStrength\\s*[-–]?\\s*(?:A1|A2|B1|B2|Deload|M)\\b", "\\bHome strength\\s*H[12]\\b", "\\bH[12](?=\\s+(?:home\\s+)?strength\\b)", "\\bStrength\\s+H[12]\\b",
   "\\b[A-E][1-3](?=\\s+(?:Max|Maximum|Speed|Easy|Controlled|Aerobic|800|Strength|Athletic|Foundation|Introductory|Race|Advanced)\\b)",
   "\\bBC (?:Michigan|7-Minute Ladder|Threshold 1000s|1000s|Flyers|Short Hills|Long Hills|Event Reps|Broken Race|Mystery Workout)\\b", "\\bJH Michigan\\b"
@@ -2872,7 +2892,7 @@ function abbrBody(k){
   const [kind, id] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":")+1)];
   if (kind==="lift") { const L = LIFTS[id]; if (!L) return null;
     return {eye: L.jh ? "Junior high strength" : L.home ? "Home strength" : "Strength", title: L.name, html: (L.when?`<p class="lede" style="margin:0 0 10px">${esc(L.when)}</p>`:"") + liftHTML(id).replace('<details class="lift">','<details class="lift" open>') }; }
-  if (kind==="wu" || kind==="cd") { const WU = {d:[WARMUPS.distance,"Distance & mid-distance"], s:[WARMUPS.sprint,"Sprints, hurdles & jumps"], p:[WARMUPS.practice,"Every practice"]}[id] || [WARMUPS.practice,"Every practice"];
+  if (kind==="wu" || kind==="cd") { const WU = {d:[WARMUPS.distance,"Distance & mid-distance"], s:[WARMUPS.sprint,"Sprints, hurdles & jumps"], j:[WARMUPS.sprintjh||WARMUPS.sprint,"Junior high sprints, hurdles & jumps"], p:[WARMUPS.practice,"Every practice"]}[id] || [WARMUPS.practice,"Every practice"];
     const L = kind==="wu" ? (WU[0] || WARMUPS.practice) : WARMUPS.cooldown;
     return {eye: kind==="wu" ? WU[1] : "End of practice", title: kind==="wu" ? "Warm-up" : "Cool-down",
       html: `<ol class="steps">${(L||[]).map(s=>`<li><span>${itemHTML(s)}</span><em>${esc(s.d||"")}</em></li>`).join("")}</ol>
@@ -4135,7 +4155,8 @@ const views = {
     return `<div class="panel ed-help"><b>How to write it.</b> One step per line: <code>Step | reps | link</code>. Reps and link are optional. A link can be a video (becomes a ▶ Video button) or a page in the hub like <code>#warmups</code>.<br>Example: <code>A-skips | 2 x 20m | https://youtu.be/…</code></div>
       <div class="panel ed">
         ${area("wu-d","Distance & mid-distance warm-up","wu.distance",10)}
-        ${area("wu-s","Sprints, hurdles & jumps warm-up","wu.sprint",10)}
+        ${area("wu-s","Sprints, hurdles & jumps warm-up (HS fast day)","wu.sprint",10)}
+        ${area("wu-sj","Sprints, hurdles & jumps warm-up (JH fast day)","wu.sprintjh",7)}
         ${area("wu-p","General warm-up (everyone else / days with no group)","wu.practice",9)}
         ${area("wu-c","Cool-down","wu.cooldown",4)}
         <div class="ed-day"><h3>Field events</h3></div>
@@ -4467,7 +4488,8 @@ const views = {
           <p class="inj-flag"><b>See the athletic trainer:</b> ${esc(i.flag)}</p></div>`).join("")}</div>
         <p class="note">Wondering why ice isn't front and center? See <a href="#warmups" onclick="wtab='ice';render();return false">Ice: the research</a>.</p>${tellCoach}`;
     } else {
-      body = `<div class="cols">${block("Distance &amp; Mid-Distance", WARMUPS.distance||WARMUPS.practice, "Every distance and 400/800 practice")}${block("Sprints, Hurdles &amp; Jumps", WARMUPS.sprint||WARMUPS.practice, "Every sprint, hurdle and jump practice")}</div>
+      body = `<div class="cols">${block("Distance &amp; Mid-Distance", WARMUPS.distance||WARMUPS.practice, "Every distance and 400/800 practice")}${block("Sprints, Hurdles &amp; Jumps", WARMUPS.sprint||WARMUPS.practice, "High school fast days")}</div>
+        <div class="cols">${block("Sprints, Hurdles &amp; Jumps · Junior High", WARMUPS.sprintjh||WARMUPS.sprint, "Junior high fast days. One cue at a time.")}</div>
         <div class="cols">${block("General", WARMUPS.practice, "Throwers, combined days, or no group yet")}${block("Cool-down", WARMUPS.cooldown, "Everyone, end of practice")}</div>
         <div><h2>Field events</h2><p class="note" style="margin:4px 0 0">After the Practice warm-up, go to your event.</p></div>
         <div class="cols">${Object.entries(WARMUPS.field).map(([ev,arr])=>block(ev,arr)).join("")}</div>
