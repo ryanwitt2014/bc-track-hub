@@ -2546,6 +2546,8 @@ function todoAdd(name){ const el = document.getElementById("td-add"); const v = 
   const T = TODOS[name] = TODOS[name] || {done:{}, add:[]}; T.add = T.add || []; T.add.push({id:"u"+Date.now().toString(36), t:v}); saveTodos(); }
 function todoDel(name, id){ const T = TODOS[name]; if (!T) return; T.add = (T.add||[]).filter(x=>x.id!==id); if (T.done) delete T.done[id]; saveTodos(); }
 // Things the hub can see need doing, for this coach's groups and role
+// Coaches who own a recruiting group (their "From the hub" list shows only those kids)
+const RECRUIT_SCOPE = {"Angela Hands": {label:"girls soccer", g:"G", sport:"soccer", fit: r => r.g==="G" && /soccer/i.test(r.sport||"")}};
 function coachAuto(s){
   const out = [], head = /Head Coach/.test(s.role), cats = staffGroups(s), lv = staffLv(s);
   const lvOK = a => lv==="Both" || a.level===lv;
@@ -2557,16 +2559,23 @@ function coachAuto(s){
     if (n) out.push({id:"auto-sg", t:`Assign sprint/hurdle/jump groups for ${n} athlete${n===1?"":"s"} (Coaches → Sprints)`, go:"sgroups"}); }
   if (head) { const n = ATHLETES.filter(a => a.isNew && !(SIGN[a.id]||{}).ff).length;
     if (n) out.push({id:"auto-ff", t:`${n} new athlete${n===1?"":"s"} not on Final Forms yet`, href:"#signups"}); }
-  if (/Recruit/i.test(s.also||"") || head) hotRecruits(3).forEach(({r}) => out.push({id:"auto-r-"+r.id, t:`Follow up with recruit ${r.name}`, href:"#recruiting"}));
+  const scope = RECRUIT_SCOPE[s.name];
+  if (scope) {
+    const nk = x => String(x||"").replace(/\([^)]*\)/g,"").toLowerCase().replace(/[^a-z]/g,"");
+    const onTeam = new Set(ATHLETES.flatMap(a => [a.fullName||a.name, ...(a.aka||[])].map(nk)));
+    const mine = REC.list.filter(r => r.status==="open" && scope.fit(r) && !onTeam.has(nk(r.fullName||r.name))).map(r=>({r, h:heat(r)})).sort((a,b)=>(b.h.score||0)-(a.h.score||0) || a.r.name.localeCompare(b.r.name));
+    mine.slice(0,5).forEach(({r,h}) => out.push({id:"auto-r-"+r.id, t:`Talk to ${r.name} (${scope.label}${r.grade?", grade "+r.grade:""})${h.n?" · "+h.l:""}`, recr:scope}));
+    if (mine.length > 5) out.push({id:"auto-rs", t:`All ${mine.length} ${scope.label} recruits`, recr:scope});
+  } else if (/Recruit/i.test(s.also||"") || head) hotRecruits(3).forEach(({r}) => out.push({id:"auto-r-"+r.id, t:`Follow up with recruit ${r.name}`, href:"#recruiting"}));
   if (head || cats.length) { const g = coverageGaps().reduce((n,x)=>n + x.gaps.filter(y=>!y.n).length, 0);
     if (head && g) out.push({id:"auto-cov", t:`${g} event${g===1?"":"s"} with nobody entered yet`, href:"#coverage"}); }
   return out;
 }
 function coachTodayHTML(s){
   const name = s.name, T = TODOS[name] || {done:{}, add:[]}, done = T.done || {};
-  const go = x => x.go ? `href="#coaches" onclick="ctab='${x.go}'"` : x.href ? `href="${esc(x.href)}"${/^https?:/.test(x.href)?' target="_blank" rel="noopener"':""}` : "";
+  const go = x => x.recr ? `href="#recruiting" onclick="rf=Object.assign({},rf,{g:'${x.recr.g}',sport:'${x.recr.sport}',lv:'All',gr:'All',q:''})"` : x.go ? `href="#coaches" onclick="ctab='${x.go}'"` : x.href ? `href="${esc(x.href)}"${/^https?:/.test(x.href)?' target="_blank" rel="noopener"':""}` : "";
   const row = (x, kind) => `<li class="todo ${done[x.id]?"done":""}"><label><input type="checkbox" ${done[x.id]?"checked":""} onchange="todoToggle('${esc(name)}','${x.id}')"><span>${esc(x.t)}</span></label>
-      ${x.go||x.href ? `<a class="todo-go" ${go(x)} aria-label="Open">→</a>` : ""}${kind==="add" ? `<button type="button" class="todo-x" aria-label="Remove" onclick="todoDel('${esc(name)}','${x.id}')">×</button>` : ""}</li>`;
+      ${x.go||x.href||x.recr ? `<a class="todo-go" ${go(x)} aria-label="Open">→</a>` : ""}${kind==="add" ? `<button type="button" class="todo-x" aria-label="Remove" onclick="todoDel('${esc(name)}','${x.id}')">×</button>` : ""}</li>`;
   const auto = coachAuto(s), seed = TODO_SEED[name] || [], add = T.add || [];
   const open = [...auto, ...seed, ...add].filter(x=>!done[x.id]).length;
   const lv = staffLv(s), cats = staffGroups(s);
@@ -4014,7 +4023,7 @@ const views = {
       <p class="note">${xc?`${xc} ${lv} athletes only have cross country times so far.`:""}</p></div>`;
   },
   recruiting(){
-    const list = REC.list.filter(r=>(rf.lv==="All"||r.lvl===rf.lv)&&(rf.g==="All"||r.g===rf.g)&&(rf.gr==="All"||(rf.gr==="JH"?r.lvl==="JH":r.lvl==="HS"&&String(r.grade)===rf.gr))&&(!rf.q||r.name.toLowerCase().includes(rf.q.toLowerCase())));
+    const list = REC.list.filter(r=>(rf.lv==="All"||r.lvl===rf.lv)&&(rf.g==="All"||r.g===rf.g)&&(rf.gr==="All"||(rf.gr==="JH"?r.lvl==="JH":r.lvl==="HS"&&String(r.grade)===rf.gr))&&(!rf.q||r.name.toLowerCase().includes(rf.q.toLowerCase()))&&(!rf.sport||String(r.sport||"").toLowerCase().includes(rf.sport)));
     const rows = list.map(r=>({r, h:heat(r), cs:REC.contacts.filter(c=>c.rid===r.id)}));
     const ORDER = {joined:6,hot:5,warm:4,warming:3,cool:2,cold:1,none:0,closed:-1};
     rows.sort((a,b)=> rf.sort==="name" ? a.r.name.localeCompare(b.r.name) : (ORDER[b.h.k]-ORDER[a.h.k]) || (b.h.score||0)-(a.h.score||0) || a.r.name.localeCompare(b.r.name));
@@ -4042,6 +4051,7 @@ const views = {
         ${segBtns(rf.g,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>{rf.g=v;render()})")}
         ${segBtns(rf.gr,[["All","All grades"],["9","Fr"],["10","So"],["11","Jr"],["12","Sr"],["JH","JH"]],"(v=>{rf.gr=v;render()})")}
         ${segBtns(rf.sort,[["heat","Closest to joining"],["name","A–Z"]],"(v=>{rf.sort=v;render()})")}
+        ${rf.sport?`<button type="button" class="chip" onclick="rf.sport='';render()">Only ${rf.g==="G"?"girls ":""}${esc(rf.sport)} ✕</button>`:""}
         <input id="rsearch" class="search" type="search" placeholder="Search name" value="${esc(rf.q)}" oninput="rf.q=this.value;render();const e=document.getElementById('rsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
       </div>
       <div class="legend">${["none","cold","cool","warming","warm","hot","joined"].map(k=>meter({k,l:HEAT_NAMES[k],lvl:{none:0,cold:1,cool:2,warming:3,warm:4,hot:5,joined:5}[k]})).join("")}</div>
