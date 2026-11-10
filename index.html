@@ -890,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09e";
+const HUB_VERSION = "11-09f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2450,7 +2450,33 @@ const SCALE = {1:{l:"Cold",w:-2,k:"cold"},2:{l:"Cool",w:-1,k:"cool"},3:{l:"Maybe
 const cHeat = c => +c.heat || ({yes:4, maybe:3, no:1}[c.resp]) || 3;
 const scaleTag = c => { const v = cHeat(c); return `<span class="resp sc-${SCALE[v].k}">${SCALE[v].l} ${v}/5</span>`; };
 let me = ""; try { me = localStorage.getItem("hub-me") || ""; } catch(e) {}
-const setMe = v => { me = v; try { localStorage.setItem("hub-me", v); } catch(e) {} render(); };
+// Picking a coach name needs the coach password once per device (signed-in coaches skip it). Soft lock: it keeps kids
+// out of the coach view; posting and private data still need the real coach sign-in.
+const COACH_PW_HASH = "f6a72b1b147533649aba05df061639e45e3f33b6a291840d10731dedaa59a20d";
+const coachOK = () => { if (canPost) return true; try { return localStorage.getItem("hub-coach-ok") === COACH_PW_HASH; } catch(e) { return false; } };
+const setMe = v => {
+  if (/^(coach:|c:)/.test(v || "") && !coachOK()) { coachPwAsk(v); return; }
+  me = v; try { localStorage.setItem("hub-me", v); } catch(e) {} render(); };
+function coachPwAsk(v){
+  let d = document.getElementById("abbrDlg");
+  if (!d) { d = document.createElement("dialog"); d.id = "abbrDlg"; d.className = "ab-dlg"; document.body.appendChild(d); }
+  d.innerHTML = `<div class="ab-in"><div class="ab-hd"><div><div class="eyebrow">Coaches only</div><h2>Coach password</h2></div><button type="button" class="ab-x" aria-label="Close" onclick="document.getElementById('abbrDlg').close();render()">×</button></div>
+    <div class="ab-bd"><form onsubmit="coachPwTry(event, ${esc(JSON.stringify(v))})"><label class="ed-row" for="cpw"><span>Password</span><input id="cpw" type="password" autocomplete="off" required></label>
+      <p id="cpw-msg" class="ed-msg err" role="status" style="margin:6px 0 0"></p>
+      <div class="ed-save" style="border:0;padding-top:8px"><button type="submit" class="btn primary">Unlock</button><button type="button" class="btn" onclick="document.getElementById('abbrDlg').close();render()">Cancel</button></div></form>
+      <p class="note" style="margin:8px 0 0">Asked once on this device.</p></div></div>`;
+  if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+  setTimeout(() => { const i = document.getElementById("cpw"); if (i) i.focus(); }, 30);
+}
+async function coachPwTry(e, v){
+  e.preventDefault();
+  const val = (document.getElementById("cpw") || {}).value || "";
+  let h = "";
+  try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(val)); h = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); } catch(err) {}
+  if (h !== COACH_PW_HASH) { const m = document.getElementById("cpw-msg"); if (m) m.textContent = "That's not it. Try again."; return; }
+  try { localStorage.setItem("hub-coach-ok", h); } catch(err) {}
+  document.getElementById("abbrDlg").close(); setMe(v);
+}
 let talk = null; // {rid, heat, by, done}
 const meName = () => !me ? "" : me.startsWith("c:") ? me.slice(2) : (ATHLETES.find(a=>a.id===me)||{}).name||"";
 function talkOpen(rid){ talk = {rid, heat:3, by: meName(), sent:false}; render(); setTimeout(()=>document.getElementById("tk-panel")?.scrollIntoView({behavior:"smooth",block:"center"}),0); }
@@ -3423,17 +3449,21 @@ function coachTodayHTML(s){
       ${tile("#data", "Data log", "Splits, PRs and goals")}
     </div></div>`;
 }
+// "Who's using this?" — always available so anyone can swap names
+function mePickHTML(compact){
+  const opt = l => ATHLETES.filter(x=>x.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(x=>`<option value="${x.id}" ${x.id===me?"selected":""}>${esc(x.name)}</option>`).join("");
+  const sel = `<select id="td-me" onchange="setMe(this.value)"><option value="">${compact?"Pick your name to personalize…":"Choose your name…"}</option><optgroup label="Coaches (password)">${STAFF.filter(s=>s.name).map(s=>`<option value="coach:${esc(s.name)}" ${"coach:"+s.name===me?"selected":""}>Coach ${esc(s.name)}</option>`).join("")}</optgroup><optgroup label="High School">${opt("HS")}</optgroup><optgroup label="Junior High">${opt("JH")}</optgroup></select>`;
+  return compact ? `<div class="panel td-pick td-pick-c"><label class="ed-row" for="td-me"><span>Who's using this device?</span>${sel}</label></div>`
+    : `<div class="panel td-pick"><div class="eyebrow">Make it yours</div><h2>Pick your name</h2>
+      <p class="lede" style="margin:0">Your hub will open on your workout for today, your next meet, and your bests. Saved on this device only. Coach names ask for the coach password.</p>
+      <label class="sr-only" for="td-me">Your name</label>${sel}</div>`;
+}
 function todayHTML(){
   { const a0 = meA(); if (a0) { LI_CTX = ctxOf(a0); LI_ATH = a0; } }
-  const cs = meCoach(); if (cs || canPost) return coachTodayHTML(cs);
+  const cs = meCoach(); if (cs) return coachTodayHTML(cs);
+  if (canPost) return mePickHTML(true) + coachTodayHTML(null);
   const a = meA();
-  if (!a) {
-    const opt = l => ATHLETES.filter(x=>x.level===l).sort((x,y)=>x.name.localeCompare(y.name)).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
-    return `<div class="panel td-pick"><div class="eyebrow">Make it yours</div><h2>Pick your name</h2>
-      <p class="lede" style="margin:0">Your hub will open on your workout for today, your next meet, and your bests. Saved on this device only.</p>
-      <label class="sr-only" for="td-me">Your name</label>
-      <select id="td-me" onchange="setMe(this.value)"><option value="">Choose your name…</option><optgroup label="Coaches">${STAFF.filter(s=>s.name).map(s=>`<option value="coach:${esc(s.name)}">Coach ${esc(s.name)}</option>`).join("")}</optgroup><optgroup label="High School">${opt("HS")}</optgroup><optgroup label="Junior High">${opt("JH")}</optgroup></select></div>`;
-  }
+  if (!a) return mePickHTML(false);
   const nx = myNext(a), m = myMeet(a);
   const first = a.name.split(" ")[0];
   const prs = Object.entries(a.prs||{}).filter(([e])=>e!=="400 split").slice(0,4);
