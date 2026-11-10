@@ -331,6 +331,8 @@ a.btn{text-decoration:none;display:inline-block}
 .asg-list{display:flex;flex-wrap:wrap;gap:6px}
 .pchip{display:inline-flex;gap:6px;align-items:baseline;font:600 13px var(--body);padding:5px 9px;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:4px;background:var(--surface);color:var(--fg);cursor:grab}
 .pchip small{font-family:var(--mono);font-weight:400;color:var(--muted)}
+.pchip{flex-wrap:wrap;text-align:left}.pchip .pc-int{flex-basis:100%;font:italic 400 12px var(--body);color:var(--accent);line-height:1.3}
+.pchip.sel .pc-int{color:var(--gold-ink)}
 .pchip.full{opacity:.5;cursor:not-allowed;border-left-color:var(--line)}
 .asg-sec{display:grid;gap:6px}
 .asg-sec h4{margin:4px 0 0;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -898,7 +900,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10g";
+const HUB_VERSION = "11-10h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -5009,7 +5011,7 @@ const views = {
           ${(()=>{ const chip = a => { const n = asgCount(asg.team, a.id); return `<button type="button" class="pchip ${asg.sel===a.id?"sel":""} ${n>MAX_EVENTS?"over":n>=MAX_EVENTS?"full":""} ${!trackEvs(a).length&&!n?"fresh":""}" draggable="${n<MAX_EVENTS}"
               ondragstart="dragId='${a.id}';try{event.dataTransfer.setData('text/plain','${a.id}');event.dataTransfer.effectAllowed='copy'}catch(e){}"
               onclick="${n>=MAX_EVENTS?`asg.msg={kind:'err',text:'${esc(a.name).replace(/'/g,"\\'")} already has ${MAX_EVENTS} events.'};render()`:`asg.sel=asg.sel==='${a.id}'?null:'${a.id}';render()`}">
-              <span>${esc(a.name)}</span><small>${a.grade??""} · ${n}/${MAX_EVENTS}</small></button>`; };
+              <span>${esc(a.name)}</span><small>${a.grade??""} · ${n}/${MAX_EVENTS}</small>${(()=>{ const f = INTEREST[a.id]; return f && f.events && f.events.length ? `<i class="pc-int" title="From their Google Form">Wants: ${esc(f.events.join(", "))}</i>` : ""; })()}</button>`; };
             const sec = (cls, title, arr) => arr.length ? `<div class="asg-sec ${cls}"><h4>${title} <span>${arr.length}</span></h4><div class="asg-list">${arr.map(chip).join("")}</div></div>` : "";
             return (sec("bad","Too many events. Adjust these", over) + sec("new","No track events yet. Ready to place", fresh) + sec("", "Everyone else", rest)) || `<p class="note">No athletes match.</p>`; })()}
         </aside>
