@@ -890,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09c";
+const HUB_VERSION = "11-09d";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3140,6 +3140,81 @@ function mdWhyHTML(){
       <div class="panel"><h3>Full recovery vs. short rest</h3><p style="margin:0">Speed work (flyers, accelerations) uses <b>full recovery</b> so every rep is fast and clean: it trains speed and mechanics, not fatigue. Intervals and broken races use <b>short, set rest</b> on purpose: the point is holding pace while tired. Short rest on a speed day turns it into conditioning and loses the speed.</p></div>
       <div class="panel"><h3>Junior high to high school</h3><p style="margin:0">Same workout names, drills and lifts, smaller doses and simpler pacing. JH steps up through intro reps, development reps, a ladder and then race-specific reps, with longer rest and no forced goal paces. A JH broken 800 is optional and earned. By 9th grade the system is familiar; only the volume and pace change.</p></div>
       <div class="panel"><h3>Meets and workload</h3><p style="margin:0">A meet is a hard day, so the day before is easy and the day after is recovery, and a two-meet week has no extra intervals. But meets aren't our only fast running: race-rhythm and speed work start in February, <b>before</b> the first meet, so nobody's first fast running of the year is a race.</p></div></div>`;
+}
+/* ===== Sprint audit: session counts and speed exposures per pathway (100/200 = S1, 200/400 = S2), from the posted plan ===== */
+const SPA_CATS = [["maxv","Max velocity (+ acceleration)","#fcb827"],["accel","Acceleration / starts + race skills","#f59e0b"],["se","Sprint endurance (60–150m reps)","#c2410c"],
+  ["long","200/400 longer reps","#b91c1c"],["split","400 split run","#7f1d1d"],["pre","Premeet / tune-up","#8fb8a4"],["rec","Recovery + technique","#4f8f73"],
+  ["str","Strength / power only","#2f6f8f"],["meet","Meet","#64748b"]];
+const SPA_PROGS = [{k:"h1", lv:"HS", path:"S1", n:"HS 100/200"}, {k:"h2", lv:"HS", path:"S2", n:"HS 200/400"}, {k:"j1", lv:"JH", path:"S1", n:"JH short sprints"}, {k:"j2", lv:"JH", path:"S2", n:"JH 200/400"}];
+const SPA_DROP = ["Hurdles","Jumps","Boys","Not entered","HSR qualifiers","Season done","S3"];
+function spaDay(d, dt, P){
+  const iso = isoD(dt), lv = P.lv, other = P.path==="S1" ? "S2" : "S1";
+  const title = gFocus(d, "Sprints", lv) || "";
+  const items = forLv([].concat(...(d.combos||[]).filter(c => (c.groups||[]).includes("Sprints")).map(c => c.items||[])), lv);
+  const L = items.map(it => splitTags(it.t)).filter(({tags,text}) => !tags.some(x => SPA_DROP.includes(x) || x===other) && !/^Joined Feb 15/.test(text));
+  const main = L.filter(({text}) => !/^(warm-?up|cool-?down|coaching|meet day\.|do today's mid)/i.test(text));
+  const T = main.map(x=>x.text).join(" | ");
+  const r = {iso, title, spd:0, sk:{blocks:0, curve:0, x4:0, x44:0}};
+  const mt = SCHEDULE.some(m => m.level===lv && m.date===iso && !/\bboys\b/i.test((m.notes||"")+" "+m.meet)) || main.some(x => /^Meet:/.test(x.text) && !/^Meet: .*Boys/.test(x.text));
+  if (/at home|optional on your own|spring break: rest|^optional: rest/i.test(T) && !/\d+\s*[×x]\s*\d+m(?! relaxed)/.test(T.replace(/optional on your own.*/i,"")) || /^optional\b/i.test(title)) r.home = true;
+  const reps = [...T.matchAll(/(\d+)\s*[×x]\s*(\d{2,3})m\b/g)].map(m => +m[2]);
+  const pick = () => {
+    if (mt) return "meet";
+    if (r.home) return /optional on your own/i.test(T) ? "home" : (main.length ? "home" : "rest");
+    if (!main.length || /^rest\.?$/i.test(T)) return "rest";
+    if (/split run/i.test(T)) return "split";
+    const longR = reps.filter(m => m >= 60 && !/build-?up/i.test(T.slice(0, 0)));
+    const sprintReps = [...T.matchAll(/(\d+)\s*[×x]\s*(\d{2,3})m\b([^|]*)/g)].filter(m => +m[2] >= 60 && !/relaxed fast|exchanges|curve start|build-?up|relaxed strides|rhythm runs|opening rhythm|backstretch|holding form/i.test(m[0] + m[3])).map(m => +m[2]);
+    if (sprintReps.length) { const mx = Math.max(...sprintReps); return P.path==="S2" && mx >= 100 ? "long" : "se"; }
+    if (/premeet|build-?ups/i.test(title + " " + T) && !/flying/i.test(T)) return "pre";
+    if (/flying|flyers?\b/i.test(T)) return "maxv";
+    if (/starts?|accelerat|blocks?\b/i.test(T)) return "accel";
+    if (/weight room|strength|lifts?|power/i.test(T) && !/easy|walk|recovery/i.test(T)) return "str";
+    return "rec";
+  };
+  r.cat = pick();
+  if (r.cat!=="meet" && r.cat!=="home" && r.cat!=="rest" && /flying|flyers?\b|starts?\b|accelerat/i.test(T)) r.spd = 1;
+  if (/blocks?\b/i.test(T)) r.sk.blocks = 1; if (/curve/i.test(T)) r.sk.curve = 1; if (/4×100|relay exchanges/i.test(T)) r.sk.x4 = 1; if (/4×400/i.test(T)) r.sk.x44 = 1;
+  return r;
+}
+function spaRun(weeksRaw, P, rev){
+  const keep = window.SP ? SP.revPrev : false; if (window.SP) SP.revPrev = !!rev;
+  try {
+    const vw = window.SP && SP.weeksWith ? SP.weeksWith(weeksRaw) : weeksRaw, ph = AUD_PH[P.lv], from = ph[0][2], to = ph[ph.length-1][3], out = [], seen = new Set();
+    vw.forEach(w0 => { const w = window.SP ? SP.inject(w0) : w0; (w.days||[]).forEach(d => { const dt = dayDate(w, d.day), iso = isoD(dt); if (iso < from || iso > to || seen.has(iso)) return; seen.add(iso); out.push(spaDay(d, dt, P)); }); });
+    return out.sort((a,b)=>a.iso.localeCompare(b.iso));
+  } finally { if (window.SP) SP.revPrev = keep; }
+}
+function spaSum(days, phase, lv){
+  const ph = AUD_PH[lv].find(p=>p[0]===phase), D = days.filter(x => !ph || (x.iso >= ph[2] && x.iso <= ph[3]));
+  const prac = D.filter(x => !["rest","home"].includes(x.cat)), cnt = Object.fromEntries(SPA_CATS.map(([k])=>[k, prac.filter(x=>x.cat===k).length]));
+  const wks = Math.max(1, D.length/7), spd = D.reduce((a,x)=>a+x.spd,0);
+  const sk = k => D.reduce((a,x)=>a+x.sk[k],0);
+  return {n: prac.length, cnt, home: D.filter(x=>x.cat==="home").length, rest: D.filter(x=>x.cat==="rest").length, spd, spdWk: spd/wks,
+    dem: cnt.se + cnt.long + cnt.split + cnt.meet, blocks: sk("blocks"), curve: sk("curve"), x4: sk("x4"), x44: sk("x44")};
+}
+let SPA_PROP = null, spaTried = false, spaS = {ph:"all"};
+function spaHTML(){
+  if (!spaTried && canPost) { spaTried = true; fetch("plans/sprint_spring.json", {cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{ if (Array.isArray(j)) { SPA_PROP = j; render(); } }).catch(()=>{}); }
+  const SPR = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
+  const propW = SPA_PROP && !(window.SP && SP.rev) ? (() => { const W = JSON.parse(JSON.stringify(visibleWeeks()));
+    SPA_PROP.forEach(q => { const w = W.find(x=>x.start===q.start), d = w && w.days.find(x=>x.day===q.day); if (!d) return;
+      d.combos = (d.combos||[]).filter(c => JSON.stringify(c.groups)!==JSON.stringify(SPR)).concat([{groups:SPR, items:q.items}]); d.gfocus = Object.assign({}, d.gfocus||{}, q.gfocus||{}); }); return W; })() : null;
+  const PH = [["all","All season"],["base","Winter"],["pre","Pre-competition"],["comp","Competition"],["champ","Championship"]];
+  const rows = SPA_PROGS.map(P => ({P, A: spaSum(spaRun(visibleWeeks(), P, false), spaS.ph, P.lv), B: propW ? spaSum(spaRun(propW, P, true), spaS.ph, P.lv) : null}));
+  const c = (A,B,f) => { const a = f(A), b = B ? f(B) : null; return B && String(a)!==String(b) ? `${a} → <b>${b}</b>` : String(a); };
+  return `<div class="panel aud"><div class="eyebrow">From the posted plan · coaches only</div><h2>Sprint sessions and speed exposures</h2>
+    <p style="margin:0 0 10px">Practice days by main purpose, plus how often each group sprints fast. ${propW ? "<b>a → b</b> = posted plan → proposed revision (not posted yet)." : ""} Meets come from the schedule (girls' postseason dates); athletes are assumed entered and advancing.</p>
+    <div class="aud-ctl"><div class="seg" role="group" aria-label="Phase">${PH.map(([k,l])=>`<button type="button" aria-pressed="${spaS.ph===k}" onclick="spaS.ph='${k}';render()">${l}</button>`).join("")}</div></div>
+    <div class="tbl"><table class="aud-t"><thead><tr><th></th>${rows.map(r=>`<th>${esc(r.P.n)}</th>`).join("")}</tr></thead><tbody>
+      ${SPA_CATS.map(([k,l,col])=>`<tr><td><i class="aud-sw" style="background:${col}"></i>${esc(l)}</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.cnt[k])}</td>`).join("")}</tr>`).join("")}
+      <tr class="aud-tot"><td><b>Practice + meet days</b></td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.n)}</td>`).join("")}</tr>
+      <tr><td>Demanding days (sprint endurance, longer reps, split, meets)</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.dem)}</td>`).join("")}</tr>
+      <tr><td>Speed exposures (days with starts, accelerations or flies) · per week</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.spd+" · "+S.spdWk.toFixed(1))}</td>`).join("")}</tr>
+      <tr><td>Race skills: blocks · curves · 4×100 · 4×400 days</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>[S.blocks,S.curve,S.x4,S.x44].join(" · "))}</td>`).join("")}</tr>
+      <tr><td>At-home / optional days · rest days (not counted above)</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.home+" · "+S.rest)}</td>`).join("")}</tr>
+    </tbody></table></div>
+    <p class="note" style="margin:8px 0 0">Each day counts once, by its main work: split run › longer reps (200/400, 100m+) › sprint endurance (60m+ reps) › premeet › max velocity › acceleration/starts › strength › recovery. Hurdle and jump substitutions and "not entered" alternatives are left out.</p></div>`;
 }
 function mdPhilHTML(){ return `<div class="panel"><h2>Our philosophy</h2>
           <p style="margin:0 0 10px">Two coaching ideas, one program. <b>Jack Daniels</b> builds the engine: aerobic running at each runner's own VDOT paces, controlled threshold work, and steady progress. <b>Tony Holler (Feed the Cats)</b> protects and builds speed: short, fast, fully recovered sprinting, good mechanics, and no junk fatigue.</p>
@@ -5419,6 +5494,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-09b"></script>
+<script src="sprints.js?v=11-09d"></script>
 </body>
 </html>

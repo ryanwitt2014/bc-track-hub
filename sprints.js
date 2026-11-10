@@ -406,6 +406,24 @@ const ST_HS = {vol:["Coach-led Tue/Thu are voluntary / out-of-season. Home days 
 const INT = {max:["Max","max"], near:["Fast, relaxed",""], cf:["Controlled fast",""], "9095":["~90–95%",""], tech:["Technical","tech"]};
 const DUR_HS = {Tue:"60–75 min", Thu:"75–90 min"};
 const DAYN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+/* ---- Proposed revision (Nov 2026): HS February preparation by pathway. Shown only once a coach posts it
+   (hub_data "sprint_rev" = true, set by supabase/spring_sprints.sql) or in the coach preview. ---- */
+const SP_REV = {HS:{
+  "2027-01-21": {sess:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Controlled explosive jumps","2×3 broad jumps + 2×10 pogos",{d:"broad",r:R.bj,i:"max"}),
+    row("Rhythm runs","2×60m",{d:"sefast",g:["S2"],r:"walk back",i:"near",n:"Relaxed, about 75–80%. Learning longer sprint rhythm."}),TECH,{str:"jan"}]}},
+  "2027-02-16": {focus:"February preparation: speed", sess:{out:[WU,row("Accelerations","4×20m",{d:"accel",r:"2–4 min",i:"max"}),row("Accelerations","2×30m",{d:"accel",r:"3–4 min",i:"max"}),
+    row("Flying 20m","3 reps",{d:"fly20",r:"4–6 min",i:"max",cut:true,n:"Individual build-up, safe run-out."}),row("Joined Feb 15 (intro week)","3×20m standing starts + 2×20m build-ups only",{r:"2–3 min",i:"near"})]}},
+  "2027-02-18": {focus:"February preparation: sprint endurance", sess:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),
+    row("Sprint endurance","2×100m",{d:"sefast",g:["S1"],r:"8–10 min",i:"9095",n:"Fast and controlled. Stop if the 2nd rep is 3%+ slower."}),
+    row("Longer reps","2×150m",{d:"sefast",g:["S2"],r:"6–8 min",i:"cf",n:"About 90%. Never a race."}),
+    row("Joined Feb 15 (intro week)","2×60m relaxed fast instead of the longer reps",{r:"5 min",i:"near"}),TECH,{str:"feb",mod:"light"}]}},
+  "2027-02-23": {focus:"February preparation: speed", sess:{out:[WU,row("Accelerations","3×30m",{d:"accel",r:"3 min",i:"max"}),row("Flying 20m","3 reps",{d:"fly20",r:"4–6 min",i:"max",cut:true}),
+    row("Joined Feb 15 (week 2)","4×20m starts + 2 × flying 10m",{r:"2–4 min",i:"max"})]}},
+  "2027-02-25": {focus:"February preparation: longer reps", sess:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),
+    row("Sprint endurance","2×120m",{d:"sefast",g:["S1"],r:"10–12 min",i:"9095",n:"Fast and controlled, about 95%."}),
+    row("Longer reps","2×180m",{d:"sefast",g:["S2"],r:"8–10 min",i:"cf",n:"About 90%. Never a race."}),
+    row("Joined Feb 15 (week 2)","2×80m relaxed fast",{r:"5–6 min",i:"near"}),TECH,{str:"feb",mod:"mod",n:"Avoid excessive fatigue."}]}}
+}, JH:{}};
 /* ======================= JUNIOR HIGH (grades 6–8) =======================
    Same week structure, drill names and philosophy as HS, with JH workloads, levels and progressions.
    Rows may carry jl:[2,3] (Level 2+) or jl:[3] (Level 3 only). {lift:"JA"} = a shared JH lift table from the main page (LIFTS). */
@@ -693,6 +711,8 @@ function dayInfo(wi, dn){
   const w = SP_WEEKS[wi]; if (!w) return null;
   const ds = dateIso(w, dn); if (ds < PROGRAM_START) return null;
   let b = baseDay(w, dn);
+  const rv = (SP.rev || SP.revPrev) && (SP_REV[CUR_LV]||{})[ds];
+  if (rv && b.sess) b = Object.assign({}, b, {sess: Object.assign({}, b.sess, rv.sess)}, rv.focus ? {revFocus: rv.focus} : {});
   const ov = SP.edits[ds];
   if (ov) {
     const sportOK = ds >= SPORT_START;   // limited-contact period for sport-specific training starts the week of Dec 7
@@ -710,7 +730,7 @@ const isCoach = i => i && (i.k==="speed" || i.k==="power");
 const isGsc = i => i && i.k==="gsc";
 const isCoachLed = i => isCoach(i) || isGsc(i);
 const isInd = i => i && !!i.tpl && !isCoach(i);
-function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? i.w.focus : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
+function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? (i.revFocus || i.w.focus) : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
 function dayFacts(i){
   if (isGsc(i)) return {dur: i.dur, rpe: CUR_LV==="JH" ? "Easy to moderate (RPE 3–5/10). Technique and confidence, never to failure." : "Light to moderate (RPE 4–6/10). Technique first, never to failure.", equip: i.equip || "Workout clothes and shoes, water. Dumbbells, mats and benches are provided.", obj: i.obj};
   if (isCoach(i)) { const od = i.movedFrom ? locate(i.movedFrom).dn : i.dn; return {dur: DUR[od] || "60–90 min", rpe:"Max effort on each sprint with full rest. The session shouldn't leave you exhausted.", equip: od==="Thu" ? "Running shoes, water, workout clothes for the weight room" : "Running shoes, water, layers for outdoors", obj: i.w.focus}; }
@@ -869,12 +889,29 @@ function drillsView(){
     <div class="sp-drills">${ids.map(drillCard).join("")}</div>
     <p class="note">Video links can be added to any drill (the <code>url</code> field in sprints.js) once we pick the clips we like.</p>`;
 }
+function sprintWhyHTML(jh){
+  const L = (a,b) => `<tr><td><b>${a}</b></td><td>${b}</td></tr>`;
+  return `<div class="panel"><h2>How we build sprinters</h2>
+    <p style="margin:0 0 8px">Fast, fresh, measured. Every athlete shares the same speed foundation; the event decides what gets added on top.</p>
+    <div class="tbl"><table><tbody>
+      ${L("Acceleration", jh ? "Getting up to speed: 3–4 × 10–20m starts with full recovery. One cue at a time." : "Getting up to speed: starts and 20–30m accelerations (e.g. 4 × 20m + 2 × 30m), 2–4 min rest. Blocks progress setup → first steps → transition → commands → race-condition starts.")}
+      ${L("Max velocity", jh ? "Relaxed build-ups. Short flying zones only for technically ready athletes with room to slow down." : "Top speed: 3–4 flying 20s with an individual build-up and safe run-out, 4–6 min rest (longer if needed).")}
+      ${L("Sprint endurance", jh ? "Holding form a bit longer: 2 × 60–80m, building to 2 × 100–120m with generous rest." : "100/200: holding speed late in the race. Starts at 2 × 100m fast and controlled (8–10 min rest), builds toward 2 × 120–150m (10–15 min).")}
+      ${L("400 preparation", jh ? "Prepared JH 400 runners only: controlled 120–150m reps later in the season. No split-run fatigue sessions." : "200/400: longer reps from 2 × 150m to 2 × 200m at about 90% (6–10 min rest), opening control, curve and backstretch rhythm, 4×400 exchanges. Prepared 400 runners occasionally run one 200m + 150m split (90 sec between); it replaces other endurance work, never adds to it.")}
+      ${L("400/800", "Coordinated with Mid-Distance under one lead coach. One workout a day, never both.")}
+      ${L("Recovery", "Full recovery keeps sprints fast and teaches speed; short rest turns them into conditioning. About 48 hours between demanding days. Meets, fast relay exchanges, hurdles and jumps all count as load. Missed sessions are never made up.")}
+      ${L("Strength & power", jh ? "Bodyweight first: squat, hinge, lunge, calf raises, simple landings. Add load only when technique is solid." : "Posterior chain (RDL, hip hinge), calves/ankles (calf raises, pogos), single-leg strength (split squat, step-up) and low-volume landings and jumps. Progress load or difficulty only when technique is solid; new exercises come in slowly. In season it's maintenance, lifted on sprint days, not extra hard days.")}
+      ${L("Indoors", "Short starts indoors are useful, but they don't replace top speed or longer reps. When we get back outside, longer reps restart at the last distance actually run outdoors. We never squeeze a missed month into one week.")}
+      ${L(jh ? "Junior high → high school" : "From junior high", jh ? "Same drill names, warm-up and lifts as high school, smaller doses and no forced times. JH explores events, learns curves, blocks where appropriate, relay exchanges and finishing mechanics. HS adds pathways, sprint endurance and 400 work." : "JH learns the same drills, warm-up and lifts with event exploration and small doses. HS adds pathway-specific endurance, blocks under race conditions and 400 work.")}
+    </tbody></table></div></div>`;
+}
 function philViewJH(){
   const wk = [["Mon","Independent recovery / mobility","10–15 min"],["Tue","<b>Coach-led speed development</b>","45–65 min"],["Wed","Independent easy activity","15–25 min"],["Thu","<b>Coach-led speed, event technique &amp; strength</b>","45–65 min"],["Fri","Independent recovery","15–20 min"],["Sat","Optional general fitness or recreational play","15–25 min"],["Sun","Full rest","—"]];
   return `<div class="panel"><h2>Junior high: one 6th–12th grade system</h2><p style="margin:0">Same coaching approach as high school (80% Tony Holler / Feed the Cats, 20% Jack Daniels-inspired individual progression), sized for junior high. Not the high school workouts with fewer reps: the same fundamentals with different workloads, technical expectations and progression rates.</p>
       <ul class="exp" style="margin:8px 0 0"><li>Make speed fun, and build confidence and positive competition</li><li>Teach sprint mechanics, acceleration and coordination</li><li>Explosive movement skills with low fatigue</li><li>Try lots of events. Build habits that carry into high school</li></ul></div>
     <div class="panel"><h2>Three levels</h2><p style="margin:0 0 8px">Athletes move up on technique, readiness and coach judgment, not age or race times. Coaches set each athlete's level on Coaches → Sprints.</p>
       <div class="cols">${[1,2,3].map(n=>`<div><h3 style="margin:0">${esc(LEVELS_JH[n].n)}</h3><div class="muted" style="font-size:13px">${esc(LEVELS_JH[n].typ)}</div><ul class="exp" style="margin:6px 0 0">${LEVELS_JH[n].focus.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>`).join("")}</div></div>
+    ${sprintWhyHTML(true)}
     <div class="cols"><div class="panel"><h2>The week</h2><div class="tbl"><table><tbody>${wk.map(([d,x,m])=>`<tr><td><b>${d}</b></td><td>${x}</td><td class="mono">${m}</td></tr>`).join("")}</tbody></table></div>
         <p class="note" style="margin:8px 0 0">Starts Tue Dec 1 with general movement + strength (Dec 1 and Dec 3, 35–45 min). Speed work starts the week of Dec 7. Dec 22–24 is a reduced optional week and Dec 29–31 is holiday recovery: no required sessions. Coach-led sessions assume they're permitted under junior high rules and district policy (high school IHSAA rules aren't assumed; confirm with the AD). Voluntary days are optional, with no completion reporting.</p></div>
       <div class="panel"><h2>Indoor rules</h2><ul class="exp"><li>Hallway/gym space is about 40–60m <b>including</b> slowing down</li><li>Junior high indoor accelerations start at 5–15m, only with traction, clear lanes and stopping room</li><li>Never force longer sprints indoors. No max sprinting in unsafe hallways</li><li>Every coach-led day has an outdoor and indoor version with the same goal</li></ul></div></div>`;
@@ -886,6 +923,7 @@ function philView(){
       <div class="cols"><div><h3 style="margin:0 0 6px">Feed the cats</h3><ul class="exp"><li>Max velocity and acceleration come first</li><li>Sprint fast while fresh, early in the session</li><li>Time sprints whenever we can</li><li>Full recovery between max reps</li><li>No conditioning for conditioning's sake</li><li>Competition is a big part of training</li></ul></div>
         <div><h3 style="margin:0 0 6px">Plan like Daniels</h3><ul class="exp"><li>Progressions fit each athlete's event, training age and readiness</li><li>Volumes are starting points; coaches reduce them when needed</li><li>Strength, plyos, hurdles and jumps are added without overloading</li><li>Peak for championship meets</li></ul></div>
         <div><h3 style="margin:0 0 6px">Measure it</h3><ul class="exp"><li>Improvement, not just workout completion</li><li>Baseline testing Week 6 (Jan 5), reassessment Week 9 (Jan 26)</li><li>10m, 20m, flying 10/20m, standing broad jump, block-start scores</li></ul></div></div></div>
+    ${sprintWhyHTML(false)}
     <div class="panel sp-stage"><h2>Signature priorities</h2><p style="margin:0">Our biggest team-wide weaknesses: <b>starting-block mechanics, initial acceleration, and explosiveness</b>. Every winter week trains them. See the <a href="#sprints" onclick="SP.tab='blocks';render();return false">block-start pathway</a>.</p></div>
     <div class="panel"><h2>Training groups</h2><div class="tbl"><table><thead><tr><th>Group</th><th>Events</th><th>Emphasis</th></tr></thead><tbody>
       ${GKEYS.map(k=>`<tr><td>${chip(k)} <b>${esc(GROUPS[k].n)}</b></td><td>${esc(GROUPS[k].ev)}</td><td>${esc(GROUPS[k].em)}</td></tr>`).join("")}</tbody></table></div>
@@ -946,7 +984,7 @@ function groupsView(){
 
 const TABS = [["cal","Today & Week"],["phil","Philosophy"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
 views.sprints = function(){
-  const body = SP.tab==="phil" ? philView() : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
+  const body = SP.tab==="phil" ? philView() + (canPost && typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
   return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · ${CUR_LV==="JH" ? "Junior high (grades 6–8)" : "High school"} · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
       <p class="lede" style="margin:6px 0 0">${CUR_LV==="JH" ? "Learn to run fast and have fun doing it. Same fundamentals as high school, sized for junior high." : "Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher."}</p></div>
       <div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div></div>
@@ -1214,6 +1252,7 @@ SP.inject = function(w, opt){
 SP.onData = function(byKey){
   if (byKey && byKey.sgroups && typeof byKey.sgroups === "object") { SP.groups = byKey.sgroups; SP.draft = null; }
   if (byKey && byKey.sprint_edits && typeof byKey.sprint_edits === "object") { SP.edits = byKey.sprint_edits; SP.edraft = null; }
+  if (byKey && "sprint_rev" in byKey) SP.rev = byKey.sprint_rev === true;
 };
 if (window.HUB_BYKEY) SP.onData(window.HUB_BYKEY);
 if (!SECTIONS.some(s=>s.id==="sprints")) {
