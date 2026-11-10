@@ -394,17 +394,23 @@ const SP_WEEKS_HS = [
   thu:{out:[WU,row("Speed endurance","2×80m",{d:"sefast",g:["S1"],r:R.se80,i:"9095"}),row("Speed endurance","2×120m",{d:"sefast",g:["S2"],r:R.se120,i:"cf"}),TECH,{str:"feb",mod:"red"}],
        in:[WU,row("Starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Low-volume jumps","2×3 broad jumps",{d:"broad",r:R.bj,i:"max"}),row("No 80–120m reps in a hallway","",{i:"tech"}),TECH,{str:"feb"}]}},
  {n:12, start:"2027-02-15", focus:"Speed consolidation", st:"off", mo:"feb",
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),TECH], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),TECH], in:null}},
+    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WU,row("Starts","3×20m",{d:"block",r:R.acc,i:"max"}),row("4×100 exchanges","3 each, walking → jogging",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","2 walk-throughs",{g:["S2"],i:"tech"})], in:null}}},
   tue:{out:[WU,row("Accelerations","2×20m",{d:"accel",r:R.acc,i:"max"}),row("Flying 20m","2 reps",{d:"fly20",r:R.fly,i:"max",cut:true})],
        in:[WU,row("Accelerations","3×10m",{d:"accel",r:R.acc,i:"max"}),row("Low-volume technical work","10 min",{d:"dribble",i:"tech"}),row("Video review","10 min",{i:"tech"})]},
   thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),TECH,{str:"feb",mod:"light"}], in:null}},
  {n:13, start:"2027-02-22", focus:"Preseason transition", st:"off", mo:"feb",
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),TECH], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),TECH], in:null}},
+    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WU,row("Starts","3×20m",{d:"block",r:R.acc,i:"max"}),row("4×100 exchanges","3 each, jogging → controlled",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","3 at a jog: incoming calls, outgoing looks",{g:["S2"],i:"tech"})], in:null}}},
   tue:{out:[WU,row("Accelerations","3×30m",{d:"accel",r:"3 min",i:"max"}),row("Fast runs","2×60m",{d:"sefast",g:["S1"],r:R.full,i:"cf"}),row("Fast runs","2×80m",{d:"sefast",g:["S2"],r:R.full,i:"cf"})],
        in:[WU,row("Accelerations","4×10–15m",{d:"accel",r:R.acc,i:"max"}),row("Controlled power","2×3 med-ball throws",{d:"medball",r:R.bj,i:"max"}),row("Technical drills","3 passes",{d:"dribble",r:R.drill,i:"tech"})]},
   thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),TECH,{str:"feb",mod:"mod",n:"Avoid excessive fatigue."}], in:null}},
 ];
 const ST_HS = {vol:["Coach-led Tue/Thu are voluntary / out-of-season. Home days are always optional.","sp-banner"], break:["Holiday: no practices. Everything this week is optional; family and travel come first. Missed sprint sessions are never made up.","sp-banner brk"], off:["Official practice season (confirm the IHSAA start date). Your coach may post practice on more days.","sp-banner off"]};
 const INT = {max:["Max","max"], near:["Fast, relaxed",""], cf:["Controlled fast",""], "9095":["~90–95%",""], tech:["Technical","tech"]};
-const DUR_HS = {Tue:"60–75 min", Thu:"75–90 min"};
+const DUR_HS = {Mon:"45–60 min", Tue:"60–75 min", Wed:"45–60 min", Thu:"75–90 min", Fri:"60–75 min"};
 const DAYN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 /* ---- Proposed revision (Nov 2026): HS February preparation by pathway. Shown only once a coach posts it
    (hub_data "sprint_rev" = true, set by supabase/spring_sprints.sql) or in the coach preview. ---- */
@@ -441,7 +447,7 @@ const WARMUP_JH = [
   ["Coordination game","1–2 min","Reaction starts (coach claps or drops a ball), mirror drill, or partner tag in a small box. Short and fun."],
 ];
 const WU_TIME = {HS:"12–15 min", JH:"8–12 min"};
-const DUR_JH = {Tue:"45–65 min", Thu:"45–65 min"};
+const DUR_JH = {Mon:"35–45 min", Tue:"45–65 min", Wed:"35–45 min", Thu:"45–65 min", Fri:"45–60 min"};
 const ST_JH = {vol:["Coach-led Tue/Thu assume they're permitted under junior high rules and district policy (confirm with the AD; high school IHSAA rules aren't assumed). Home days are always optional.","sp-banner"],
   break:["Holiday: no required practices. Everything this week is optional; family and travel come first. Missed sessions are never made up.","sp-banner brk"],
   off:["Preseason (confirm the junior high practice start date). Your coach may post practice on more days.","sp-banner off"]};
@@ -557,11 +563,17 @@ const SP_WEEKS_JH = [
   tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Controlled fast runs","2×40–60m",{d:"sefast",r:RJ.full,i:"cf",jl:[2,3],cut:true}),COOL],
        in:[WUJ,row("Short accelerations","3×10m",{d:"accel",r:RJ.acc,i:"near"}),row("Mechanics + coordination","5–8 min",{d:"dribble",i:"tech"}),COOL]},
   thu:{out:[WUJ,HJTJ,JLIFT("JB"),COOL], in:null}},
- {n:12, start:"2027-02-15", focus:"Technical consolidation", st:"vol", mo:"feb",
+ {n:12, start:"2027-02-15", focus:"Technical consolidation", st:"off", mo:"feb",
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","5–8 min, or a coordination game",{i:"tech"}),row("Recovery core","ankle rocks, dead bug, side plank · 2 sets",{i:"tech"}),TECHJ,COOL], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + relay basics", sess:{out:[row("Easy movement","5–8 min, or a coordination game",{i:"tech"}),row("Recovery core","ankle rocks, dead bug, side plank · 2 sets",{i:"tech"}),row("Relay basics","handoff walk-throughs, 3 each",{i:"tech"}),TECHJ,COOL], in:null}},
+    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Relay exchanges","3 each, walking → jogging",{i:"tech"}),row("Finish through the line","2×20m relaxed fast",{i:"near"}),COOL], in:null}}},
   tue:{out:[WUJ,row("Accelerations","2×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Flying 10m","2 reps",{d:"fly10",r:RJ.fly,i:"max",jl:[2,3],cut:true}),COOL],
        in:[WUJ,row("Accelerations","3×10m",{d:"accel",r:RJ.acc,i:"near"}),row("Technical drills","5–8 min",{d:"dribble",i:"tech"}),COOL]},
   thu:{out:[WUJ,row("Event skill review","15 min",{i:"tech"}),TECHJ,JLIFT("JL","10–15 min"),COOL], in:null}},
- {n:13, start:"2027-02-22", focus:"Preseason transition", st:"vol", mo:"feb",
+ {n:13, start:"2027-02-22", focus:"Preseason transition", st:"off", mo:"feb",
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","5–8 min, or a coordination game",{i:"tech"}),row("Recovery core","ankle rocks, dead bug, side plank · 2 sets",{i:"tech"}),TECHJ,COOL], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + relay basics", sess:{out:[row("Easy movement","5–8 min, or a coordination game",{i:"tech"}),row("Recovery core","ankle rocks, dead bug, side plank · 2 sets",{i:"tech"}),row("Relay basics","handoff walk-throughs, 3 each",{i:"tech"}),TECHJ,COOL], in:null}},
+    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Relay exchanges","3 each, jogging → controlled",{i:"tech"}),row("Finish through the line","2×20m relaxed fast",{i:"near"}),COOL], in:null}}},
   tue:{out:[WUJ,row("Accelerations","3×20m",{d:"accel",r:RJ.acc,i:"max"}),row("Controlled runs","2×40–60m",{d:"sefast",r:RJ.full,i:"cf",jl:[2,3],cut:true}),COOL],
        in:[WUJ,row("Starts","3×10–15m",{d:"stand",r:RJ.acc,i:"max"}),row("Mechanics","5–8 min",{d:"dribble",i:"tech"}),COOL]},
   thu:{out:[WUJ,TECHJ,JLIFT("JM"),COOL], in:null}},
@@ -730,7 +742,7 @@ const isCoach = i => i && (i.k==="speed" || i.k==="power");
 const isGsc = i => i && i.k==="gsc";
 const isCoachLed = i => isCoach(i) || isGsc(i);
 const isInd = i => i && !!i.tpl && !isCoach(i);
-function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? (i.revFocus || i.w.focus) : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
+function dayTitle(i){ return isGsc(i) ? i.title : isCoach(i) ? (i.revFocus || i.dfocus || i.w.focus) : i.k==="meet" ? i.meet : i.k==="rest" ? "Full rest" : IND[i.tpl].n; }
 function dayFacts(i){
   if (isGsc(i)) return {dur: i.dur, rpe: CUR_LV==="JH" ? "Easy to moderate (RPE 3–5/10). Technique and confidence, never to failure." : "Light to moderate (RPE 4–6/10). Technique first, never to failure.", equip: i.equip || "Workout clothes and shoes, water. Dumbbells, mats and benches are provided.", obj: i.obj};
   if (isCoach(i)) { const od = i.movedFrom ? locate(i.movedFrom).dn : i.dn; return {dur: DUR[od] || "60–90 min", rpe:"Max effort on each sprint with full rest. The session shouldn't leave you exhausted.", equip: od==="Thu" ? "Running shoes, water, workout clothes for the weight room" : "Running shoes, water, layers for outdoors", obj: i.w.focus}; }

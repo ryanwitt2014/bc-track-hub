@@ -890,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09f";
+const HUB_VERSION = "11-09g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2411,6 +2411,48 @@ function planCheckHTML(){
     ${iss.length>60?`<p class="note">…and ${iss.length-60} more.</p>`:""}
     <div class="ed-save">${fixable.length?`<button type="button" class="btn primary" onclick="planFix()" ${saving?"disabled":""}>Clean up ${fixable.length} issue${fixable.length===1?"":"s"}</button>`:""}<span class="note">Plan lines (HS/JH) are never changed.</span></div>
     <p class="ed-msg ${pcMsg.kind}" role="status" style="margin:0">${esc(pcMsg.text)}</p></div>`;
+}
+
+/* ---- Training groups (quick): one dropdown per kid. Distance/Hybrid/Mid go to Runner Tags (pathway);
+   Sprints 100/200, 200/400, Hurdles, Jumps go to the sprint groups. Level (A/B/C) can be set later. ---- */
+const GRP_OPTS = [["","Not set"],["D","Distance (1600/3200)"],["H8","Hybrid 800/1600"],["M","Mid-Distance (400/800)"],["S1","Sprints 100/200"],["S2","Sprints 200/400"],["H","Hurdles"],["J","Jumps"]];
+const GRP_PATH = {D:"Distance", H8:"Hybrid", M:"Mid"};
+let grpDraft = null, grpSel = new Set(), grpUI = {lv:"HS", open:false, bulk:""}, grpMsg = {kind:"",text:""};
+function grpOf(id){ const t = (dtDraft||DTAGS)[id] || {}; if (t.path) return Object.keys(GRP_PATH).find(k=>GRP_PATH[k]===t.path) || ""; const g = (grpDraft||{})[id]; return g && g.p && g.p!=="S3" ? g.p : (g && g.p==="S3" ? "M" : ""); }
+function grpSet(id, v){
+  if (!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
+  if (!grpDraft) grpDraft = JSON.parse(JSON.stringify((window.SP && SP.groups) || {}));
+  if (GRP_PATH[v]) { dtSet(id, "path", GRP_PATH[v]); delete grpDraft[id]; }
+  else if (v) { dtSet(id, "path", ""); dtSet(id, "lv", ""); grpDraft[id] = Object.assign({}, grpDraft[id], {p:v}); }
+  else { dtSet(id, "path", ""); delete grpDraft[id]; }
+  grpMsg = {kind:"", text:"Changed. Hit Save groups."};
+}
+function grpBulk(){ const v = grpUI.bulk; if (!grpSel.size) return; grpSel.forEach(id => grpSet(id, v)); grpSel.clear(); render(); }
+async function grpSave(){
+  if (!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
+  if (!grpDraft) grpDraft = JSON.parse(JSON.stringify((window.SP && SP.groups) || {}));
+  const err = await publishFiles({"dtags.json": JSON.stringify(dtDraft), "sgroups.json": JSON.stringify(grpDraft)});
+  if (err) grpMsg = {kind:"err", text:err};
+  else { DTAGS = JSON.parse(JSON.stringify(dtDraft)); if (window.SP) { SP.groups = JSON.parse(JSON.stringify(grpDraft)); SP.draft = null; } grpMsg = {kind:"ok", text:"Saved. Kids now see only their group's workouts."}; }
+  render();
+}
+function grpHTML(){
+  if (!grpDraft) grpDraft = JSON.parse(JSON.stringify((window.SP && SP.groups) || {}));
+  const L = ATHLETES.filter(a => a.level===grpUI.lv).sort((x,y)=>x.name.localeCompare(y.name));
+  const shown = grpUI.open ? L.filter(a => !grpOf(a.id)) : L;
+  const done = L.filter(a => grpOf(a.id)).length;
+  const opts = (cur, jh) => GRP_OPTS.filter(([v]) => !(jh && v==="H8")).map(([v,l])=>`<option value="${v}" ${v===cur?"selected":""}>${esc(l)}</option>`).join("");
+  return `<div class="panel ed"><div class="bar"><div><h2 style="margin:0">Training groups</h2><p class="note" style="margin:4px 0 0">Pick each kid's group. Levels (A/B/C) can wait: until a level is set, a runner sees the Intermediate version. ${done} of ${L.length} ${grpUI.lv==="JH"?"junior high":"high school"} athletes have a group.</p></div></div>
+    <div class="aud-ctl" style="margin:10px 0"><div class="seg" role="group" aria-label="Level">${[["HS","High school"],["JH","Junior high"]].map(([k,l])=>`<button type="button" aria-pressed="${grpUI.lv===k}" onclick="grpUI.lv='${k}';grpSel.clear();render()">${l}</button>`).join("")}</div>
+      <label class="aud-chk"><input type="checkbox" ${grpUI.open?"checked":""} onchange="grpUI.open=this.checked;render()"> Only kids without a group</label></div>
+    <div class="aud-ctl"><span class="note" style="margin:0">${grpSel.size} selected →</span><select aria-label="Group for selected" onchange="grpUI.bulk=this.value">${opts(grpUI.bulk, grpUI.lv==="JH")}</select>
+      <button type="button" class="btn sm" onclick="grpBulk()" ${grpSel.size?"":"disabled"}>Set group for selected</button></div>
+    <div class="tbl"><table><thead><tr><th><input type="checkbox" aria-label="Select all" onchange="(this.checked?[${shown.map(a=>`'${a.id}'`).join(",")}].forEach(i=>grpSel.add(i)):grpSel.clear());render()"></th><th>Athlete</th><th>Signed up for</th><th>Group</th></tr></thead><tbody>
+      ${shown.map(a=>`<tr><td><input type="checkbox" aria-label="Select ${esc(a.name)}" ${grpSel.has(a.id)?"checked":""} onchange="this.checked?grpSel.add('${a.id}'):grpSel.delete('${a.id}');render()"></td>
+        <td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td class="muted">${esc((a.cats||[]).join(", ")||"—")}</td>
+        <td><select aria-label="Group for ${esc(a.name)}" onchange="grpSet('${a.id}',this.value);render()">${opts(grpOf(a.id), a.level==="JH")}</select></td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="ed-save sticky"><button type="button" class="btn primary" onclick="grpSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save groups"}</button><span class="ed-msg ${grpMsg.kind}" role="status">${esc(grpMsg.text)}</span></div></div>`;
 }
 
 /* ---- Runner tags editor ---- */
@@ -4498,7 +4540,7 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Runner Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Groups & Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
     const body = ctab==="sptest" ? views._sptEdit() : ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
@@ -4698,7 +4740,7 @@ const views = {
           ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:""}
           <td>${sel(a.id,"ready",READY,"This week")}</td><td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
       </tbody></table></div>`;
-    return `<p class="lede" style="margin:0">Give each distance and mid-distance runner a level and a pathway. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
+    return `${grpHTML()}<h2 style="margin:18px 0 0">Distance &amp; mid-distance details</h2><p class="lede" style="margin:0">Give each distance and mid-distance runner a level and a pathway. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
       <div class="panel ed"><h2>High school</h2>${tbl("HS")}</div>
       <div class="panel ed"><h2>Junior high</h2><p class="note" style="margin:0 0 8px"><b>Advanced</b> = established runner with a proven training history (not just a fast PR). <b>Development</b> = consistent JH runner (the as-written plan). <b>Foundation</b> = newer or lower-volume runner. <b>HS group invite</b> lets an advanced runner see the invite to join HS warm-ups, drills, and strength on Tuesdays. Nothing here adds mileage automatically.</p>${tbl("JH")}</div>
       <div class="ed-save sticky"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button>
@@ -5543,6 +5585,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-09e"></script>
+<script src="sprints.js?v=11-09g"></script>
 </body>
 </html>
