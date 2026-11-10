@@ -1,0 +1,882 @@
+[
+{
+"start": "2027-02-15",
+"day": "Thu",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 15 min Easy + drills.",
+"lv": "HS"
+},
+{
+"t": "4 × 30m progressive accelerations, full recovery",
+"lv": "HS"
+},
+{
+"t": "BC Track Accelerations: 6–8 × 40m progressive accelerations on the track (near-max by 30m), walk back + 60–90 sec (full recovery)",
+"lv": "HS"
+},
+{
+"t": "2 × 150m at Rep pace (fast and relaxed), 3–4 min recovery",
+"lv": "HS"
+},
+{
+"t": "[Crossover] [Hybrid] Optional instead of the 150s: 3 × 300m at 800 pace, 4–5 min recovery (first 800-specific Thursday)",
+"lv": "HS"
+},
+{
+"t": "Run tall, quick arms, relaxed face. Speed, not strain.",
+"lv": "HS"
+},
+{
+"t": "Cool-down: 10 min Easy.",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "Track accelerations"
+},
+"focus": "Track accelerations"
+},
+{
+"start": "2027-02-22",
+"day": "Tue",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up and cool-down: 10–15 min Easy each.",
+"lv": "HS"
+},
+{
+"t": "300s at current 3200 pace (your Paces page), 60 sec recovery jog. Relaxed and even: every rep the same.",
+"lv": "HS"
+},
+{
+"t": "[A] 8 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[B] 7 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[C] 6 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "300s at 3200 pace"
+},
+"focus": "300s at 3200 pace"
+},
+{
+"start": "2027-02-22",
+"day": "Thu",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "[A] 40 min Easy + 4 × 100m relaxed strides, full walk-back recovery",
+"lv": "HS"
+},
+{
+"t": "[B] 35 min Easy + 4 × 100m relaxed strides, full walk-back recovery",
+"lv": "HS"
+},
+{
+"t": "[C] 25–30 min Easy + 4 × 100m relaxed strides, full walk-back recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "Easy + strides"
+},
+"focus": "Easy + strides"
+},
+{
+"start": "2027-03-15",
+"day": "Tue",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 15 min Easy + drills + 4 strides. Cool-down: 10–15 min Easy.",
+"lv": "HS"
+},
+{
+"t": "[Distance] BC 3200 Ladder at current 3200 pace (Paces page): 60 sec jog after the 200s and 400s, 90 sec after the 600s, 2 min after the 800. Even and relaxed, no racing.",
+"lv": "HS"
+},
+{
+"t": "[A] [Distance] 200–400–600–800–600–400–200 at 3200 pace",
+"lv": "HS"
+},
+{
+"t": "[B] [Distance] 200–400–600–600–400–200 at 3200 pace",
+"lv": "HS"
+},
+{
+"t": "[C] [Distance] 200–400–600–400–200 at 3200 pace",
+"lv": "HS"
+},
+{
+"t": "[Hybrid] BC Michigan: every rep a little faster than the last. Record every split. Nobody races the 1600.",
+"lv": "HS"
+},
+{
+"t": "[A] [Hybrid] 1200 Tempo · 2 min jog · 800 Interval · 3 min jog · 400 at 1600 pace · 3–4 min walk/jog · 200 at 800 pace",
+"lv": "HS"
+},
+{
+"t": "[B] [Hybrid] 1200 Tempo · 2 min jog · 800 Interval · 3 min jog · 400 at 1600 pace · 3–4 min walk/jog · 200 at 800 pace",
+"lv": "HS"
+},
+{
+"t": "[C] [Hybrid] 800 Tempo · 2 min jog · 400 Interval · 3 min walk/jog · 200 at 800 pace",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "3200 Ladder (Hybrid: Michigan)"
+},
+"focus": "3200 Ladder · Michigan"
+},
+{
+"start": "2027-03-29",
+"day": "Thu",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up and cool-down: 10–15 min Easy each.",
+"lv": "HS"
+},
+{
+"t": "BC Event Reps at current race pace (your Paces page), never goal pace.",
+"lv": "HS"
+},
+{
+"t": "[A] [Hybrid] 1600/800: 5 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[B] [Hybrid] 1600/800: 5 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[C] [Hybrid] 1600/800: 4 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[A] [Distance] 1600/3200: 8 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[B] [Distance] 1600/3200: 8 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[C] [Distance] 1600/3200: 6 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "BC Event Reps"
+}
+},
+{
+"start": "2027-04-12",
+"day": "Thu",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up and cool-down: 10–15 min Easy each.",
+"lv": "HS"
+},
+{
+"t": "[Distance] BC Mystery Workout: draw a card or pick at the line. Every option is the same work (about 18 min at Tempo). Raced a lot Tuesday? Cut it down or run Easy.",
+"lv": "HS"
+},
+{
+"t": "[A] [Distance] (a) 3 × 6 min Tempo, 90 sec jog · (b) 4 × 1000m Tempo, 75 sec jog · (c) 6 × 600m Tempo, 45 sec jog",
+"lv": "HS"
+},
+{
+"t": "[B] [Distance] (a) 3 × 5 min · (b) 3 × 1000m · (c) 5 × 600m, all at Tempo",
+"lv": "HS"
+},
+{
+"t": "[C] [Distance] (a) 2 × 6 min · (b) 3 × 800m · (c) 4 × 600m, all at Tempo",
+"lv": "HS"
+},
+{
+"t": "[A] [Hybrid] 1600/800: 5 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[B] [Hybrid] 1600/800: 5 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[C] [Hybrid] 1600/800: 4 × 300m at 1600 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "[Hybrid] Raced 2+ hard events Tuesday? 30–40 min Easy instead.",
+"lv": "HS"
+},
+{
+"t": "Coaching: 1600/3200 keep the Mystery Workout (tempo) so there's still threshold work between Mar 30 and May 12.",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "Mystery Workout (Hybrid: 300s at 1600 pace)"
+},
+"focus": "Mystery Workout · 300s"
+},
+{
+"start": "2027-04-19",
+"day": "Thu",
+"lv": "HS",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up and cool-down: 10–15 min Easy each.",
+"lv": "HS"
+},
+{
+"t": "[Distance] 300s at current 3200 pace (Paces page), 60 sec recovery jog. Raced 2+ hard events Tuesday? Run Easy instead.",
+"lv": "HS"
+},
+{
+"t": "[A] [Distance] 10 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[B] [Distance] 8 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[C] [Distance] 6 × 300m at 3200 pace, 60 sec recovery",
+"lv": "HS"
+},
+{
+"t": "[Hybrid] BC Broken Race at current race pace, one set only. Raced 2+ hard events Tuesday? Run Easy instead.",
+"lv": "HS"
+},
+{
+"t": "[Hybrid] 800: 500m + 300m at 800 pace, 3 min rest",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Distance": "300s at 3200 pace (Hybrid: Broken Race)"
+},
+"focus": "300s · Broken Race"
+},
+{
+"start": "2027-02-22",
+"day": "Tue",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "800 runners: D1 800 rhythm: 6 × 200m at current 800 pace (Paces page), 90 sec recovery. Controlled: every rep the same.",
+"lv": "HS"
+},
+{
+"t": "400-focused runners: B1 Easy run: 15–25 min Easy (10–15 min, optional) + E2 Athletic development: pogo hops 2×10, A-skips 2×20m, mini-hurdle run 2×, 5 min hip mobility",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "200s at 800 pace"
+}
+},
+{
+"start": "2027-02-22",
+"day": "Thu",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "800 runners: B1 Easy run: 20–25 min Easy + 4 × 100m relaxed strides, full walk-back recovery (Tuesday was your 800 work)",
+"lv": "HS"
+},
+{
+"t": "400-focused runners: C2 Speed endurance (reduced): 2 × 150m fast and controlled, 6–8 min recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "Easy + strides (400s: speed endurance)"
+}
+},
+{
+"start": "2027-03-15",
+"day": "Tue",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills + 4 strides. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "800 runners: Broken 800: 200–400–200 at current 800 pace, 60 sec between segments. One set. Record splits.",
+"lv": "HS"
+},
+{
+"t": "Newer 800 runners: 3 × 200m at 800 pace, 2 min recovery",
+"lv": "HS"
+},
+{
+"t": "400-focused runners: BC Michigan (Mid): 400 Tempo · 3 min jog · 300 at 800 pace · 4 min walk/jog · 200 at Rep pace · 4 min walk · 150 fast and relaxed",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "Broken 800 (400s: Michigan)"
+}
+},
+{
+"start": "2027-03-15",
+"day": "Thu",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "BC Track Accelerations: 6 × 40m progressive accelerations on the track, walk back + 60–90 sec",
+"lv": "HS"
+},
+{
+"t": "BC Flyers: 2 × flying 20m (20–30m build-up), full recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "Track accelerations + Flyers"
+}
+},
+{
+"start": "2027-03-29",
+"day": "Thu",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "800 runners: BC Event Reps: 4 × 300m at current 800 pace, 3 min recovery",
+"lv": "HS"
+},
+{
+"t": "400-focused runners: BC Event Reps: 3 × 300m at 800 pace, 4–5 min recovery",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "BC Event Reps"
+}
+},
+{
+"start": "2027-04-12",
+"day": "Thu",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "800 runners (raced one event Tuesday): Broken 800: 200–400–200 at your updated current 800 pace, 60 sec between segments",
+"lv": "HS"
+},
+{
+"t": "400-focused runners (raced one event Tuesday): C2 Speed endurance: 3 × 150m fast and controlled, 6–8 min recovery",
+"lv": "HS"
+},
+{
+"t": "Raced 2+ events: B1 Easy run: 15–25 min Easy (400-focused runners: 10–15 min, optional) + 4 × 80m relaxed strides",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "Broken 800 / Speed endurance"
+}
+},
+{
+"start": "2027-04-19",
+"day": "Thu",
+"lv": "HS",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10 min Easy + dynamic drills. Cool-down: 5–10 min Easy.",
+"lv": "HS"
+},
+{
+"t": "BC Broken Race at current race pace, one set only:",
+"lv": "HS"
+},
+{
+"t": "800 runners: 400–200–200 at 800 pace, 60 sec between segments",
+"lv": "HS"
+},
+{
+"t": "400 runners: 300m + 100m at your season-best 400 pace, 60 sec rest",
+"lv": "HS"
+},
+{
+"t": "Raced 2+ hard events Tuesday? B1 Easy run: 15–25 min Easy (400-focused runners: 10–15 min, optional) instead.",
+"lv": "HS"
+}
+],
+"gfocus": {
+"Mid Distance": "BC Broken Race"
+}
+},
+{
+"start": "2027-02-22",
+"day": "Tue",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 4 × 200m at a controlled current 1600 rhythm, 90 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 4 × 200m at a controlled current 1600 rhythm, 90 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 200m at a controlled 1600 rhythm, 90 sec recovery (or 4 × 40 sec smooth efforts)",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "Intro 200s"
+},
+"focus": "Intro reps"
+},
+{
+"start": "2027-03-01",
+"day": "Tue",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 6 × 300m at controlled current 3K effort, 90 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 5 × 300m at controlled current 3K effort, 90 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 4 × 300m at controlled 3K effort, 90 sec recovery (or 4 × 60 sec controlled efforts)",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "300s at 3K effort"
+},
+"focus": "300s · 200s"
+},
+{
+"start": "2027-03-01",
+"day": "Thu",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] BC Track Accelerations: 6 × 40m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "[B] BC Track Accelerations: 5 × 30–40m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "[C] BC Track Accelerations: 4 × 30m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "Then 2 × 150m relaxed fast, full recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "Track accelerations"
+},
+"focus": "Track accelerations"
+},
+{
+"start": "2027-03-08",
+"day": "Thu",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 4 × 45 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "[B] 3 × 45 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 30 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "45-second efforts"
+},
+"focus": "45-second efforts"
+},
+{
+"start": "2027-04-05",
+"day": "Tue",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 200–400–600–400–200 at controlled current 3K effort, 90–120 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 200–400–400–200 at controlled current 3K effort, 90–120 sec recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 200–400–200 at controlled 3K effort, 90–120 sec recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "3K ladder"
+},
+"focus": "Ladder"
+},
+{
+"start": "2027-04-05",
+"day": "Thu",
+"lv": "JH",
+"group": "Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 3 × 400m at current 1600 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 3 × 400m at current 1600 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 2 × 400m or 3 × 300m at 1600 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[Hybrid] 800 is your priority? Do the Mid-Distance session instead.",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Distance": "400s at 1600 rhythm"
+},
+"focus": "400s · Broken 800"
+},
+{
+"start": "2027-02-22",
+"day": "Tue",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 4 × 150m fast but relaxed, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 4 × 150m fast but relaxed, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 150m fast but relaxed, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "Intro 150s"
+},
+"focus": "Intro reps"
+},
+{
+"start": "2027-03-01",
+"day": "Tue",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 4 × 200m at current 800 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 4 × 200m at current 800 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 200m at current 800 rhythm, 2 min recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "200s at 800 rhythm"
+},
+"focus": "300s · 200s"
+},
+{
+"start": "2027-03-01",
+"day": "Thu",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] BC Track Accelerations: 6 × 40m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "[B] BC Track Accelerations: 5 × 30–40m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "[C] BC Track Accelerations: 4 × 30m progressive accelerations, walk back + rest",
+"lv": "JH"
+},
+{
+"t": "Then 2 × 150m relaxed fast, full recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "Track accelerations"
+},
+"focus": "Track accelerations"
+},
+{
+"start": "2027-03-08",
+"day": "Thu",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 4 × 45 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "[B] 3 × 45 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 30 sec on the track at 3K effort (steady-hard), 90 sec jog",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "45-second efforts"
+},
+"focus": "45-second efforts"
+},
+{
+"start": "2027-04-05",
+"day": "Tue",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "[A] 200–300–200 at controlled current 800 rhythm, 2–3 min recovery",
+"lv": "JH"
+},
+{
+"t": "[B] 200–300–200 at controlled current 800 rhythm, 2–3 min recovery",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 150m at 800 rhythm, 2–3 min recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+},
+{
+"t": "[HS-ready] Invited: join the HS group for warm-up, drills, and strength coaching. Run your JH Advanced reps.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "800-rhythm ladder"
+},
+"focus": "Ladder"
+},
+{
+"start": "2027-04-05",
+"day": "Thu",
+"lv": "JH",
+"group": "Mid Distance",
+"items": [
+{
+"t": "Warm-up: 10–15 min Easy + drills (shorter for younger runners).",
+"lv": "JH"
+},
+{
+"t": "BC Broken 800 for prepared runners: 200–400–200 at current 800 rhythm, 2 min between segments. No all-out efforts, no forced goal paces.",
+"lv": "JH"
+},
+{
+"t": "[A] 200–400–200 at 800 rhythm, 2 min between segments",
+"lv": "JH"
+},
+{
+"t": "[B] 200–400–200 at 800 rhythm, 2 min between segments (first time? 3 × 200m instead)",
+"lv": "JH"
+},
+{
+"t": "[C] 3 × 200m at 800 rhythm, 3 min recovery",
+"lv": "JH"
+},
+{
+"t": "Cool-down: 5–10 min Easy.",
+"lv": "JH"
+}
+],
+"gfocus": {
+"JH Mid Distance": "Broken 800 (JH)"
+},
+"focus": "400s · Broken 800"
+}
+]

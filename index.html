@@ -679,6 +679,20 @@ a{text-underline-offset:3px}
 .cal-mt{font-weight:700;font-size:12px;background:var(--gold);color:var(--gold-ink);border-radius:5px;padding:2px 5px;margin:2px 0 4px}
 .cal-ls div{margin:0 0 3px;overflow-wrap:anywhere}
 ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
+.aud-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 10px}
+.aud-chk{display:flex;gap:6px;align-items:center;font-size:14px}
+.aud-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:0 0 12px}
+.aud-leg span{display:flex;align-items:center;gap:5px}
+.aud-sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid rgba(127,127,127,.35)}
+.aud-p{border-top:1px solid var(--line);padding:12px 0 6px}
+.aud-p h3{margin:0 0 8px;font-size:16px}.aud-p h3 small{font-weight:500;color:var(--muted);font-size:12.5px;margin-left:6px}
+.aud-row{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin:0 0 6px}
+.aud-lab{font-weight:700;font-size:13px}.aud-lab small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.aud-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;background:var(--chip)}
+.aud-bar span{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;min-width:2px;border-right:1px solid rgba(0,0,0,.18)}
+.aud-t td,.aud-t th{font-size:13px}.aud-tot td{border-top:2px solid var(--line)}
+.aud details summary,.aud-rules summary{cursor:pointer;font-weight:600;margin:6px 0}
+@media (max-width:600px){.aud-row{grid-template-columns:1fr}}
 .today.cdash{display:grid;gap:14px;grid-template-columns:1fr}
 .cd-top{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .cd-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
@@ -876,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09b";
+const HUB_VERSION = "11-09c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2963,6 +2977,170 @@ function openAbbr(k){
   if (d.showModal) d.showModal(); else d.setAttribute("open", "");
 }
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("button.abbr"); if (b) { e.preventDefault(); e.stopPropagation(); openAbbr(b.dataset.k); } });
+/* ===== Training audit: every posted day for one program, classified by ONE primary purpose (computed live from the posted plan) ===== */
+const AUD_CATS = [["easy","Easy / recovery","#8fb8a4"],["long","Long run","#4f8f73"],["steady","Steady aerobic","#2f6f8f"],["tempo","Tempo / threshold","#6d5fb3"],
+  ["int","Aerobic / race-pace intervals","#c2410c"],["broken","Broken race / specific endurance","#b91c1c"],["speed","Speed / mechanics","#fcb827"],["meet","Meet / competition","#64748b"]];
+const AUD_Q = ["steady","tempo","int","broken","speed"];   // "quality" subtotal (not a category)
+const AUD_PROGS = [{k:"hsd", lv:"HS", g:"Distance", path:"Distance", n:"HS Distance · 1600/3200"}, {k:"hsh", lv:"HS", g:"Distance", path:"Hybrid", n:"HS Distance · Hybrid 800/1600"},
+  {k:"hsm", lv:"HS", g:"Mid Distance", path:"Mid", n:"HS Mid-Distance (800-focused)"}, {k:"jhd", lv:"JH", g:"Distance", path:"", n:"JH Distance"}, {k:"jhm", lv:"JH", g:"Mid Distance", path:"", n:"JH Mid-Distance"}];
+// Phases. Championship starts at the conference meet week.
+const AUD_PH = {HS:[["base","Winter / base","2026-12-01","2027-02-14"],["pre","Pre-competition","2027-02-15","2027-03-04"],["comp","Competition","2027-03-05","2027-05-02"],["champ","Championship","2027-05-03","2027-05-25"]],
+  JH:[["base","Winter / base","2026-12-01","2027-02-14"],["pre","Pre-competition","2027-02-15","2027-04-14"],["comp","Competition","2027-04-15","2027-05-09"],["champ","Championship","2027-05-10","2027-05-22"]]};
+// Earliest keyword in a line decides its purpose (ties go to the first in this list). Documented on the page.
+const AUD_RX = [["broken",/broken|speed endurance|between segments|\bC\d\b/i],["int",/michigan|ladder|interval|event reps|event-specific|race pace|\b(3200|1600|800|3k|mile|1500) (pace|effort|rhythm)|long hills|\bD\d\b|\b\d{3,4}m at (?!rep)|\bat 800\b/i],
+  ["tempo",/threshold|tempo|mystery|1000s/i],["steady",/controlled aerobic|\bsteady\b/i],["speed",/\bspeed\b|flyers?|accelerat|hill sprints?|short hills|max velocity|flying|sharpen|rep pace|fast but relaxed|relaxed fast|fast and relaxed|\bA\d\b/i],
+  ["long",/long (easy )?run|long easy/i],["easy",/easy|recovery run|^recovery\b|recovery or rest|shakeout|shake-out|pre-meet|\bjog\b|aerobic|athletic development/i]];
+const AUD_RANK = ["broken","int","tempo","steady","speed","long","easy"];
+const AUD_SPD = /strides?|accelerat|flying|flyers?|build-?ups?|relaxed fast|fast and relaxed|hill sprints?|\b\d0m\b|max velocity/i;
+function audCat(s){ let best = null, bi = 1e9; AUD_RX.forEach(([k,rx]) => { const m = rx.exec(s); if (m && m.index < bi) { bi = m.index; best = k; } }); return best; }
+function audLines(d, lv, g, path){
+  const raw = forLv((d.groups||{})[g]||[], lv);
+  const PATHS = ["Distance","Hybrid","Mid"];
+  return raw.map(it => ({...splitTags(it.t)})).filter(({tags}) => {
+    if (tags.includes("Boys") || tags.includes("HS-ready")) return false;
+    const pt = tags.filter(x=>PATHS.includes(x)); if (pt.length && path && !pt.includes(path)) return false;
+    const lvT = tags.filter(x=>["A","B","C"].includes(x)); if (lvT.length && !lvT.includes("B")) return false;   // the Intermediate version
+    return true; }).filter(({text}) => path!=="Mid" || !/^400(-focused)? runners/i.test(text));   // HS Mid numbers are for 800-focused runners
+}
+function audDay(d, dt, lv, g, path){
+  const iso = isoD(dt), mt = SCHEDULE.filter(m => m.level===lv && m.date===iso && !/\bboys\b/i.test(m.notes||"") && !/\bBoys\b/.test(m.meet));
+  const title = gFocus(d, g, lv) || focusFor(d, lv) || "";
+  const L = audLines(d, lv, g, path);
+  const isOpt = x => /^optional\b|\bor rest\b|^rest or\b|\bor shakeout\b/i.test(x);
+  const note = x => !/\d/.test(x) && !/\bBC\b|michigan|ladder/i.test(x);   // advice lines ("Two-meet week: no extra intervals") aren't workouts
+  const main = L.filter(({text,tags}) => !/^(warm-?up|cool-?down|coaching|strength|e\d strength|weight room|home strength|mobility|core\b)/i.test(text) && !tags.includes("Crossover") && !isOpt(text) && !note(text));
+  const extra = L.filter(({text,tags}) => tags.includes("Crossover") || isOpt(text));
+  const optS = isOpt(title) || (!main.length && extra.length);
+  const r = {iso, title, opt: optS, spd: 0, spdOpt: 0, min: {}, hasMin: false};
+  if (mt.length) { r.cat = "meet"; r.meet = mt.map(m=>m.meet).join(" + "); return r; }
+  const tc = audCat(title);
+  const lc = (optS ? extra : main).map(x => audCat(x.text)).filter(Boolean);
+  if (!lc.length && (!tc || /^rest\b|full rest/i.test(title))) { r.cat = /rest|off/i.test(title) || !L.length ? "rest" : "nonrun"; return r; }
+  let cat = lc.length ? AUD_RANK.find(k => lc.includes(k)) : tc;
+  // easy run + a few strides/accelerations stays easy (speed exposure only)
+  if (cat==="speed" && tc!=="speed" && (lc.includes("easy") || lc.includes("long")) && !/flyers?|speed/i.test(title)) cat = lc.includes("long") ? "long" : "easy";
+  if (cat==="easy" && tc==="long") cat = "long";
+  r.cat = cat;
+  const all = (optS ? extra : main).map(x=>x.text).join(" | ");
+  if (cat==="speed" || AUD_SPD.test(all)) r.spd = 1;
+  if (!r.spd && extra.some(x => AUD_SPD.test(x.text))) r.spdOpt = 1;
+  // ---- time estimate (minutes by intensity). Distances use assumed speeds; labelled as estimates on the page. ----
+  const V = lv==="HS" ? {int:4.4, tempo:4.0, broken:5.4, speed:6.5, steady:3.8, easy:3.2, long:3.2} : {int:3.8, tempo:3.5, broken:4.6, speed:5.8, steady:3.4, easy:2.9, long:2.9};
+  const add = (k, m) => { if (m > 0) { r.min[k] = (r.min[k]||0) + m; r.hasMin = true; } };
+  const mid = s => { const p = s.split(/[–-]/).map(Number); return p.length > 1 ? (p[0]+p[1])/2 : p[0]; };
+  L.forEach(({text: t0}) => {
+    const text = t0.replace(/\(b\).*$/i, "");   // "(a) … (b) … (c) …" options: count one
+    if (/7-Minute Ladder/i.test(text) && !/\d+ sets?/i.test(text)) add("int", 7);
+    const lk = /^(warm-?up|cool-?down)/i.test(text) ? "easy" : (audCat(text) || cat);
+    if (/^(strength|e\d strength|weight room|mobility)/i.test(text)) return;
+    let mm, used = false;
+    const wc = /warm-?up and cool-?down: (\d+(?:[–-]\d+)?) min/i.exec(text); if (wc) { add("easy", 2*mid(wc[1])); return; }
+    const reMin = /(\d+(?:[–-]\d+)?)\s*(?:×|x)\s*(\d+(?:[–-]\d+)?)\s*min/gi; while ((mm = reMin.exec(text))) { add(lk==="easy"?cat:lk, mid(mm[1])*mid(mm[2])); used = true; }
+    if (!used) { const reM = /(\d+(?:[–-]\d+)?)\s*min\b/gi; while ((mm = reM.exec(text))) { if (/rest|recovery|jog between|walk/i.test(text.slice(Math.max(0, mm.index-2), mm.index + mm[0].length + 12)) && lk!=="easy") continue; add(lk==="speed"||lk==="int"||lk==="broken" ? "easy" : lk, mid(mm[1])); break; } }
+    const reSec = /(\d+(?:[–-]\d+)?)\s*(?:×|x)\s*(\d+)\s*sec\b/gi; while ((mm = reSec.exec(text))) { add(lk==="easy" ? "speed" : lk, mid(mm[1]) * (+mm[2]) / 60); }
+    const reRep = /(\d+(?:[–-]\d+)?)\s*(?:×|x)\s*(\d{2,4})m\b/gi; while ((mm = reRep.exec(text))) { const k = lk==="easy" ? "speed" : lk; add(k, mid(mm[1]) * (+mm[2]) / (V[k]||4) / 60); }
+    const reOne = /(?<![×x]\s?)(?<![×x])\b(\d{3,4})m? (?:Tempo|Interval|at (?:\w+ )?pace|at Rep)/gi; while ((mm = reOne.exec(text))) { const k = /tempo/i.test(mm[0]) ? "tempo" : /rep/i.test(mm[0]) ? "speed" : (lk==="easy" ? "int" : lk); add(k, (+mm[1]) / (V[k]||4) / 60); }
+    const reLad = /\b(\d{3,4}(?:[–-]\d{3,4}){2,})\b/g; while ((mm = reLad.exec(text))) { const k = lk==="easy" ? "int" : lk; add(k, mm[1].split(/[–-]/).reduce((a,b)=>a+(+b),0) / (V[k]||4) / 60); }
+  });
+  return r;
+}
+function auditRun(weeks, P){
+  const days = [], lv = P.lv, ph = AUD_PH[lv], from = ph[0][2], to = ph[ph.length-1][3];
+  (weeks||[]).forEach(w => (w.days||[]).forEach(d => { const dt = dayDate(w, d.day), iso = isoD(dt); if (iso < from || iso > to) return; days.push(audDay(d, dt, lv, P.g, P.path)); }));
+  days.sort((a,b)=>a.iso.localeCompare(b.iso));
+  const seen = new Set(); return days.filter(x => !seen.has(x.iso) && seen.add(x.iso));
+}
+function auditSum(days, phase, lv, withOpt){
+  const ph = AUD_PH[lv].find(p=>p[0]===phase);
+  const D = days.filter(x => !ph || (x.iso >= ph[2] && x.iso <= ph[3]));
+  const run = D.filter(x => x.cat && x.cat!=="rest" && x.cat!=="nonrun" && (withOpt || !x.opt));
+  const cnt = Object.fromEntries(AUD_CATS.map(([k])=>[k, run.filter(x=>x.cat===k).length]));
+  const n = run.length, meets = cnt.meet, prac = n - meets, q = AUD_Q.reduce((a,k)=>a+cnt[k],0);
+  const weeks = Math.max(1, D.length/7), spd = run.reduce((a,x)=>a+x.spd,0) + (withOpt ? D.reduce((a,x)=>a+(x.spdOpt||0),0) : 0);
+  const mins = {}; let covered = 0; run.forEach(x => { if (x.hasMin) { covered++; Object.entries(x.min).forEach(([k,v]) => mins[k] = (mins[k]||0) + v); } });
+  return {D, n, cnt, rest: D.filter(x=>x.cat==="rest").length, nonrun: D.filter(x=>x.cat==="nonrun").length, opt: D.filter(x=>x.opt && x.cat!=="rest" && x.cat!=="nonrun").length,
+    q, qPrac: prac ? q/prac : 0, qComp: n ? (q+meets)/n : 0, spd, spdWk: spd/weeks, mins, covered, from: D.length ? D[0].iso : "", to: D.length ? D[D.length-1].iso : ""};
+}
+// ---- Philosophy: how the training fits together + the live audit (graphs/tables come from the posted plan) ----
+let audS = {ph:"all", opt:true}, AUD_PROP = null, audPropTried = false, audCache = {key:"", v:null};
+function audProposal(){
+  if (audPropTried || !canPost) return; audPropTried = true;
+  fetch("plans/distance_revision.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).then(j => { if (Array.isArray(j) && j.length) { AUD_PROP = j; audCache.key = ""; render(); } }).catch(()=>{});
+}
+function audApply(weeks, patches){
+  const W = JSON.parse(JSON.stringify(weeks));
+  patches.forEach(q => { const w = W.find(x=>x.start===q.start), d = w && w.days.find(x=>x.day===q.day); if (!d) return;
+    d.groups = d.groups || {}; d.groups[q.group] = (d.groups[q.group]||[]).filter(i=>i.lv!==q.lv).concat(q.items);
+    d.gfocus = Object.assign({}, d.gfocus||{}, q.gfocus||{});
+    if (q.focus) { const f = d.focus && typeof d.focus==="object" ? d.focus : {HS:d.focus||"", JH:d.focus||""}; d.focus = Object.assign({}, f, {[q.lv]: q.focus}); if (d.sess && d.sess[q.lv] && typeof d.sess[q.lv]==="object") d.sess = Object.assign({}, d.sess, {[q.lv]: Object.assign({}, d.sess[q.lv], {title: q.focus})}); } });
+  return W;
+}
+function audData(){
+  const key = RAW_STARTS.length + "|" + WORKOUTS.length + "|" + JSON.stringify(WORKOUTS).length + "|" + (AUD_PROP ? AUD_PROP.length : 0);
+  if (audCache.key === key) return audCache.v;
+  const rev = AUD_PROP ? audApply(WORKOUTS, AUD_PROP) : null;
+  const v = AUD_PROGS.map(P => ({P, cur: auditRun(WORKOUTS, P), rev: rev ? auditRun(rev, P) : null}));
+  audCache = {key, v}; return v;
+}
+const pct = x => (100*x).toFixed(x > 0 && x < 0.1 ? 1 : 0) + "%";
+function audBar(S, label){
+  const segs = AUD_CATS.map(([k,l,c]) => ({k, l, c, n:S.cnt[k], p: S.n ? S.cnt[k]/S.n : 0})).filter(s=>s.n);
+  return `<div class="aud-row"><div class="aud-lab">${esc(label)}<small>${S.n} sessions</small></div><div class="aud-bar" role="img" aria-label="${esc(label)}: ${segs.map(s=>`${s.l} ${pct(s.p)}`).join(", ")}">
+    ${segs.map(s=>`<span style="flex:${s.n};background:${s.c};color:${s.k==="speed"||s.k==="easy"?"#111":"#fff"}" title="${esc(s.l)}: ${s.n} (${pct(s.p)})">${s.p>=0.06?pct(s.p):""}</span>`).join("")}</div></div>`;
+}
+function audTable(A, B){
+  const col = (S, k) => S ? `<td class="mono">${S.cnt[k]}</td><td class="mono">${pct(S.n ? S.cnt[k]/S.n : 0)}</td>` : "";
+  const mt = S => { const tot = Object.values(S.mins).reduce((a,b)=>a+b,0); return tot ? S : null; };
+  const tm = (S, k) => { const tot = Object.values(S.mins).reduce((a,b)=>a+b,0); return tot ? pct((S.mins[k]||0)/tot) : "—"; };
+  const H = B ? `<th colspan="2">Current</th><th colspan="2">Proposed</th>` : `<th colspan="2">Posted plan</th>`;
+  return `<div class="tbl"><table class="aud-t"><thead><tr><th>Primary purpose</th>${H}<th>Est. running time${B?" (cur → prop)":""}</th></tr></thead><tbody>
+    ${AUD_CATS.map(([k,l,c])=>`<tr><td><i class="aud-sw" style="background:${c}"></i>${esc(l)}</td>${col(A,k)}${col(B,k)}<td class="mono">${k==="meet" ? "not estimated" : tm(A,k) + (B ? " → " + tm(B,k) : "")}</td></tr>`).join("")}
+    <tr class="aud-tot"><td><b>Running sessions (denominator)</b></td><td class="mono" colspan="2">${A.n}</td>${B?`<td class="mono" colspan="2">${B.n}</td>`:""}<td class="mono">${A.covered} of ${A.n} with duration data</td></tr>
+    <tr><td>Quality subtotal (steady + tempo + intervals + broken race + speed)</td><td class="mono">${A.q}</td><td class="mono">—</td>${B?`<td class="mono">${B.q}</td><td class="mono">—</td>`:""}<td></td></tr>
+    <tr><td>Practice quality % (meets excluded)</td><td class="mono" colspan="2">${pct(A.qPrac)}</td>${B?`<td class="mono" colspan="2">${pct(B.qPrac)}</td>`:""}<td></td></tr>
+    <tr><td>Quality + competition %</td><td class="mono" colspan="2">${pct(A.qComp)}</td>${B?`<td class="mono" colspan="2">${pct(B.qComp)}</td>`:""}<td></td></tr>
+    <tr><td>Speed exposures (incl. strides/accelerations on other days)</td><td class="mono" colspan="2">${A.spd} · ${A.spdWk.toFixed(1)}/wk</td>${B?`<td class="mono" colspan="2">${B.spd} · ${B.spdWk.toFixed(1)}/wk</td>`:""}<td></td></tr>
+    <tr><td>Optional sessions ${audS.opt?"(included above)":"(left out above)"}</td><td class="mono" colspan="2">${A.opt}</td>${B?`<td class="mono" colspan="2">${B.opt}</td>`:""}<td></td></tr>
+    <tr><td>Rest days · non-running-only days (not in the denominator)</td><td class="mono" colspan="2">${A.rest} · ${A.nonrun}</td>${B?`<td class="mono" colspan="2">${B.rest} · ${B.nonrun}</td>`:""}<td></td></tr>
+    </tbody></table></div>`;
+}
+function audHTML(){
+  audProposal();
+  const data = audData(), prop = !!AUD_PROP;
+  const PH = [["all","All season"],["base","Winter / base"],["pre","Pre-competition"],["comp","Competition"],["champ","Championship"]];
+  return `<div class="panel aud"><div class="bar"><div><div class="eyebrow">From the posted plan · updates itself</div><h2>What our training actually looks like</h2></div></div>
+    <p style="margin:0 0 10px">Every day from Dec 1 to each program's last scheduled meet, sorted by its <b>one main purpose</b>. Percentages are of running sessions. ${prop ? `<b>Proposed</b> = the Distance &amp; Mid revision that isn't posted yet (coaches only).` : ""}</p>
+    <div class="aud-ctl"><div class="seg" role="group" aria-label="Phase">${PH.map(([k,l])=>`<button type="button" aria-pressed="${audS.ph===k}" onclick="audS.ph='${k}';render()">${l}</button>`).join("")}</div>
+      <label class="aud-chk"><input type="checkbox" ${audS.opt?"checked":""} onchange="audS.opt=this.checked;render()"> Include optional sessions</label></div>
+    <div class="aud-leg">${AUD_CATS.map(([k,l,c])=>`<span><i class="aud-sw" style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>
+    ${data.map(({P, cur, rev}) => { const A = auditSum(cur, audS.ph, P.lv, audS.opt), B = rev ? auditSum(rev, audS.ph, P.lv, audS.opt) : null;
+      const ph = AUD_PH[P.lv].find(p=>p[0]===audS.ph); const rng = ph ? `${fmtD(ph[2])} – ${fmtD(ph[3])}` : `${fmtD(AUD_PH[P.lv][0][2])} – ${fmtD(AUD_PH[P.lv][3][3])}`;
+      return `<section class="aud-p"><h3>${esc(P.n)} <small>${rng}</small></h3>${audBar(A, prop ? "Current" : "Posted plan")}${B ? audBar(B, "Proposed") : ""}
+        <details><summary>Counts, percentages and time</summary>${audTable(A, B)}</details></section>`; }).join("")}
+    <details class="aud-rules"><summary>How days are sorted</summary><ul class="exp">
+      <li><b>One purpose per day.</b> Each running line is read for its first workout word (Michigan, ladder, threshold, steady, flyers, easy…). A day takes the most race-specific purpose in it: broken race › intervals › tempo › steady › speed › long › easy.</li>
+      <li><b>Easy + a few strides stays easy</b> and adds a speed exposure. A speed day is one where speed is the main work (flyers, accelerations, short sprints).</li>
+      <li><b>Ladders</b> go by pace: at 3200/1600/800 pace or 3K effort = intervals; at Tempo = tempo. <b>Michigan</b> counts as intervals (most of its fast running is Interval/race pace). <b>Threshold reps stay tempo.</b></li>
+      <li><b>Meets</b> come from the meet schedule (girls' dates in the postseason; boys are the same pattern 2 days later). Qualifier-only meets are counted as if the athlete qualifies. Anticipated meets count.</li>
+      <li><b>Optional</b> = days posted as "optional" or "… or rest". Winter conditioning is voluntary for everyone, so it isn't counted as optional.</li>
+      <li><b>Versions:</b> the Intermediate (B) line, girls' lines, and the athlete's own pathway. HS Mid-Distance is shown for 800-focused runners.</li>
+      <li><b>Running time</b> is an estimate: written minutes, plus rep distances at assumed speeds (HS ≈ 4.4 m/s at 3200 pace, 5.4 m/s at 800 pace; JH a bit slower). Meets aren't timed. Treat it as a rough guide, not a measurement.</li></ul></details></div>`;
+}
+function mdWhyHTML(){
+  return `<div class="panel"><h2>Every workout type, in plain language</h2><div class="tbl"><table><thead><tr><th>Type</th><th>What it's for</th><th>Examples</th></tr></thead><tbody>
+    ${[["Easy / recovery","Builds the aerobic engine and lets the body absorb hard days. Conversational.","30–45 min Easy, recovery run, easy pre-meet shakeout"],
+      ["Long run","Aerobic endurance and durability. Still Easy pace, just longer.","Saturday long run, 45–75 min HS"],
+      ["Steady aerobic","Comfortably hard aerobic running, a step up from Easy.","JH controlled aerobic 3 × 4 min at Steady"],
+      ["Tempo / threshold","Raises the pace you can hold for a long time. Controlled, never raced.","BC Threshold 1000s, Mystery Workout, 3 × 6 min Tempo"],
+      ["Aerobic / race-pace intervals","Teaches race rhythm and builds aerobic power at 3200, 1600 or 800 pace.","300s at 3200 pace, 3200 Ladder, BC Event Reps, Michigan, JH 200s at 1600 rhythm"],
+      ["Broken race / specific endurance","Practises the feel of the race with short breaks, so the real race isn't the first time at that pace.","Broken 800 200–400–200, 500 + 300 at 800 pace, speed endurance 150s"],
+      ["Speed / mechanics","Top speed and good form while fresh. Short, fast, full recovery.","Flyers, track accelerations, 150s at Rep pace"],
+      ["Meet / competition","Racing. Counts as a hard day, so the days around it are lighter.","Tuesday duals, invitationals, conference, sectional"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div></div>
+    <div class="cols"><div class="panel"><h3>How it fits together</h3><p style="margin:0">Aerobic running (easy, long, steady, tempo) is the engine and most of the week. Speed work keeps the legs quick and the form clean. Race-rhythm intervals teach what 800, 1600 and 3200 pace feels like. Broken races and speed endurance put rhythm and fatigue together, close to the race itself. Each piece supports the others; none replaces the engine.</p></div>
+      <div class="panel"><h3>Full recovery vs. short rest</h3><p style="margin:0">Speed work (flyers, accelerations) uses <b>full recovery</b> so every rep is fast and clean: it trains speed and mechanics, not fatigue. Intervals and broken races use <b>short, set rest</b> on purpose: the point is holding pace while tired. Short rest on a speed day turns it into conditioning and loses the speed.</p></div>
+      <div class="panel"><h3>Junior high to high school</h3><p style="margin:0">Same workout names, drills and lifts, smaller doses and simpler pacing. JH steps up through intro reps, development reps, a ladder and then race-specific reps, with longer rest and no forced goal paces. A JH broken 800 is optional and earned. By 9th grade the system is familiar; only the volume and pace change.</p></div>
+      <div class="panel"><h3>Meets and workload</h3><p style="margin:0">A meet is a hard day, so the day before is easy and the day after is recovery, and a two-meet week has no extra intervals. But meets aren't our only fast running: race-rhythm and speed work start in February, <b>before</b> the first meet, so nobody's first fast running of the year is a race.</p></div></div>`;
+}
 function mdPhilHTML(){ return `<div class="panel"><h2>Our philosophy</h2>
           <p style="margin:0 0 10px">Two coaching ideas, one program. <b>Jack Daniels</b> builds the engine: aerobic running at each runner's own VDOT paces, controlled threshold work, and steady progress. <b>Tony Holler (Feed the Cats)</b> protects and builds speed: short, fast, fully recovered sprinting, good mechanics, and no junk fatigue.</p>
           <div class="cols"><div><h3 style="margin:0 0 6px">Build the engine (Daniels)</h3><ul class="exp"><li>Paces from each runner's best race (see Paces)</li><li>Most running is Easy, conversational</li><li>Threshold (Tempo) work that's controlled, not raced</li><li>Add work gradually; recovery is part of the plan</li></ul></div>
@@ -4831,7 +5009,7 @@ const views = {
     }
     else if (mdtab==="library") {
       const groups = ["A","B","C","D","E"];
-      body = `${mdPhilHTML()}${tyLegend}${groups.map(g=>`<div><h2 style="margin:6px 0 10px">${g} · ${esc(CODE_NAME[g])}</h2><div class="libgrid">${MD.lib.filter(x=>x.c[0]===g).map(x=>`<div class="panel libcard">
+      body = `${mdPhilHTML()}${mdWhyHTML()}${audHTML()}${tyLegend}${groups.map(g=>`<div><h2 style="margin:6px 0 10px">${g} · ${esc(CODE_NAME[g])}</h2><div class="libgrid">${MD.lib.filter(x=>x.c[0]===g).map(x=>`<div class="panel libcard">
           <h3><span class="wcode ty-${CODE_TY[g]}">${x.c}</span>${esc(x.n)}</h3>
           <dl><dt>Adaptation</dt><dd><b>${esc(CODE_ADAPT[g])}</b></dd><dt>Workout</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>
           ${x.prog?`<p style="margin:10px 0 4px"><b>Progression</b></p><ul class="exp">${x.prog.map(s=>`<li>${esc(s)}</li>`).join("")}</ul><p style="margin:8px 0 4px"><b>Technique</b></p><ul class="exp">${x.tech.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:""}
