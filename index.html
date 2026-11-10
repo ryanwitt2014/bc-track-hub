@@ -678,6 +678,13 @@ a{text-underline-offset:3px}
 .cal-ti:hover{color:var(--accent);text-decoration:underline}
 .cal-mt{font-weight:700;font-size:12px;background:var(--gold);color:var(--gold-ink);border-radius:5px;padding:2px 5px;margin:2px 0 4px}
 .cal-ls div{margin:0 0 3px;overflow-wrap:anywhere}
+ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
+ul.cal-ls li{margin:0 0 3px;overflow-wrap:anywhere;list-style:none}
+ul.cal-ls li.s-wu,ul.cal-ls li.s-str{margin:3px 0}
+ul.cal-ls li.s-str{gap:4px;font-weight:600}
+ul.cal-ls button.abbr.s-pill{font-size:11px;padding:1px 8px}
+ul.cal-ls button.abbr.vl{font-size:11px;padding:0 7px}
+ul.cal-ls .s-opt{color:var(--muted);font-style:italic}
 .cal-tg{color:var(--accent)}
 .cal-lift{color:var(--accent);font-weight:600}
 .cal-opt{color:var(--muted);font-style:italic}
@@ -859,7 +866,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-06r";
+const HUB_VERSION = "11-09a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1024,7 +1031,10 @@ const ATHLETES = [
   {"id": "hs-addison-hopkins", "name": "Addison Hopkins", "level": "HS", "g": "G", "grade": 10, "cats": ["Sprints", "High Jump", "Shot Put", "Discus", "Hurdles"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
   {"id": "hs-michael-williams", "name": "Michael Williams", "level": "HS", "g": "B", "grade": 11, "cats": ["Mid Distance", "Sprints"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
   {"id": "hs-elizabeth-widmer", "name": "Elizabeth (Libby) Widmer", "level": "HS", "g": "G", "grade": 9, "cats": ["Sprints", "Hurdles"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true, "aka": ["Libby Widmer", "Elizabeth Widmer"]},
-  {"id": "hs-tristan-landis", "name": "Tristan Landis", "level": "HS", "g": "B", "grade": 10, "cats": ["Sprints", "Long Jump"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true}
+  {"id": "hs-tristan-landis", "name": "Tristan Landis", "level": "HS", "g": "B", "grade": 10, "cats": ["Sprints", "Long Jump"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-gavin-ellis", "name": "Gavin Ellis", "level": "HS", "g": "B", "grade": 9, "cats": ["Sprints"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "hs-jose", "name": "Jose", "level": "HS", "g": "B", "grade": 12, "cats": ["Mid Distance", "Sprints", "Hurdles", "Long Jump", "High Jump", "Pole Vault", "Shot Put", "Discus"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true},
+  {"id": "jh-kayden-siddens", "name": "Kayden Siddens", "level": "JH", "g": "B", "grade": 7, "cats": ["Mid Distance", "Sprints", "Hurdles", "Long Jump", "High Jump", "Pole Vault", "Shot Put", "Discus"], "events": [], "prs": {}, "goals": {}, "log": [], "meets": [], "pri": {}, "isNew": true}
 ];
 
 // Set to true to show athletes as "First L." to people who aren't signed in as a coach.
@@ -1910,6 +1920,7 @@ const LIFTS = {
 };
 const LIFT_ORDER = ["A1","A2","B1","Deload","B2","M"], LIFT_ORDER_JH = ["JA","JB","JL","JM"];
 const liftCode = t => { const sp = String(t).match(/\b(JH )?Sprint Strength (A|B)\b/i); if (sp) return (sp[1] ? "MS" : "S") + sp[2].toUpperCase();
+  const sw = String(t).match(/\bSprint Weight Room \((\w+)/i); if (sw && LIFTS["SW"+sw[1].toLowerCase()]) return "SW"+sw[1].toLowerCase();
   const jg = String(t).match(/\bJH General Strength\s*(A1|A2)\b/i); if (jg) return "JG" + jg[1].toUpperCase();
   const g = String(t).match(/\bGeneral Strength\s*(A1|A2)\b/i); if (g) return "G" + g[1].toUpperCase();
   const j = String(t).match(/\bJH Strength (A|B|Light|Maintenance)\b/); if (j) return {A:"JA",B:"JB",Light:"JL",Maintenance:"JM"}[j[1]];
@@ -2061,7 +2072,8 @@ function sText(x, many){
   if (many && !/\d/.test(parts[0]) && !/^[^.]{1,40}:/.test(parts[0])) return "";                      // advice lines ("Floats are jogs…")
   return parts[0] + parts.slice(1).filter(p => /\d/.test(p) && /\d\s*(×|x|m\b|min|sec|s\b|set|rep)/i.test(p)).map(p => " " + p).join("");
 }
-function liSimple(arr){
+function liSimple(arr, o){
+  o = o || {};
   const S = {warm:[], main:[], str:[], opt:[], cool:[]};
   arr.forEach(it => { const sc = secOf(it); if (sc!=="warm" && sc!=="cool" && S_DROP.test(splitTags(it.t).text)) return; (S[sc] || S.main).push(it); });
   const rebuild = (it, txt) => Object.assign({}, it, {t: splitTags(it.t).tags.map(g=>`[${g}]`).join(" ") + (splitTags(it.t).tags.length ? " " : "") + txt});
@@ -2092,10 +2104,13 @@ function liSimple(arr){
   const wk = hasS && hasD ? (["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "d") : hasS ? "s" : hasD ? "d"
     : ["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "p";
   const wk2 = wk==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : wk;
-  return (S.warm.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wk2}">Warm-up</button></li>` : "")
+  const wkF = o.wu ? (o.wu==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : o.wu) : wk2;
+  const hasWork = !!main || mainS.length || S.str.length;   // something to actually do (not just notes)
+  const showWU = (S.warm.length && (hasWork || !o.wu)) || (o.wu && hasWork), showCD = (S.cool.length && (hasWork || !o.wu)) || (o.wu && hasWork);
+  return (showWU ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wkF}">Warm-up</button></li>` : "")
     + main + [...mainS, ...S.str].map(strHTML).join("")
     + S.opt.map(it => { const s = sText(splitTags(it.t).text, true); return s ? `<li class="s-opt">${itemHTML(rebuild(it, s))}</li>` : ""; }).join("")
-    + (S.cool.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
+    + (showCD ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
 }
 const liFull = arr => { const s = arr.map(secOf), k = new Set(s);
   if (k.size < 2) return arr.map(it=>`<li>${itemHTML(it)}</li>`).join("");
@@ -2864,7 +2879,7 @@ const SIG = {
       ["JH 800/1600","3 × 400m · 4 × 300m · 6 × 200m at 1600 pace"],["JH 400/800","4 × 150m relaxed fast · 3 × 200m at 800 pace · 6 × 100m fast"]], cues:["Pick before you warm up, then stick with it"]}
 };
 const ABBR_RE = new RegExp([
-  "\\b(?:JH )?Sprint Strength [AB]\\b", "\\bJH General Strength\\s*A[12]\\b", "\\bGeneral Strength\\s*A[12]\\b", "\\bJH Strength (?:A|B|Light|Maintenance)\\b",
+  "\\b(?:JH )?Sprint Strength [AB]\\b", "\\bSprint Weight Room \\(\\w+\\)", "\\bJH General Strength\\s*A[12]\\b", "\\bGeneral Strength\\s*A[12]\\b", "\\bJH Strength (?:A|B|Light|Maintenance)\\b",
   "\\bStrength\\s*[-–]?\\s*(?:A1|A2|B1|B2|Deload|M)\\b", "\\bHome strength\\s*H[12]\\b", "\\bH[12](?=\\s+(?:home\\s+)?strength\\b)", "\\bStrength\\s+H[12]\\b",
   "\\b[A-E][1-3](?=\\s+(?:Max|Maximum|Speed|Easy|Controlled|Aerobic|800|Strength|Athletic|Foundation|Introductory|Race|Advanced)\\b)",
   "\\bBC (?:Michigan|7-Minute Ladder|Threshold 1000s|1000s|Flyers|Short Hills|Long Hills|Event Reps|Broken Race|Mystery Workout)\\b", "\\bJH Michigan\\b"
@@ -2935,19 +2950,20 @@ function calDays(lv, g){
   if (calCache.key === key) return calCache.map;
   const map = {};
   const vw = window.SP && SP.weeksWith ? SP.weeksWith(visibleWeeks()) : visibleWeeks();
-  vw.forEach((w0, wi) => { const w = window.SP && SP.inject ? SP.inject(w0, {print:true}) : w0;
+  vw.forEach((w0, wi) => { const w = window.SP && SP.inject ? SP.inject(w0) : w0;
     w.days.forEach(d => { const dt = dayDate(w, d.day);
       let items = [...(d.all||[])];
       (d.combos||[]).filter(cb=>cb.groups.includes(g)).forEach(cb=>items.push(...cb.items));
       items.push(...((d.groups||{})[g]||[]));
       items = forLv(items, lv);
-      const sec = {main:[], str:[], opt:[]}; let hdr = "";
+      const sec = {main:[], str:[], opt:[]}; let hdr = ""; const raw = [];
       items.forEach(it => { const s = secOf(it); if (s==="warm"||s==="cool") return; const {tags, text} = splitTags(it.t);
         const m = /^Coach-Led [^·]+·\s*(.+?)\s*·\s*([\d–-]+ min)$/.exec(text); if (m) { hdr = m[2]; return; }
+        if (/^(MEET:|Meet:)/i.test(text)) return; raw.push(it);
         if (CAL_DROP.test(text)) return; (sec[s]||sec.main).push({tags, text}); });
       const title = g==="Sprints" ? gFocus(d, g, lv) : (gFocus(d, g, lv) || focusFor(d, lv) || "");
       const ss = typeof sessOf==="function" ? sessOf(d, lv) : null;
-      map[isoD(dt)] = {title, sess: ss && ss.kind ? ss.kind : "", hdr, sec, wi, day:d.day};
+      map[isoD(dt)] = {title, sess: ss && ss.kind ? ss.kind : "", hdr, sec, raw, wi, day:d.day};
     }); });
   calCache = {key, map};
   return map;
@@ -2960,14 +2976,18 @@ function calCell(dt, x, meets, inMonth){
   if (!x) return `<div class="cal-d ${inMonth?"":"out"} empty">${dn}</div>`;
   const jh = calInit().lv==="JH";
   const tagp = tags => { tags = tags.filter(y=>y!=="Crossover"); return tags.length ? `<b class="cal-tg">${esc(tags.map(x=>(jh && TAG_CHIP_JH[x]) || TAG_CHIP[x] || x).join(" · "))}</b> ` : ""; };
-  const lines = [...x.sec.main.map(it=>tagp(it.tags)+esc(it.text))];
-  if (x.sec.str.length) lines.push(`<span class="cal-lift">Lift: ${esc(x.sec.str[0].text.replace(/^(Weight room|Strength|Home strength):\s*/i,"").replace(/\s*\([^)]*min\)\s*$/,""))}</span>`);
-  x.sec.opt.slice(0,2).forEach(it=>lines.push(`<span class="cal-opt">${tagp(it.tags)}${esc(it.text)}</span>`));
-  const rest = /^(rest|full rest|off)/i.test(x.title) && lines.length<=1;
+  // Same clean lines as the Workouts page: Warm-up pop-up, the reps, "Strength · View lifts", Cool-down pop-up
+  const g = calInit().g, rest = /^(rest|full rest|off)/i.test(x.title) || (!x.sec.main.length && !x.sec.str.length);
+  const brk = x.sess==="spring" && !x.sec.str.length && !x.raw.some(it=>/\d\s*(×|x)\s*\d/.test(splitTags(it.t).text));
+  LI_CTX = g; const saveAth = LI_ATH; LI_ATH = null;
+  const home = /^optional\b/i.test(x.title) || x.raw.some(it=>/^At home\b/.test(splitTags(it.t).text));   // optional at-home days: no warm-up/cool-down
+  const body = liSimple(x.raw, {wu: rest || brk || home || mt.length && !x.sec.main.length ? "" : g==="Sprints" ? "s" : "d"});
+  LI_ATH = saveAth;
+  const lines = [];
   return `<div class="cal-d ${inMonth?"":"out"}${mt.length?" meet":""}${rest?" rest":""}${isToday?" today":""}">${dn}
     ${mt.map(m=>`<div class="cal-mt">★ ${esc(m.meet)}</div>`).join("")}
     ${x.title && !(mt.length && /^meet/i.test(x.title)) ? `<a class="cal-ti" href="#workouts" onclick="calGo(${x.wi});return false;">${esc(x.title)}</a>` : ""}
-    <div class="cal-ls">${lines.map(l=>`<div>${l}</div>`).join("")}</div></div>`;
+    <ul class="cal-ls wl">${body}</ul></div>`;
 }
 function calSet(k, v){ const s = calInit(); if (k==="m") { let m = s.m + v, y = s.y; if (m<0) { m=11; y--; } if (m>11) { m=0; y++; } s.m = m; s.y = y; } else s[k] = v;
   if (k==="lv" && !CAL_GROUPS[v].some(([g])=>g===s.g)) s.g = "Distance"; render(); }
@@ -3007,7 +3027,7 @@ const coachLast = s => s.name.split(" ").slice(-1)[0];
 // One-time items from planning chats, per coach (check them off; added tasks save the same way)
 const TODO_SEED = {"Ryan Witt":[
   {id:"sb-sql", t:"Run spring_break.sql in Supabase (spring break week = on your own)", href:"https://github.com/ryanwitt2014/bc-track-hub/blob/main/supabase/spring_break.sql"},
-  {id:"if-1105", t:"Paste the Nov 5 evening interest-form batch into Sign-ups → Interest form responses"},
+  {id:"if-1109", t:"Paste the Nov 9 interest-form export into Sign-ups → Interest form responses"},
   {id:"jh-sprint-ok", t:"Approve the JH sprint plan doc so the Mar–May JH program can be built"},
   {id:"jh-jumps", t:"Send the rest of the JH program doc (Section 10: jumps)"},
   {id:"hill", t:"Pick the hill for hill workouts (short ~50m steep, long 250–350m)"},
@@ -3261,7 +3281,7 @@ let WINTER = {ids:[], maybe:{}, follow:{}, done:[]}, wQueue = Promise.resolve(),
 const isWinter = a => WINTER.ids.includes(a.id) || !!WINTER.maybe[a.id];
 const isWinterMaybe = a => !WINTER.ids.includes(a.id) && !!WINTER.maybe[a.id];
 // Coach decisions made in chat, applied once (they become permanent the next time the winter roster is saved; un-starring later sticks).
-const WINTER_DECISIONS = [{key:"2026-11-05-form", star:["hs-maya-morales"], maybe:{"hs-elizabeth-widmer":"Can do some sessions; mornings work best"}, follow:{"hs-kayden-wade":"Said no to winter conditioning without a reason. Check in."}}, {"key": "2026-11-05-form-all", "star": ["hs-landon-dennis", "hs-gabe-holt", "hs-kian-yeary", "jh-kaci-howard", "jh-wesley-weigle", "jh-claire-bauer", "jh-noah-akins", "hs-adler-payne", "hs-dominic-dean", "jh-tripp-johnson", "hs-cailey-jones", "jh-deklan-wisniewski", "jh-oakley-sparks", "hs-ethan-hood", "jh-lexi-dennis", "hs-harlo-holder", "jh-levis-juarez-fuentes", "hs-michael-williams", "jh-destiny-barrera", "hs-loralei-rayman", "hs-veda-duttlinger", "hs-laila-stewart", "hs-zoe-butzke", "hs-sam-fleming", "jh-mia-zimmerman", "jh-eva-morales", "jh-gabe-devers", "hs-sarah-lambeck", "hs-elijah-justice", "hs-addison-hopkins", "jh-noah-ellis", "hs-ella-stacy", "hs-donald-adams", "hs-parker-vanallen", "jh-luke-rayman", "jh-olivia-crowder", "jh-jorge-marcial", "jh-annabelle-thomas", "jh-celie-bush", "jh-adella-walker", "hs-delilah-fuller", "hs-lillian-weigle", "jh-aiden-budreau"], "maybe": {"jh-corinn-hughes": "Yes if it works with the wrestling schedule", "hs-bryce-floyd": "Said yes, potentially", "hs-riley-sowders": "Club volleyball Tue/Thu, so can't make coach-led days", "hs-jacob-pitstick": "In basketball; will come when he can", "hs-brianna-mendoza": "When her other winter sport allows", "hs-ezreall-roberson": "Will come if able", "jh-rocklyn-crisp": "Maybe, if no basketball", "jh-tynlee-becker": "Maybe; basketball may conflict"}}];
+const WINTER_DECISIONS = [{key:"2026-11-05-form", star:["hs-maya-morales"], maybe:{"hs-elizabeth-widmer":"Can do some sessions; mornings work best"}, follow:{"hs-kayden-wade":"Said no to winter conditioning without a reason. Check in."}}, {"key": "2026-11-05-form-all", "star": ["hs-landon-dennis", "hs-gabe-holt", "hs-kian-yeary", "jh-kaci-howard", "jh-wesley-weigle", "jh-claire-bauer", "jh-noah-akins", "hs-adler-payne", "hs-dominic-dean", "jh-tripp-johnson", "hs-cailey-jones", "jh-deklan-wisniewski", "jh-oakley-sparks", "hs-ethan-hood", "jh-lexi-dennis", "hs-harlo-holder", "jh-levis-juarez-fuentes", "hs-michael-williams", "jh-destiny-barrera", "hs-loralei-rayman", "hs-veda-duttlinger", "hs-laila-stewart", "hs-zoe-butzke", "hs-sam-fleming", "jh-mia-zimmerman", "jh-eva-morales", "jh-gabe-devers", "hs-sarah-lambeck", "hs-elijah-justice", "hs-addison-hopkins", "jh-noah-ellis", "hs-ella-stacy", "hs-donald-adams", "hs-parker-vanallen", "jh-luke-rayman", "jh-olivia-crowder", "jh-jorge-marcial", "jh-annabelle-thomas", "jh-celie-bush", "jh-adella-walker", "hs-delilah-fuller", "hs-lillian-weigle", "jh-aiden-budreau"], "maybe": {"jh-corinn-hughes": "Yes if it works with the wrestling schedule", "hs-bryce-floyd": "Said yes, potentially", "hs-riley-sowders": "Club volleyball Tue/Thu, so can't make coach-led days", "hs-jacob-pitstick": "In basketball; will come when he can", "hs-brianna-mendoza": "When her other winter sport allows", "hs-ezreall-roberson": "Will come if able", "jh-rocklyn-crisp": "Maybe, if no basketball", "jh-tynlee-becker": "Maybe; basketball may conflict"}}, {"key": "2026-11-09-form", "star": ["hs-matthew-mckinnis", "hs-dietrich-payne", "hs-chris-ingram", "hs-gabe-ingram", "hs-olive-budreau", "hs-carson-brost", "jh-logan-pyke", "hs-gavin-ellis"], "maybe": {"hs-kenzie-oswald": "Cheer practice Tue/Wed may conflict", "jh-gavin-gobel": "Might be able to", "hs-morgan-chapman": "Indoor soccer may conflict", "hs-scarlet-duttlinger": "Science Olympiad may conflict"}, "follow": {"hs-jose": "Said no to winter conditioning; no last name on the form. Check in.", "jh-kayden-siddens": "Said no to winter conditioning without a reason. Check in."}}];
 let wDirty = false, wLoaded = false;
 function applyWinterDecisions(){
   WINTER.maybe = WINTER.maybe || {}; WINTER.follow = WINTER.follow || {}; WINTER.done = WINTER.done || [];
@@ -5162,6 +5182,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-05q"></script>
+<script src="sprints.js?v=11-09a"></script>
 </body>
 </html>

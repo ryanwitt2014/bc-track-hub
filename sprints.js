@@ -1083,6 +1083,50 @@ const tplLines = T => [
   ...(T.opt ? [T.opt] : []),
   ...(T.steps ? (T.rounds ? [`${T.rounds} rounds:`] : []).concat(T.steps.map(([n,p,c])=>`${n}: ${p}${c?" · "+c:""}`)) : []),
   ...(T.rest ? [T.rest] : []), ...(T.end ? [T.end] : [])];
+/* ---------- Simple lines (Workouts page, athlete week, calendar): warm-up / reps / "View lifts" / cool-down, nothing else ---------- */
+const SWN = k => ({dec:"Dec", jan:"Jan", feb:"Feb", spring:"Spring"})[k] || k;
+const GTAG = {S1:"S1", S2:"S2", S3:"S3", H:"Hurdles", J:"Jumps"};
+const sTag = r => { const g = (r.g||[]).filter(x=>GTAG[x]).map(x=>`[${GTAG[x]}]`); const l = r.jl ? [`[Level ${r.jl.length===1 ? r.jl[0] : r.jl[0]+"+"}]`] : []; return g.concat(l).join(" ") + (g.length||l.length ? " " : ""); };
+function simpleRow(r){
+  if (r.wu) return "Warm-up: sprint warm-up";
+  if (r.lift) { const L = typeof LIFTS!=="undefined" && LIFTS[r.lift]; return L ? L.name.split(" · ")[0] : r.x || r.lift; }
+  if (r.str) return `Sprint Weight Room (${SWN(r.str)})`;
+  let p = r.p || "", m, q;
+  if ((m = r.x.match(/flying (\d+)m/i)) && (q = p.match(/^(\d+(?:–\d+)?)\s*(?:reps?)?(.*)$/))) return `${sTag(r)}${q[1]} × flying ${m[1]}m${q[2]}${r.r?" · rest "+r.r:""}`;
+  return `${sTag(r)}${r.x}${p?": "+p:""}${r.r && !/walk back$/.test(r.r) ? " · rest "+r.r : r.r ? " · "+r.r : ""}`;
+}
+function simpleItems(i, LV, d){
+  const JHL = LV==="JH", it = t => ({t, lv:LV}), out = [];
+  const s3 = () => { if (!JHL) out.push(it("[S3] Do today's Mid-Distance workout instead.")); };
+  if (i.cnote) out.push(it("Coaching: " + i.cnote));
+  if (isGsc(i)) {
+    i.blocks.forEach(([k,x,p]) => out.push(it(k==="warm" ? "Warm-up: " + x : k==="cool" ? "Cool-down: " + x : k==="str" ? (LIFTS && LIFTS[i.lift] ? LIFTS[i.lift].name.split(" · ")[0] : x) : `${x.replace(/\s*\([^)]*\)\s*$/,"")} · ${p}`)));
+    s3();
+  } else if (isCoach(i)) {
+    const env = i.forceIn ? "in" : SP.env, rows = env==="in" ? (i.sess.in||i.sess.out) : i.sess.out;
+    if (i.forceIn) out.push(it("Indoors today (hallway/gym)"));
+    rows.filter(r=>!r.tech).forEach(r => out.push(it(simpleRow(r))));
+    if (!rows.some(r=>r.wu)) out.unshift(it("Warm-up: sprint warm-up"));
+    out.push(it("Cool-down: easy walk + mobility"));
+    s3();
+    if (rows.some(r=>r.tech)) {
+      const m = i.w.mo, add = (g, arr) => { d.groups[g] = (d.groups[g]||[]).concat(arr.slice(0,2).map(t=>({t, lv:LV}))); };
+      add("Sprints", (SPRINT_TECH[m]||[]).filter(x=>x[0]).map(x=>"Technique: " + x[0]));
+      add("Hurdles", (HURDLE_TECH[m]||[]).map(x=>"Technique: " + x[0]));
+      add("Long Jump", (JUMPS["Long Jump"].mo[m]||[]).map(x=>"Technique: " + String(x).split(/[.:(]/)[0]));
+      add("High Jump", (JUMPS["High Jump"].mo[m]||[]).map(x=>"Technique: " + String(x).split(/[.:(]/)[0]));
+      if (JUMPS["Pole Vault"]) add("Pole Vault", (JUMPS["Pole Vault"].mo[m]||[]).map(x=>"Technique (with a coach): " + String(x).split(/[.:(]/)[0]));
+    }
+  } else if (isInd(i)) {
+    const T = IND[i.tpl];
+    const nm = s => String(s).replace(/\s*\([^)]*\)/g,"").replace(/:.*$/,"").trim();
+    if (T.choose) out.push(it(`At home, pick one (${T.dur}): ` + T.choose.map(([n])=>nm(n).replace(/^\w/,c=>c.toLowerCase())).join(" / ")));
+    if (T.steps) out.push(it(`At home (${T.dur}): ` + T.steps.slice(0,5).map(([n,p],k)=>k===0 ? `${nm(n).toLowerCase()} ${p}` : nm(n).toLowerCase()).join(", ") + (T.steps.length>5 ? ", + more" : "")));
+    s3();
+  } else if (i.k==="meet") out.push(it("Meet day."));
+  else out.push(it("Rest."));
+  return out;
+}
 SP.weeksWith = function(list){
   const have = new Set((list||[]).map(w=>w.start));
   const extra = [...new Set([...SP_WEEKS_HS, ...SP_WEEKS_JH].map(w=>w.start))].filter(s => !have.has(s)).map(start=>({start})).map(w => ({start:w.start, days:[], spOnly:true}));
@@ -1102,6 +1146,17 @@ SP.inject = function(w, opt){
     const L = lab(i), F = dayFacts(i);
     const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:LV} : i.k==="rest" ? {t:"Rest · Full rest", lv:LV} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:LV};
     let items = [head];
+    if (!P) {
+      items = simpleItems(i, LV, d);
+      const ex0 = d.combos.find(c => c.sp);
+      if (ex0) { ex0.items = ex0.items.concat(items); ex0.groups = [...new Set(ex0.groups.concat(SG))]; }
+      else d.combos.push({groups:[...SG], name:"Sprints · Hurdles · Jumps", items, sp:true});
+      const ttl = i.k==="rest" ? "Rest" : isInd(i) ? "Optional · " + IND[i.tpl].n.replace(/^(Optional\s*·?\s*|(Recovery|General Fitness)( [A-Z])?\s*·\s*)/i,"").replace(/^\w/,c=>c.toUpperCase()) : dayTitle(i).replace(/^General (Movement \+ )?Strength (A\d)\b.*$/, (m0,a,b)=>"Strength " + b);
+      SG.forEach(g => { const gk = (JHL ? "JH " : "") + g; if (!d.gfocus[gk]) d.gfocus[gk] = ttl; });
+      if (d.focus && typeof d.focus==="object") { if (!d.focus[LV]) d.focus = Object.assign({}, d.focus, {[LV]: dayTitle(i)}); }
+      else if (!d.focus) d.focus = {HS: "", JH: "", [LV]: dayTitle(i)};
+      return;
+    }
     if (i.cnote) items.push({t:"Coach note: " + i.cnote, lv:LV});
     if (isGsc(i)) {
       items.push({t:JHL ? "General movement & strength only: technique and confidence, no sprint, hurdle or jump instruction yet. Voluntary days are optional with no reporting." : "General strength & conditioning only. Sprint-specific training starts Tue Dec 8.", lv:LV});
@@ -1165,6 +1220,7 @@ if (!SECTIONS.some(s=>s.id==="sprints")) {
   const i = SECTIONS.findIndex(s=>s.id==="middistance");
   SECTIONS.splice(i+1, 0, {id:"sprints", g:"train", name:"Sprints, Hurdles & Jumps", blurb:"Sprint, hurdle and jump program: winter calendar (indoor/outdoor), drills, block starts, strength"});
 }
+if (typeof LIFTS!=="undefined") Object.keys(STR).forEach(k => { LIFTS["SW"+k] = {name:"Sprint Weight Room (" + SWN(k) + ")", when:STR[k].n, spr:1, gen:1, rest:"60–90 s", note:STR[k].note, ex:STR[k].ex.map(e=>[e[0], e[1]])}; });
 SP.withLv = withLv; SP.dayInfo = dayInfo; SP.dayTitle = dayTitle; SP.dayFacts = dayFacts; SP.weeksOf = lv => withLv(lv, () => SP_WEEKS);
 SP.weeks = SP_WEEKS; SP.drills = DRILLS; SP.suggest = suggest; SP.groupOf = groupOf;
 render();
