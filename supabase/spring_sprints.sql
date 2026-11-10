@@ -1,7 +1,7 @@
 -- BC Track Hub: REVISED SPRINTS / HURDLES / JUMPS plan (Nov 2026 revision).
 -- Posts the spring plan (HS Mar 1 – Jun 5, JH Mar 1 – May 22, 2027) AND switches on the revised HS February
--- sessions (Jan 21, Feb 16, 18, 23, 25), which live in sprints.js and stay hidden until this runs.
--- DRAFT FOR COACH REVIEW. Running this makes it visible to athletes.
+-- sessions (Jan 21, Feb 16, 18, 23, 25), which live in sprints.js.
+-- APPROVED Nov 9, 2026. The hub already shows this; running it stores it in the database so the workout editor and the plan match.
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again: on each day it replaces only the
 -- "Sprints + Hurdles + Long Jump + High Jump + Pole Vault" combined workout and the sprint/hurdle/jump day labels.
 -- Distance, Mid-Distance, Everyone lines, winter weeks (before Mar 1) and every other key are left exactly as they are.

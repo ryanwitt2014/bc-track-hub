@@ -1,5 +1,4 @@
--- BC Track Hub: Distance & Mid-Distance speed / race-readiness revision (HS + JH). DRAFT FOR COACH REVIEW.
--- Running this posts it. Review "Distance & Mid revision: proposed changes" first.
+-- BC Track Hub: Distance & Mid-Distance speed / race-readiness revision (HS + JH). APPROVED Nov 9, 2026. The hub already shows these changes; running this stores them in the database so the workout editor and the plan match.
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again (it replaces, never adds twice).
 -- Changes 26 sessions between Feb 18 and Apr 22, 2027 (HS Distance 7, HS Mid-Distance 7, JH Distance 6, JH Mid-Distance 6).
 -- For each one it replaces ONLY that level's lines in that group on that day, and updates that day's label.
@@ -58,6 +57,8 @@ begin
   end loop;
 
   insert into public.hub_data (key, value, updated_at) values ('workouts', cur, now())
+  on conflict (key) do update set value = excluded.value, updated_at = now();
+  insert into public.hub_data (key, value, updated_at) values ('distance_rev', 'true'::jsonb, now())
   on conflict (key) do update set value = excluded.value, updated_at = now();
   raise notice 'Distance & Mid revision posted: % of % sessions updated (% skipped).', n, jsonb_array_length(patches), miss;
 end

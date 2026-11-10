@@ -607,7 +607,7 @@ function withLv(lv, fn){ const keep = CUR_LV; useLv(lv); try { return fn(); } fi
 
 
 /* ---------- state ---------- */
-const SP = window.SP = {lv:"HS", jl:"All", tab:"cal", sel:null, edits:{}, edraft:null, ewi:null, etab:"groups", emsg:{kind:"",text:""}, wi:null, env:"out", g:"All", me:"", groups:{}, draft:null, msg:{kind:"",text:""}, gq:"", gshow:"all"};
+const SP = window.SP = {rev:true, lv:"HS", jl:"All", tab:"cal", sel:null, edits:{}, edraft:null, ewi:null, etab:"groups", emsg:{kind:"",text:""}, wi:null, env:"out", g:"All", me:"", groups:{}, draft:null, msg:{kind:"",text:""}, gq:"", gshow:"all"};
 try { const e = localStorage.getItem("sp-env"); if (e==="in"||e==="out") SP.env = e; } catch(e){}
 try { SP.me = localStorage.getItem("sp-me") || ""; if (!SP.me) { const h = localStorage.getItem("hub-me") || ""; const ha = h && ATHLETES.find(x=>x.id===h); if (ha && (ha.cats||[]).some(c=>["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"].includes(c))) { SP.me = h; SP.lv = ha.level; } } } catch(e){}
 try { const l = localStorage.getItem("sp-lv"); if (l==="JH"||l==="HS") SP.lv = l; } catch(e){}
@@ -984,7 +984,7 @@ function groupsView(){
 
 const TABS = [["cal","Today & Week"],["phil","Philosophy"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
 views.sprints = function(){
-  const body = SP.tab==="phil" ? philView() + (canPost && typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
+  const body = SP.tab==="phil" ? philView() + (typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
   return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · ${CUR_LV==="JH" ? "Junior high (grades 6–8)" : "High school"} · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
       <p class="lede" style="margin:6px 0 0">${CUR_LV==="JH" ? "Learn to run fast and have fun doing it. Same fundamentals as high school, sized for junior high." : "Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher."}</p></div>
       <div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div></div>
@@ -1252,7 +1252,7 @@ SP.inject = function(w, opt){
 SP.onData = function(byKey){
   if (byKey && byKey.sgroups && typeof byKey.sgroups === "object") { SP.groups = byKey.sgroups; SP.draft = null; }
   if (byKey && byKey.sprint_edits && typeof byKey.sprint_edits === "object") { SP.edits = byKey.sprint_edits; SP.edraft = null; }
-  if (byKey && "sprint_rev" in byKey) SP.rev = byKey.sprint_rev === true;
+  SP.rev = true;   // February revision approved Nov 9, 2026
 };
 if (window.HUB_BYKEY) SP.onData(window.HUB_BYKEY);
 if (!SECTIONS.some(s=>s.id==="sprints")) {

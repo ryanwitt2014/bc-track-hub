@@ -890,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09d";
+const HUB_VERSION = "11-09e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3062,11 +3062,22 @@ function auditSum(days, phase, lv, withOpt){
     q, qPrac: prac ? q/prac : 0, qComp: n ? (q+meets)/n : 0, spd, spdWk: spd/weeks, mins, covered, from: D.length ? D[0].iso : "", to: D.length ? D[D.length-1].iso : ""};
 }
 // ---- Philosophy: how the training fits together + the live audit (graphs/tables come from the posted plan) ----
-let audS = {ph:"all", opt:true}, AUD_PROP = null, audPropTried = false, audCache = {key:"", v:null};
-function audProposal(){
-  if (audPropTried || !canPost) return; audPropTried = true;
-  fetch("plans/distance_revision.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).then(j => { if (Array.isArray(j) && j.length) { AUD_PROP = j; audCache.key = ""; render(); } }).catch(()=>{});
+let audS = {ph:"all", opt:true}, audCache = {key:"", v:null};
+/* Approved revisions (Nov 9, 2026): Distance & Mid (plans/distance_revision.json) and Sprints spring (plans/sprint_spring.json).
+   The hub applies them to the posted plan until the matching SQL has been run (hub_data "distance_rev" / "sprint_rev" = true);
+   after that the database itself holds them and nothing is applied here. Both are idempotent. */
+let APPROVED = {d:null, s:null}, approvedFlags = {d:false, s:false};
+function applyApproved(){
+  const SPR = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
+  if (APPROVED.d && !approvedFlags.d) WORKOUTS = audApply(WORKOUTS, APPROVED.d);
+  if (APPROVED.s && !approvedFlags.s) { const W = JSON.parse(JSON.stringify(WORKOUTS));
+    APPROVED.s.forEach(q => { let w = W.find(x=>x.start===q.start); if (!w) return; const d = w.days.find(x=>x.day===q.day); if (!d) return;
+      d.combos = (d.combos||[]).filter(c => JSON.stringify(c.groups)!==JSON.stringify(SPR)).concat([{groups:SPR, items:q.items}]); d.gfocus = Object.assign({}, d.gfocus||{}, q.gfocus||{}); });
+    WORKOUTS = W; }
+  calCache = {key:"", map:{}}; audCache.key = "";
 }
+Promise.all(["plans/distance_revision.json","plans/sprint_spring.json"].map(u => fetch(u, {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(()=>null)))
+  .then(([d, s]) => { APPROVED = {d: Array.isArray(d) ? d : null, s: Array.isArray(s) ? s : null}; applyApproved(); render(); });
 function audApply(weeks, patches){
   const W = JSON.parse(JSON.stringify(weeks));
   patches.forEach(q => { const w = W.find(x=>x.start===q.start), d = w && w.days.find(x=>x.day===q.day); if (!d) return;
@@ -3076,10 +3087,9 @@ function audApply(weeks, patches){
   return W;
 }
 function audData(){
-  const key = RAW_STARTS.length + "|" + WORKOUTS.length + "|" + JSON.stringify(WORKOUTS).length + "|" + (AUD_PROP ? AUD_PROP.length : 0);
+  const key = RAW_STARTS.length + "|" + WORKOUTS.length + "|" + JSON.stringify(WORKOUTS).length;
   if (audCache.key === key) return audCache.v;
-  const rev = AUD_PROP ? audApply(WORKOUTS, AUD_PROP) : null;
-  const v = AUD_PROGS.map(P => ({P, cur: auditRun(WORKOUTS, P), rev: rev ? auditRun(rev, P) : null}));
+  const v = AUD_PROGS.map(P => ({P, cur: auditRun(WORKOUTS, P)}));
   audCache = {key, v}; return v;
 }
 const pct = x => (100*x).toFixed(x > 0 && x < 0.1 ? 1 : 0) + "%";
@@ -3092,7 +3102,7 @@ function audTable(A, B){
   const col = (S, k) => S ? `<td class="mono">${S.cnt[k]}</td><td class="mono">${pct(S.n ? S.cnt[k]/S.n : 0)}</td>` : "";
   const mt = S => { const tot = Object.values(S.mins).reduce((a,b)=>a+b,0); return tot ? S : null; };
   const tm = (S, k) => { const tot = Object.values(S.mins).reduce((a,b)=>a+b,0); return tot ? pct((S.mins[k]||0)/tot) : "—"; };
-  const H = B ? `<th colspan="2">Current</th><th colspan="2">Proposed</th>` : `<th colspan="2">Posted plan</th>`;
+  const H = `<th colspan="2">Current plan</th>`;
   return `<div class="tbl"><table class="aud-t"><thead><tr><th>Primary purpose</th>${H}<th>Est. running time${B?" (cur → prop)":""}</th></tr></thead><tbody>
     ${AUD_CATS.map(([k,l,c])=>`<tr><td><i class="aud-sw" style="background:${c}"></i>${esc(l)}</td>${col(A,k)}${col(B,k)}<td class="mono">${k==="meet" ? "not estimated" : tm(A,k) + (B ? " → " + tm(B,k) : "")}</td></tr>`).join("")}
     <tr class="aud-tot"><td><b>Running sessions (denominator)</b></td><td class="mono" colspan="2">${A.n}</td>${B?`<td class="mono" colspan="2">${B.n}</td>`:""}<td class="mono">${A.covered} of ${A.n} with duration data</td></tr>
@@ -3105,17 +3115,16 @@ function audTable(A, B){
     </tbody></table></div>`;
 }
 function audHTML(){
-  audProposal();
-  const data = audData(), prop = !!AUD_PROP;
+  const data = audData();
   const PH = [["all","All season"],["base","Winter / base"],["pre","Pre-competition"],["comp","Competition"],["champ","Championship"]];
   return `<div class="panel aud"><div class="bar"><div><div class="eyebrow">From the posted plan · updates itself</div><h2>What our training actually looks like</h2></div></div>
-    <p style="margin:0 0 10px">Every day from Dec 1 to each program's last scheduled meet, sorted by its <b>one main purpose</b>. Percentages are of running sessions. ${prop ? `<b>Proposed</b> = the Distance &amp; Mid revision that isn't posted yet (coaches only).` : ""}</p>
+    <p style="margin:0 0 10px">Every day from Dec 1 to each program's last scheduled meet, sorted by its <b>one main purpose</b>. Percentages are of running sessions.</p>
     <div class="aud-ctl"><div class="seg" role="group" aria-label="Phase">${PH.map(([k,l])=>`<button type="button" aria-pressed="${audS.ph===k}" onclick="audS.ph='${k}';render()">${l}</button>`).join("")}</div>
       <label class="aud-chk"><input type="checkbox" ${audS.opt?"checked":""} onchange="audS.opt=this.checked;render()"> Include optional sessions</label></div>
     <div class="aud-leg">${AUD_CATS.map(([k,l,c])=>`<span><i class="aud-sw" style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>
-    ${data.map(({P, cur, rev}) => { const A = auditSum(cur, audS.ph, P.lv, audS.opt), B = rev ? auditSum(rev, audS.ph, P.lv, audS.opt) : null;
+    ${data.map(({P, cur}) => { const A = auditSum(cur, audS.ph, P.lv, audS.opt), B = null;
       const ph = AUD_PH[P.lv].find(p=>p[0]===audS.ph); const rng = ph ? `${fmtD(ph[2])} – ${fmtD(ph[3])}` : `${fmtD(AUD_PH[P.lv][0][2])} – ${fmtD(AUD_PH[P.lv][3][3])}`;
-      return `<section class="aud-p"><h3>${esc(P.n)} <small>${rng}</small></h3>${audBar(A, prop ? "Current" : "Posted plan")}${B ? audBar(B, "Proposed") : ""}
+      return `<section class="aud-p"><h3>${esc(P.n)} <small>${rng}</small></h3>${audBar(A, "Current plan")}
         <details><summary>Counts, percentages and time</summary>${audTable(A, B)}</details></section>`; }).join("")}
     <details class="aud-rules"><summary>How days are sorted</summary><ul class="exp">
       <li><b>One purpose per day.</b> Each running line is read for its first workout word (Michigan, ladder, threshold, steady, flyers, easy…). A day takes the most race-specific purpose in it: broken race › intervals › tempo › steady › speed › long › easy.</li>
@@ -3193,28 +3202,37 @@ function spaSum(days, phase, lv){
   return {n: prac.length, cnt, home: D.filter(x=>x.cat==="home").length, rest: D.filter(x=>x.cat==="rest").length, spd, spdWk: spd/wks,
     dem: cnt.se + cnt.long + cnt.split + cnt.meet, blocks: sk("blocks"), curve: sk("curve"), x4: sk("x4"), x44: sk("x44")};
 }
-let SPA_PROP = null, spaTried = false, spaS = {ph:"all"};
+let spaS = {ph:"all"}, spaCache = {key:"", v:null};
+function spaBar(S){
+  const segs = SPA_CATS.map(([k,l,c]) => ({k, l, c, n:S.cnt[k], p: S.n ? S.cnt[k]/S.n : 0})).filter(s=>s.n);
+  return `<div class="aud-row"><div class="aud-lab">Current plan<small>${S.n} practice + meet days</small></div><div class="aud-bar" role="img" aria-label="${segs.map(s=>`${s.l} ${pct(s.p)}`).join(", ")}">
+    ${segs.map(s=>`<span style="flex:${s.n};background:${s.c};color:${["maxv","accel","pre"].includes(s.k)?"#111":"#fff"}" title="${esc(s.l)}: ${s.n} (${pct(s.p)})">${s.p>=0.06?pct(s.p):""}</span>`).join("")}</div></div>`;
+}
+function spaTable(S){
+  return `<div class="tbl"><table class="aud-t"><thead><tr><th>Main purpose</th><th colspan="2">Current plan</th></tr></thead><tbody>
+    ${SPA_CATS.map(([k,l,c])=>`<tr><td><i class="aud-sw" style="background:${c}"></i>${esc(l)}</td><td class="mono">${S.cnt[k]}</td><td class="mono">${pct(S.n ? S.cnt[k]/S.n : 0)}</td></tr>`).join("")}
+    <tr class="aud-tot"><td><b>Practice + meet days (denominator)</b></td><td class="mono" colspan="2">${S.n}</td></tr>
+    <tr><td>Demanding days (sprint endurance, longer reps, split, meets)</td><td class="mono">${S.dem}</td><td class="mono">${pct(S.n ? S.dem/S.n : 0)}</td></tr>
+    <tr><td>Speed exposures (days with starts, accelerations or flies)</td><td class="mono" colspan="2">${S.spd} · ${S.spdWk.toFixed(1)}/wk</td></tr>
+    <tr><td>Race-skill days: blocks · curves · 4×100 · 4×400</td><td class="mono" colspan="2">${[S.blocks,S.curve,S.x4,S.x44].join(" · ")}</td></tr>
+    <tr><td>At-home / optional · rest days (not in the denominator)</td><td class="mono" colspan="2">${S.home} · ${S.rest}</td></tr>
+    </tbody></table></div>`;
+}
 function spaHTML(){
-  if (!spaTried && canPost) { spaTried = true; fetch("plans/sprint_spring.json", {cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{ if (Array.isArray(j)) { SPA_PROP = j; render(); } }).catch(()=>{}); }
-  const SPR = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"];
-  const propW = SPA_PROP && !(window.SP && SP.rev) ? (() => { const W = JSON.parse(JSON.stringify(visibleWeeks()));
-    SPA_PROP.forEach(q => { const w = W.find(x=>x.start===q.start), d = w && w.days.find(x=>x.day===q.day); if (!d) return;
-      d.combos = (d.combos||[]).filter(c => JSON.stringify(c.groups)!==JSON.stringify(SPR)).concat([{groups:SPR, items:q.items}]); d.gfocus = Object.assign({}, d.gfocus||{}, q.gfocus||{}); }); return W; })() : null;
-  const PH = [["all","All season"],["base","Winter"],["pre","Pre-competition"],["comp","Competition"],["champ","Championship"]];
-  const rows = SPA_PROGS.map(P => ({P, A: spaSum(spaRun(visibleWeeks(), P, false), spaS.ph, P.lv), B: propW ? spaSum(spaRun(propW, P, true), spaS.ph, P.lv) : null}));
-  const c = (A,B,f) => { const a = f(A), b = B ? f(B) : null; return B && String(a)!==String(b) ? `${a} → <b>${b}</b>` : String(a); };
-  return `<div class="panel aud"><div class="eyebrow">From the posted plan · coaches only</div><h2>Sprint sessions and speed exposures</h2>
-    <p style="margin:0 0 10px">Practice days by main purpose, plus how often each group sprints fast. ${propW ? "<b>a → b</b> = posted plan → proposed revision (not posted yet)." : ""} Meets come from the schedule (girls' postseason dates); athletes are assumed entered and advancing.</p>
+  const key = RAW_STARTS.length + "|" + JSON.stringify(WORKOUTS).length + "|" + (window.SP && SP.rev);
+  if (spaCache.key !== key) spaCache = {key, v: SPA_PROGS.map(P => ({P, days: spaRun(visibleWeeks(), P, false)}))};
+  const PH = [["all","All season"],["base","Winter / base"],["pre","Pre-competition"],["comp","Competition"],["champ","Championship"]];
+  return `<div class="panel aud"><div class="bar"><div><div class="eyebrow">From the posted plan · updates itself</div><h2>What our sprint training actually looks like</h2></div></div>
+    <p style="margin:0 0 10px">Every day from Dec 1 to each group's last scheduled meet, sorted by its <b>one main purpose</b>. Percentages are of practice and meet days.</p>
     <div class="aud-ctl"><div class="seg" role="group" aria-label="Phase">${PH.map(([k,l])=>`<button type="button" aria-pressed="${spaS.ph===k}" onclick="spaS.ph='${k}';render()">${l}</button>`).join("")}</div></div>
-    <div class="tbl"><table class="aud-t"><thead><tr><th></th>${rows.map(r=>`<th>${esc(r.P.n)}</th>`).join("")}</tr></thead><tbody>
-      ${SPA_CATS.map(([k,l,col])=>`<tr><td><i class="aud-sw" style="background:${col}"></i>${esc(l)}</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.cnt[k])}</td>`).join("")}</tr>`).join("")}
-      <tr class="aud-tot"><td><b>Practice + meet days</b></td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.n)}</td>`).join("")}</tr>
-      <tr><td>Demanding days (sprint endurance, longer reps, split, meets)</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.dem)}</td>`).join("")}</tr>
-      <tr><td>Speed exposures (days with starts, accelerations or flies) · per week</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.spd+" · "+S.spdWk.toFixed(1))}</td>`).join("")}</tr>
-      <tr><td>Race skills: blocks · curves · 4×100 · 4×400 days</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>[S.blocks,S.curve,S.x4,S.x44].join(" · "))}</td>`).join("")}</tr>
-      <tr><td>At-home / optional days · rest days (not counted above)</td>${rows.map(({A,B})=>`<td class="mono">${c(A,B,S=>S.home+" · "+S.rest)}</td>`).join("")}</tr>
-    </tbody></table></div>
-    <p class="note" style="margin:8px 0 0">Each day counts once, by its main work: split run › longer reps (200/400, 100m+) › sprint endurance (60m+ reps) › premeet › max velocity › acceleration/starts › strength › recovery. Hurdle and jump substitutions and "not entered" alternatives are left out.</p></div>`;
+    <div class="aud-leg">${SPA_CATS.map(([k,l,c])=>`<span><i class="aud-sw" style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>
+    ${spaCache.v.map(({P, days}) => { const S = spaSum(days, spaS.ph, P.lv); const ph = AUD_PH[P.lv].find(p=>p[0]===spaS.ph);
+      const rng = ph ? `${fmtD(ph[2])} – ${fmtD(ph[3])}` : `${fmtD(AUD_PH[P.lv][0][2])} – ${fmtD(AUD_PH[P.lv][3][3])}`;
+      return `<section class="aud-p"><h3>${esc(P.n)} <small>${rng} · ${S.spdWk.toFixed(1)} speed days/wk</small></h3>${spaBar(S)}<details><summary>Counts, percentages and race skills</summary>${spaTable(S)}</details></section>`; }).join("")}
+    <details class="aud-rules"><summary>How days are sorted</summary><ul class="exp">
+      <li><b>One purpose per day</b>, by its main work: 400 split run › 200/400 longer reps (100m+) › sprint endurance (60m+ reps) › premeet › max velocity › acceleration/starts › strength › recovery.</li>
+      <li><b>Speed exposure</b> = any day with starts, accelerations or flies. <b>Demanding</b> = sprint endurance, longer reps, split runs and meets.</li>
+      <li>Meets come from the schedule (girls' postseason dates). Athletes are assumed entered and advancing; hurdle/jump substitutions and "not entered" alternatives are left out.</li></ul></details></div>`;
 }
 function mdPhilHTML(){ return `<div class="panel"><h2>Our philosophy</h2>
           <p style="margin:0 0 10px">Two coaching ideas, one program. <b>Jack Daniels</b> builds the engine: aerobic running at each runner's own VDOT paces, controlled threshold work, and steady progress. <b>Tony Holler (Feed the Cats)</b> protects and builds speed: short, fast, fully recovered sprinting, good mechanics, and no junk fatigue.</p>
@@ -5388,7 +5406,8 @@ async function loadAll(){
   const w = byKey.workouts, wu0 = byKey.warmups, lg = byKey.logs, rj = byKey.recruits, aj = byKey.assignments;
   if (aj && typeof aj === "object") ASSIGN = Object.assign({"HS-B":{}, "HS-G":{}, "JH-B":{}, "JH-G":{}}, aj);
   if (rj && Array.isArray(rj.list)) REC = {list: rj.list, contacts: (rj.contacts||[]).map(({note, ...c})=>c)};
-  if (Array.isArray(w)) { RAW_STARTS = w.filter(x=>x && typeof x.start==="string").map(x=>x.start); WORKOUTS = mergeWeeks(w); }
+  approvedFlags = {d: byKey.distance_rev === true, s: byKey.sprint_rev === true};
+  if (Array.isArray(w)) { RAW_STARTS = w.filter(x=>x && typeof x.start==="string").map(x=>x.start); WORKOUTS = mergeWeeks(w); applyApproved(); }
   if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
@@ -5494,6 +5513,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-09d"></script>
+<script src="sprints.js?v=11-09e"></script>
 </body>
 </html>
