@@ -891,7 +891,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10b";
+const HUB_VERSION = "11-10c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2549,8 +2549,8 @@ let me = ""; try { me = localStorage.getItem("hub-me") || ""; } catch(e) {}
 // out of the coach view; posting and private data still need the real coach sign-in.
 /* ===== Drills: library → named sets (e.g. "Speed Day") → assigned to dates for HS / JH / both.
    Stored in hub_data "drills". Shown as a "Drills: <set>" button on that day for the set's group. ===== */
-const DRILL_GROUPS = ["Sprints","Hurdles","High Jump","Pole Vault","Relays"];
-const DRILL_CATS = {Sprints:["Sprints"], Hurdles:["Hurdles"], "High Jump":["High Jump"], "Pole Vault":["Pole Vault"], Relays:["Sprints","Hurdles","Mid Distance"]};
+const DRILL_GROUPS = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault","Relays"];
+const DRILL_CATS = {Sprints:["Sprints"], Hurdles:["Hurdles"], "Long Jump":["Long Jump"], "High Jump":["High Jump"], "Pole Vault":["Pole Vault"], Relays:["Sprints","Hurdles","Mid Distance"]};
 const dId = () => Math.random().toString(36).slice(2, 9);
 let DRILLS = {lib:[
   {id:"d1", group:"Sprints", name:"A-skip", note:"Tall posture, quick ground contact, knee up and toe up.", url:V("A skip sprint drill")},
@@ -2559,6 +2559,8 @@ let DRILLS = {lib:[
   {id:"d4", group:"Sprints", name:"Wall drives", note:"45° lean into the wall. Fast, piston-like switches.", url:V("wall drill sprint acceleration")},
   {id:"d5", group:"Hurdles", name:"Lead-leg walkovers", note:"Knee up first, then extend. Snap down.", url:V("hurdle lead leg drill")},
   {id:"d6", group:"Hurdles", name:"Trail-leg walkovers", note:"Knee to armpit, toe up, pull through flat.", url:V("hurdle trail leg drill")},
+  {id:"d13", group:"Long Jump", name:"Pop-ups", note:"Short approach, drive the knee, land on the lead leg. Height, not distance.", url:V("long jump pop up drill")},
+  {id:"d14", group:"Long Jump", name:"Penultimate step runs", note:"Run through the board: long-short rhythm on the last two steps.", url:V("long jump penultimate step drill")},
   {id:"d7", group:"High Jump", name:"J-curve runs", note:"Run the approach shape, lean away from the bar on the curve.", url:V("high jump J curve approach drill")},
   {id:"d8", group:"High Jump", name:"Scissors", note:"Short approach, knee drive, stay tall at takeoff.", url:V("high jump scissors drill")},
   {id:"d9", group:"Pole Vault", name:"Pole runs", note:"Pole carry, tip drops on the last steps.", url:V("pole vault pole run drill")},
