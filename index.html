@@ -694,6 +694,7 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 .aud details summary,.aud-rules summary{cursor:pointer;font-weight:600;margin:6px 0}
 @media (max-width:600px){.aud-row{grid-template-columns:1fr}}
 .ed-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
+.cf-streak{border-left:4px solid var(--gold)}
 .today.cdash{display:grid;gap:14px;grid-template-columns:1fr}
 .cd-top{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .cd-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
@@ -891,7 +892,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10c";
+const HUB_VERSION = "11-10d";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1191,7 +1192,10 @@ const CONF = {
     {yr:2025, G:[["West Lafayette",1,181],["Hamilton Heights",2,138],["Western",3,104.5],["Logansport",4,73],["Twin Lakes",5,43.5],["Benton Central",6,37],["Rensselaer Central",7,21],["Tipton",8,17],["Central Catholic",9,7]],
               B:[["West Lafayette",1,192],["Rensselaer Central",2,91],["Hamilton Heights",3,86],["Logansport",4,67],["Western",5,64],["Tipton",6,48],["Twin Lakes",7,44],["Central Catholic",8,25],["Benton Central",9,6]]},
     {yr:2024, G:[["West Lafayette",1,171],["Hamilton Heights",2,157],["Western",3,95],["Northwestern",4,70],["Rensselaer Central",5,43],["Benton Central",6,40],["Twin Lakes",7,23],["Tipton",8,16],["Central Catholic",9,6]],
-              B:[["West Lafayette",1,165],["Rensselaer Central",2,104],["Hamilton Heights",3,96],["Twin Lakes",4,69],["Tipton",5,61],["Northwestern",6,43.5],["Western",7,38.5],["Central Catholic",8,33],["Benton Central",9,13]]}]},
+              B:[["West Lafayette",1,165],["Rensselaer Central",2,104],["Hamilton Heights",3,96],["Twin Lakes",4,69],["Tipton",5,61],["Northwestern",6,43.5],["Western",7,38.5],["Central Catholic",8,33],["Benton Central",9,13]]},
+    {yr:2023, note:"74th annual", G:[["West Lafayette",1,137],["Northwestern",2,100],["Benton Central",3,80],["Hamilton Heights",4,70.5],["Western",5,66.5],["Cass",6,54],["Twin Lakes",7,49],["Rensselaer Central",8,38],["Tipton",9,15],["Central Catholic",10,13]]},
+    {yr:2022, note:"73rd annual · Benton Central girls champions", G:[["Benton Central",1,124],["West Lafayette",2,122],["Northwestern",3,75.5],["Hamilton Heights",4,74.5],["Rensselaer Central",5,63.5],["Tipton",6,37.5],["Cass",7,37],["Twin Lakes",7,37],["Western",9,29],["Central Catholic",10,23]],
+              B:[["West Lafayette",1,170],["Northwestern",2,76],["Hamilton Heights",3,61],["Twin Lakes",4,57],["Rensselaer Central",5,55.5],["Cass",6,52],["Benton Central",7,46],["Tipton",8,39.5],["Western",9,35.5],["Central Catholic",10,31.5]]}]},
 };
 // IHSAA postseason team scores (HS). Same row format as CONF. Boys still to come.
 const POST = [
@@ -5018,6 +5022,9 @@ const views = {
   conference(){
     const C = CONF[level], K = meetKit(C);
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
+      ${level==="HS" ? `<div class="panel cf-streak"><div class="eyebrow">Girls · Hoosier Conference</div><h2>2022: Benton Central snaps the streak</h2>
+        <p style="margin:6px 0 10px">West Lafayette had won the Hoosier Conference girls track title every year since 2000. On May 9, 2022, Benton Central edged them <b>124–122</b> to win the conference, the only year West Lafayette didn't win from 2000 through 2025.</p>
+        <a class="btn sm" href="https://www.jconline.com/story/sports/2022/05/10/benton-central-snaps-west-lafayette-hoosier-conference-track-streak/9712839002/" target="_blank" rel="noopener">Read the Journal &amp; Courier story →</a></div>` : ""}
       <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G")}${K.trend("B")}</div></div>
       ${K.years()}${K.legend}</div>`;
   },
