@@ -1256,6 +1256,7 @@ SP.inject = function(w, opt){
     else if (!d.focus) d.focus = {HS: "", JH: "", [LV]: dayTitle(i)};
   });
   }));
+  if (window.drillInject) window.drillInject(copy);
   copy.days.sort((a,b)=>DAYN.indexOf(a.day)-DAYN.indexOf(b.day));
   return copy;
 };

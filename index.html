@@ -693,6 +693,7 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 .aud-t td,.aud-t th{font-size:13px}.aud-tot td{border-top:2px solid var(--line)}
 .aud details summary,.aud-rules summary{cursor:pointer;font-weight:600;margin:6px 0}
 @media (max-width:600px){.aud-row{grid-template-columns:1fr}}
+.ed-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
 .today.cdash{display:grid;gap:14px;grid-template-columns:1fr}
 .cd-top{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .cd-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
@@ -890,7 +891,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10a";
+const HUB_VERSION = "11-10b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2102,6 +2103,8 @@ function sText(x, many){
 }
 function liSimple(arr, o){
   o = o || {};
+  const DR = arr.filter(it => it.drill && drillSet(it.drill)); arr = arr.filter(it => !it.drill);
+  const drP = [...new Set(DR.map(it=>it.drill))].map(id => `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="dr:${id}">Drills: ${esc(drillSet(id).name)}</button></li>`).join("");
   const S = {warm:[], main:[], str:[], opt:[], cool:[]};
   arr.forEach(it => { const sc = secOf(it); if (sc!=="warm" && sc!=="cool" && S_DROP.test(splitTags(it.t).text)) return; (S[sc] || S.main).push(it); });
   const rebuild = (it, txt) => Object.assign({}, it, {t: splitTags(it.t).tags.map(g=>`[${g}]`).join(" ") + (splitTags(it.t).tags.length ? " " : "") + txt});
@@ -2135,7 +2138,7 @@ function liSimple(arr, o){
   const wkF = o.wu ? (o.wu==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : o.wu) : wk2;
   const hasWork = !!main || mainS.length || S.str.length;   // something to actually do (not just notes)
   const showWU = (S.warm.length && (hasWork || !o.wu)) || (o.wu && hasWork), showCD = (S.cool.length && (hasWork || !o.wu)) || (o.wu && hasWork);
-  return (showWU ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wkF}">Warm-up</button></li>` : "")
+  return (showWU || DR.length ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="wu:${wkF}">Warm-up</button></li>` : "") + drP
     + main + [...mainS, ...S.str].map(strHTML).join("")
     + S.opt.map(it => { const s = sText(splitTags(it.t).text, true); return s ? `<li class="s-opt">${itemHTML(rebuild(it, s))}</li>` : ""; }).join("")
     + (showCD ? `<li class="s-wu"><button type="button" class="abbr s-pill" data-k="cd:p">Cool-down</button></li>` : "");
@@ -2465,6 +2468,57 @@ async function dtSave(){
   render();
 }
 
+/* ---- Drills editor (Coaches → Warm-ups) ---- */
+let drDraft = null, drUI = {g:"Sprints", set:"", lv:"Both", date:"", until:"", every:false}, drMsg = {kind:"",text:""};
+const drD = () => (drDraft = drDraft || JSON.parse(JSON.stringify(DRILLS)));
+function drTouch(){ drMsg = {kind:"", text:"Unsaved changes. Hit Save drills."}; }
+function drAddDrill(){ drD().lib.push({id:dId(), group:drUI.g, name:"", note:"", url:""}); drTouch(); render(); }
+function drNewSet(){ const s = {id:dId(), group:drUI.g, name:"New set", note:"", drills:[]}; drD().sets.push(s); drUI.set = s.id; drTouch(); render(); }
+function drToggle(sid, did, on){ const s = drD().sets.find(x=>x.id===sid); if (!s) return; s.drills = s.drills.filter(x=>x!==did); if (on) s.drills.push(did); drTouch(); }
+function drAssign(){
+  const D = drD(); if (!drUI.set || !drUI.date) { drMsg = {kind:"err", text:"Pick a set and a date."}; render(); return; }
+  let d = parseD(drUI.date); const end = drUI.every && drUI.until ? parseD(drUI.until) : d; let n = 0;
+  while (d <= end && n < 40) { D.assign.push({id:dId(), set:drUI.set, date:isoD(d), lv:drUI.lv}); n++; d = new Date(d); d.setDate(d.getDate()+7); }
+  drMsg = {kind:"", text:`Added to ${n} day${n===1?"":"s"}. Hit Save drills.`}; render();
+}
+async function drSave(){
+  const D = drD(); D.lib = D.lib.filter(x=>x.name.trim()); const ok = new Set(D.lib.map(x=>x.id));
+  D.sets.forEach(s => s.drills = s.drills.filter(x=>ok.has(x)));
+  const err = await publishFiles({"drills.json": JSON.stringify(D)});
+  if (err) drMsg = {kind:"err", text:err}; else { DRILLS = JSON.parse(JSON.stringify(D)); drDraft = null; drMsg = {kind:"ok", text:"Drills saved. They show on the assigned days now."}; }
+  render();
+}
+function drillEditHTML(){
+  const D = drD(), g = drUI.g, L = D.lib.filter(x=>x.group===g), SS = D.sets.filter(x=>x.group===g);
+  const up = D.assign.filter(a => a.date >= isoD(today)).sort((a,b)=>a.date.localeCompare(b.date));
+  return `<div class="panel ed"><h2>Drills</h2><p class="note" style="margin:4px 0 10px">1) Add drills with a note and video. 2) Group them into a set (like "Speed Day"). 3) Assign the set to a day for HS, JH or both. Kids in that event see a <b>Drills</b> button on that day.</p>
+    <div class="seg" role="group" aria-label="Event">${DRILL_GROUPS.map(x=>`<button type="button" aria-pressed="${g===x}" onclick="drUI.g='${x}';drUI.set='';render()">${x==="Relays"?"Relay development":x}</button>`).join("")}</div>
+    <div class="ed-day"><h3>${esc(g==="Relays"?"Relay development":g)} drills</h3></div>
+    ${L.map(d=>{ const i = D.lib.indexOf(d); return `<div class="ed-fe"><div class="ed-grid2">
+      <label class="ed-g" for="dn-${d.id}"><span>Drill</span><input id="dn-${d.id}" type="text" value="${esc(d.name)}" placeholder="e.g. A-skip" oninput="drD().lib[${i}].name=this.value;drTouch()"></label>
+      <label class="ed-g" for="du-${d.id}"><span>Video link (optional)</span><input id="du-${d.id}" type="url" value="${esc(d.url||"")}" placeholder="https://youtube.com/…" oninput="drD().lib[${i}].url=this.value.trim();drTouch()"></label></div>
+      <label class="ed-g all" for="dt-${d.id}"><span>Notes / cues</span><input id="dt-${d.id}" type="text" value="${esc(d.note||"")}" oninput="drD().lib[${i}].note=this.value;drTouch()"></label>
+      <div><button type="button" class="btn sm" style="width:auto" onclick="drD().lib.splice(${i},1);drTouch();render()">Remove drill</button></div></div>`; }).join("")}
+    <div class="ed-add"><button type="button" class="btn sm" onclick="drAddDrill()">+ Add drill</button></div>
+    <div class="ed-day"><h3>Sets</h3></div>
+    ${SS.map(s=>{ const i = D.sets.indexOf(s); return `<div class="ed-fe">
+      <div class="ed-dayhead"><label class="ed-row" for="sn-${s.id}" style="flex:1"><span>Set name</span><input id="sn-${s.id}" type="text" value="${esc(s.name)}" oninput="drD().sets[${i}].name=this.value;drTouch()"></label>
+        <button type="button" class="btn sm" onclick="drD().sets.splice(${i},1);drD().assign=drD().assign.filter(a=>a.set!=='${s.id}');drTouch();render()">Delete set</button></div>
+      <label class="ed-row" for="sx-${s.id}"><span>Note</span><input id="sx-${s.id}" type="text" value="${esc(s.note||"")}" placeholder="e.g. 2 × 20m each before flies" oninput="drD().sets[${i}].note=this.value;drTouch()"></label>
+      <div class="ed-checks">${L.filter(d=>d.name.trim()).map(d=>`<label class="ed-check"><input type="checkbox" ${s.drills.includes(d.id)?"checked":""} onchange="drToggle('${s.id}','${d.id}',this.checked)"> ${esc(d.name)}</label>`).join("") || `<span class="note">Add ${esc(g)} drills above first.</span>`}</div></div>`; }).join("")}
+    <div class="ed-add"><button type="button" class="btn sm" onclick="drNewSet()">+ New ${esc(g==="Relays"?"relay":g.toLowerCase())} set</button></div>
+    <div class="ed-day"><h3>Assign a set to a day</h3></div>
+    <div class="ed-grid2">
+      <label class="ed-g" for="da-set"><span>Set</span><select id="da-set" onchange="drUI.set=this.value"><option value="">Pick a set…</option>${D.sets.map(s=>`<option value="${s.id}" ${s.id===drUI.set?"selected":""}>${esc(s.group)} · ${esc(s.name)}</option>`).join("")}</select></label>
+      <div class="ed-g"><span>Who</span>${segBtns(drUI.lv,[["Both","HS + JH"],["HS","High school"],["JH","Junior high"]],"(v=>{drUI.lv=v;render()})")}</div>
+      <label class="ed-g" for="da-d"><span>Day</span><input id="da-d" type="date" value="${drUI.date}" onchange="drUI.date=this.value"></label>
+      <label class="ed-g" for="da-u"><span><input type="checkbox" ${drUI.every?"checked":""} onchange="drUI.every=this.checked;render()"> Repeat weekly until</span><input id="da-u" type="date" value="${drUI.until}" ${drUI.every?"":"disabled"} onchange="drUI.until=this.value"></label></div>
+    <div class="ed-add"><button type="button" class="btn sm" onclick="drAssign()">Add to calendar</button></div>
+    ${up.length ? `<div class="tbl"><table><thead><tr><th>Day</th><th>Set</th><th>Who</th><th></th></tr></thead><tbody>${up.slice(0,40).map(a=>{ const s = D.sets.find(x=>x.id===a.set); return `<tr><td class="mono">${esc(fmtD(a.date))}</td><td>${esc(s ? s.group+" · "+s.name : "(deleted set)")}</td><td>${a.lv==="Both"?"HS + JH":a.lv}</td>
+      <td><button type="button" class="btn sm" onclick="drD().assign=drD().assign.filter(x=>x.id!=='${a.id}');drTouch();render()">Remove</button></td></tr>`; }).join("")}</tbody></table></div>${up.length>40?`<p class="note">…and ${up.length-40} more.</p>`:""}` : `<p class="note">Nothing assigned yet.</p>`}
+    <div class="ed-save sticky"><button type="button" class="btn primary" onclick="drSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save drills"}</button>
+      <button type="button" class="btn sm" onclick="drDraft=null;drMsg={kind:'',text:''};render()">Undo changes</button><span class="ed-msg ${drMsg.kind}" role="status">${esc(drMsg.text)}</span></div></div>`;
+}
 /* ---- Warm-up editor ---- */
 let wu = null, wuMsg = {kind:"",text:""};
 const wuToText = arr => (arr||[]).map(s=>[s.t, s.d||"", s.url||s.link||""].filter((x,i)=>i<2||x).join(" | ")).join("\n");
@@ -2493,6 +2547,42 @@ const scaleTag = c => { const v = cHeat(c); return `<span class="resp sc-${SCALE
 let me = ""; try { me = localStorage.getItem("hub-me") || ""; } catch(e) {}
 // Picking a coach name needs the coach password once per device (signed-in coaches skip it). Soft lock: it keeps kids
 // out of the coach view; posting and private data still need the real coach sign-in.
+/* ===== Drills: library → named sets (e.g. "Speed Day") → assigned to dates for HS / JH / both.
+   Stored in hub_data "drills". Shown as a "Drills: <set>" button on that day for the set's group. ===== */
+const DRILL_GROUPS = ["Sprints","Hurdles","High Jump","Pole Vault","Relays"];
+const DRILL_CATS = {Sprints:["Sprints"], Hurdles:["Hurdles"], "High Jump":["High Jump"], "Pole Vault":["Pole Vault"], Relays:["Sprints","Hurdles","Mid Distance"]};
+const dId = () => Math.random().toString(36).slice(2, 9);
+let DRILLS = {lib:[
+  {id:"d1", group:"Sprints", name:"A-skip", note:"Tall posture, quick ground contact, knee up and toe up.", url:V("A skip sprint drill")},
+  {id:"d2", group:"Sprints", name:"B-skip", note:"A-skip, then extend and paw the foot back under the hip.", url:V("B skip sprint drill")},
+  {id:"d3", group:"Sprints", name:"Dribbles", note:"Ankle-height, then shin-height, then knee-height. Stay tall.", url:V("dribble drill sprinters")},
+  {id:"d4", group:"Sprints", name:"Wall drives", note:"45° lean into the wall. Fast, piston-like switches.", url:V("wall drill sprint acceleration")},
+  {id:"d5", group:"Hurdles", name:"Lead-leg walkovers", note:"Knee up first, then extend. Snap down.", url:V("hurdle lead leg drill")},
+  {id:"d6", group:"Hurdles", name:"Trail-leg walkovers", note:"Knee to armpit, toe up, pull through flat.", url:V("hurdle trail leg drill")},
+  {id:"d7", group:"High Jump", name:"J-curve runs", note:"Run the approach shape, lean away from the bar on the curve.", url:V("high jump J curve approach drill")},
+  {id:"d8", group:"High Jump", name:"Scissors", note:"Short approach, knee drive, stay tall at takeoff.", url:V("high jump scissors drill")},
+  {id:"d9", group:"Pole Vault", name:"Pole runs", note:"Pole carry, tip drops on the last steps.", url:V("pole vault pole run drill")},
+  {id:"d10", group:"Pole Vault", name:"Plant drill (walking)", note:"Hands up early, top arm straight over the takeoff foot.", url:V("pole vault plant drill")},
+  {id:"d11", group:"Relays", name:"Stationary handoffs", note:"Upsweep or downsweep. Call 'stick', hand stays still.", url:V("4x100 relay handoff drill")},
+  {id:"d12", group:"Relays", name:"Jog-through exchanges", note:"Outgoing runner goes on the check mark; hand back on the call.", url:V("4x100 relay exchange zone drill")}],
+  sets:[{id:"s1", group:"Sprints", name:"Speed Day", note:"Before acceleration or flies. 2 × 15–20m each.", drills:["d1","d2","d3","d4"]}], assign:[]};
+const drillSet = id => DRILLS.sets.find(s=>s.id===id);
+const drillById = id => DRILLS.lib.find(d=>d.id===id);
+// added to each displayed week (never saved into the posted workouts)
+window.drillInject = function(copy){
+  const A = (DRILLS.assign||[]).filter(a => drillSet(a.set)); if (!A.length) return copy;
+  const s = parseD(copy.start), DN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  A.forEach(a => { const k = Math.round((parseD(a.date) - s)/864e5); if (k < 0 || k > 6) return;
+    const S = drillSet(a.set), dn = DN[k]; let d = copy.days.find(x=>x.day===dn);
+    if (!d) { d = {day:dn, focus:"", all:[], groups:{}, combos:[], gfocus:{}}; copy.days.push(d); }
+    const names = S.drills.map(drillById).filter(Boolean).map(x=>x.name);
+    const items = (a.lv==="Both" ? ["HS","JH"] : [a.lv]).map(lv => ({t:`Drills: ${S.name} (${names.join(", ")})`, lv, drill:S.id}));
+    d.combos = (d.combos||[]).concat([{groups:DRILL_CATS[S.group]||["Sprints"], items, drillc:true}]); });
+  return copy;
+};
+function drillSetHTML(S){
+  return `${S.note?`<p class="lede" style="margin:0 0 10px">${esc(S.note)}</p>`:""}<ol class="steps">${S.drills.map(drillById).filter(Boolean).map(d=>`<li><span><b>${esc(d.name)}</b>${d.url?` <a class="vid" href="${esc(d.url)}" target="_blank" rel="noopener">▶ Video</a>`:""}${d.note?`<br><span class="muted">${esc(d.note)}</span>`:""}</span></li>`).join("")}</ol>`;
+}
 const COACH_PW_HASH = "f6a72b1b147533649aba05df061639e45e3f33b6a291840d10731dedaa59a20d";
 const coachOK = () => { if (canPost) return true; try { return localStorage.getItem("hub-coach-ok") === COACH_PW_HASH; } catch(e) { return false; } };
 const setMe = v => {
@@ -3015,6 +3105,7 @@ function enhanceAbbr(root){
 }
 function abbrBody(k){
   const [kind, id] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":")+1)];
+  if (kind==="dr") { const S = drillSet(id); if (!S) return null; return {eye:`${S.group} drills`, title:S.name, html:drillSetHTML(S)}; }
   if (kind==="prog") { const lv = (athMode()||{}).level || (wlv==="JH" ? "JH" : "HS");
     return id==="sp" ? {eye:"Sprints, Hurdles & Jumps", title:"Our philosophy", html:(window.SP && SP.phil ? SP.phil(lv) : "").replace(/class="panel"/g,'class="ab-sec"')}
       : {eye:"Distance & Mid-Distance", title:"Our philosophy", html:mdPhilHTML().replace(/class="panel"/g,'class="ab-sec"')}; }
@@ -3227,7 +3318,7 @@ const SPA_DROP = ["Hurdles","Jumps","Boys","Not entered","HSR qualifiers","Seaso
 function spaDay(d, dt, P){
   const iso = isoD(dt), lv = P.lv, other = P.path==="S1" ? "S2" : "S1";
   const title = gFocus(d, "Sprints", lv) || "";
-  const items = forLv([].concat(...(d.combos||[]).filter(c => (c.groups||[]).includes("Sprints")).map(c => c.items||[])), lv);
+  const items = forLv([].concat(...(d.combos||[]).filter(c => !c.drillc && (c.groups||[]).includes("Sprints")).map(c => c.items||[])), lv);
   const L = items.map(it => splitTags(it.t)).filter(({tags,text}) => !tags.some(x => SPA_DROP.includes(x) || x===other) && !/^Joined Feb 15/.test(text));
   const main = L.filter(({text}) => !/^(warm-?up|cool-?down|coaching|meet day\.|do today's mid)/i.test(text));
   const T = main.map(x=>x.text).join(" | ");
@@ -3351,7 +3442,7 @@ function calDays(lv, g){
       items.push(...((d.groups||{})[g]||[]));
       items = forLv(items, lv);
       const sec = {main:[], str:[], opt:[]}; let hdr = ""; const raw = [];
-      items.forEach(it => { const s = secOf(it); if (s==="warm"||s==="cool") return; const {tags, text} = splitTags(it.t);
+      items.forEach(it => { if (it.drill) { raw.push(it); sec.main.push({tags:[], text:"Drills"}); return; } const s = secOf(it); if (s==="warm"||s==="cool") return; const {tags, text} = splitTags(it.t);
         const m = /^Coach-Led [^·]+·\s*(.+?)\s*·\s*([\d–-]+ min)$/.exec(text); if (m) { hdr = m[2]; return; }
         if (/^(MEET:|Meet:)/i.test(text)) return; raw.push(it);
         if (CAL_DROP.test(text)) return; (sec[s]||sec.main).push({tags, text}); });
@@ -4599,7 +4690,7 @@ const views = {
         <div class="ed-save"><button type="button" class="btn primary" onclick="wuSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save warm-ups"}</button>
           <button type="button" class="btn sm" onclick="wuStart();wuMsg={kind:'',text:''};render()">Undo changes</button>
           <span class="ed-msg ${wuMsg.kind}" role="status">${esc(wuMsg.text)}</span></div>
-      </div>`;
+      </div>${drillEditHTML()}`;
   },
   _sheets(){
     const weeks = printWeeks();
@@ -4872,13 +4963,19 @@ const views = {
       </div>`;
   },
   warmups(){
-    const tabs = [["warm","Warm-ups"],["stretch","Stretching"],["sore","Soreness vs. pain"],["injury","Common injuries"],["ice","Ice: the research"]];
+    const tabs = [["warm","Warm-ups"],["drills","Drills"],["stretch","Stretching"],["sore","Soreness vs. pain"],["injury","Common injuries"],["ice","Ice: the research"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Routines &amp; recovery</div><h1>Warm-ups &amp; Care</h1></div>
       <div class="seg" role="group" aria-label="Section">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${wtab===k}" onclick="wtab='${k}';render()">${l}</button>`).join("")}</div>`;
     const block = (title, arr, sub) => `<div class="panel"><h2>${title}</h2>${sub?`<p class="note" style="margin:4px 0 0">${sub}</p>`:""}<ol class="steps">${arr.map(s=>`<li><span>${itemHTML(s)}</span><em>${esc(s.d)}</em></li>`).join("")}</ol></div>`;
     const tellCoach = `<div class="panel care-alert"><b>If something hurts in a way that changes how you run, stop and tell a coach that day.</b> Coaches and the athletic trainer decide when you're ready to go again. This page is general info, not a diagnosis.</div>`;
     let body = "";
-    if (wtab==="stretch") {
+    if (wtab==="drills") {
+      body = `<p class="lede" style="margin:0">Drills by event. Your workout shows which set to do on which day.</p>
+        ${DRILL_GROUPS.map(g => { const L = DRILLS.lib.filter(d=>d.group===g); const SS = DRILLS.sets.filter(s=>s.group===g);
+          return L.length ? `<div class="panel"><h2>${esc(g==="Relays"?"Relay development":g)}</h2>
+            ${SS.length?`<p class="note" style="margin:4px 0 8px">Sets: ${SS.map(s=>`<button type="button" class="abbr s-pill" data-k="dr:${s.id}">${esc(s.name)}</button>`).join(" ")}</p>`:""}
+            <ol class="steps">${L.map(d=>`<li><span><b>${esc(d.name)}</b>${d.url?` <a class="vid" href="${esc(d.url)}" target="_blank" rel="noopener">▶ Video</a>`:""}${d.note?`<br><span class="muted">${esc(d.note)}</span>`:""}</span></li>`).join("")}</ol></div>` : ""; }).join("")}`;
+    } else if (wtab==="stretch") {
       const list = WARMUPS.stretch || STRETCH_DEFAULT;
       body = `<div class="panel"><h2>Stretching basics</h2><ul class="exp">${STRETCH_RULES.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>
         <div class="muscles">${list.map(g=>`<div class="panel muscle"><h3>${esc(g.m)}</h3>${g.why?`<p class="note" style="margin:4px 0 0">${esc(g.why)}</p>`:""}
@@ -5487,6 +5584,7 @@ async function loadAll(){
   applyLogs();
   applySelfSignups();
   if (byKey.exvideos && typeof byKey.exvideos === "object") { EXV = byKey.exvideos; exvDraft = null; }
+  if (byKey.drills && typeof byKey.drills === "object" && Array.isArray(byKey.drills.lib)) { DRILLS = Object.assign({lib:[], sets:[], assign:[]}, byKey.drills); drDraft = null; }
   if (byKey.sptests && typeof byKey.sptests === "object") { SPT = byKey.sptests; spt.draft = null; }
   window.HUB_BYKEY = byKey; if (window.SP && SP.onData) SP.onData(byKey);
   render();
@@ -5575,6 +5673,6 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-05f"></script>
-<script src="sprints.js?v=11-09g"></script>
+<script src="sprints.js?v=11-10b"></script>
 </body>
 </html>
