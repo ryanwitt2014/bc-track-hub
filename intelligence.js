@@ -113,7 +113,7 @@ const GRADES = {SR:12, JR:11, SO:10, FR:9, "8":8, "7":7};
 function looksLikeCSV(t){ const first = String(t||"").trim().split("\n")[0].toLowerCase(); return /(^|[,\t])\s*(event|athlete|name)\s*([,\t]|$)/.test(first) && /[,\t]/.test(first); }
 function parsePasted(text){
   const lines = String(text||"").replace(/\r/g,"").replace(/(\d|["'”-])(Boys|Girls) /g, "$1\n$2 ").replace(/More Results/g,"\n").split("\n").map(l=>l.trim());
-  const HEAD = /^(?:(Varsity|JV|C?omplete|Results)\s+)?(Boys|Girls)\s+(.+?)(?:\s+(Finals|Prelims|Preliminaries|Final))?$/i;
+  const HEAD = /^(.*?\s)?(Boys|Girls)\s+(.+?)(?:\s+(Finals|Prelims|Preliminaries|Final))?$/i;   // any lead-in ("Updated Kouts Invite 2026 Boys 100 Meter Dash Finals", "Varsity Girls ...")
   const ROW_G = /^(\d+|-|--)\s+(.+?)\s+(SR|JR|SO|FR|7|8)\s+(.+?)\s+(\S+)(?:\s+(\d+))?$/;
   const MARK = String.raw`(\d{1,2}:\d{2}(?:\.\d+)?|\d{1,3}\.\d+|\d+-\d+(?:\.\d+)?|\d+'\s*\d+(?:\.\d+)?"?|DQ|DNF|DNS|NT|NH|FS)`;
   const ROW_END = new RegExp(String.raw`^(\d+|-|--)\s+(.+?)\s+` + MARK + String.raw`(?:\s+(\d+))?$`);          // place first: "1 Name Team 5:12.4 [heat]"
@@ -128,7 +128,7 @@ function parsePasted(text){
     if (!l || /^place\b/i.test(l) || /^athlete:/i.test(l)) continue;
     const h = l.match(HEAD);
     if (h && !/\d\s*\d*$/.test(l.replace(/\d+m\b/gi,"").replace(/\b(100|110|200|300|400|800|1600|3200|4x\d+)\b/gi,""))) {
-      jv = /^jv/i.test(h[1]||""); g = /^b/i.test(h[2]) ? "B" : "G"; ev = h[3].trim(); rnd = /^prelim/i.test(h[4]||"") ? "P" : "F"; continue; }
+      jv = /\bJV\b/i.test(h[1]||""); g = /^b/i.test(h[2]) ? "B" : "G"; ev = h[3].trim(); rnd = /^prelim/i.test(h[4]||"") ? "P" : "F"; continue; }
     if (!ev || jv) continue;
     const relay = /relay|4\s*x/i.test(ev);
     const push = (pl, ath, team, gr, mark) => {
