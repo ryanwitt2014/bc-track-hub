@@ -1218,9 +1218,10 @@ SP.onData = function(byKey){
 if (window.HUB_BYKEY) SP.onData(window.HUB_BYKEY);
 if (!SECTIONS.some(s=>s.id==="sprints")) {
   const i = SECTIONS.findIndex(s=>s.id==="middistance");
-  SECTIONS.splice(i+1, 0, {id:"sprints", g:"train", name:"Sprints, Hurdles & Jumps", blurb:"Sprint, hurdle and jump program: winter calendar (indoor/outdoor), drills, block starts, strength"});
+  SECTIONS.splice(i+1, 0, {id:"sprints", g:"train", cnav:true, name:"Sprints, Hurdles & Jumps", blurb:"Sprint, hurdle and jump program: winter calendar (indoor/outdoor), drills, block starts, strength"});
 }
 if (typeof LIFTS!=="undefined") Object.keys(STR).forEach(k => { LIFTS["SW"+k] = {name:"Sprint Weight Room (" + SWN(k) + ")", when:STR[k].n, spr:1, gen:1, rest:"60–90 s", note:STR[k].note, ex:STR[k].ex.map(e=>[e[0], e[1]])}; });
+SP.phil = lv => withLv(lv==="JH" ? "JH" : "HS", () => philView().split('<div class="panel sp-stage">')[0].split('<div class="panel"><h2>Training groups')[0].split('<div class="cols"><div class="panel"><h2>The week')[0]);
 SP.withLv = withLv; SP.dayInfo = dayInfo; SP.dayTitle = dayTitle; SP.dayFacts = dayFacts; SP.weeksOf = lv => withLv(lv, () => SP_WEEKS);
 SP.weeks = SP_WEEKS; SP.drills = DRILLS; SP.suggest = suggest; SP.groupOf = groupOf;
 render();
