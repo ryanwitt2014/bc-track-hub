@@ -890,7 +890,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-09g";
+const HUB_VERSION = "11-10a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2130,8 +2130,8 @@ function liSimple(arr, o){
   const wt = S.warm.map(it => splitTags(it.t).text).join(" | ");
   const hasS = /sprint warm-up|junior high warm-up|fast-day warm-up/i.test(wt), hasD = /check-in|min easy|easy \+ drills|easy jog \d|jog.*strides/i.test(wt) && !/arm circles|general movement/i.test(wt);
   const wk = hasS && hasD ? (["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "d") : hasS ? "s" : hasD ? "d"
-    : ["Distance","Mid Distance"].includes(LI_CTX) ? "d" : SPR_CATS.includes(LI_CTX) ? "s" : "p";
-  const wk2 = wk==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : wk;
+    : SPR_CATS.includes(LI_CTX) ? "s" : "d";
+  const wk2 = wk;
   const wkF = o.wu ? (o.wu==="s" && arr.some(it=>it.lv==="JH") && !arr.some(it=>it.lv==="HS") ? "j" : o.wu) : wk2;
   const hasWork = !!main || mainS.length || S.str.length;   // something to actually do (not just notes)
   const showWU = (S.warm.length && (hasWork || !o.wu)) || (o.wu && hasWork), showCD = (S.cool.length && (hasWork || !o.wu)) || (o.wu && hasWork);
@@ -2474,8 +2474,7 @@ const wuFromText = txt => String(txt||"").split("\n").map(l=>l.trim()).filter(Bo
 function wuStart(){ wu = {practice:wuToText(WARMUPS.practice), distance:wuToText(WARMUPS.distance), sprint:wuToText(WARMUPS.sprint), sprintjh:wuToText(WARMUPS.sprintjh), cooldown:wuToText(WARMUPS.cooldown), field:Object.entries(WARMUPS.field).map(([ev,arr])=>({ev, txt:wuToText(arr)})),
   stretch:(WARMUPS.stretch||STRETCH_DEFAULT).map(g=>({m:g.m, why:g.why||"", s:wuToText(g.s), x:wuToText(g.x)}))}; }
 async function wuSave(){
-  const next = {practice:wuFromText(wu.practice), distance:wuFromText(wu.distance), sprint:wuFromText(wu.sprint), sprintjh:wuFromText(wu.sprintjh), cooldown:wuFromText(wu.cooldown), field:{}};
-  wu.field.forEach(f=>{ const n=f.ev.trim(); if(n) next.field[n]=wuFromText(f.txt); });
+  const next = {distance:wuFromText(wu.distance), sprint:wuFromText(wu.sprint), cooldown:wuFromText(wu.cooldown), field:{}};
   next.stretch = wu.stretch.filter(g=>g.m.trim()).map(g=>({m:g.m.trim(), why:g.why.trim(), s:wuFromText(g.s), x:wuFromText(g.x)}));
   const err = await publishFiles({"warmups.json": JSON.stringify(next, null, 1)});
   if(err){ wuMsg={kind:"err",text:err}; render(); return; }
@@ -3021,8 +3020,9 @@ function abbrBody(k){
       : {eye:"Distance & Mid-Distance", title:"Our philosophy", html:mdPhilHTML().replace(/class="panel"/g,'class="ab-sec"')}; }
   if (kind==="lift") { const L = LIFTS[id]; if (!L) return null;
     return {eye: L.jh ? "Junior high strength" : L.home ? "Home strength" : "Strength", title: L.name, html: (L.when?`<p class="lede" style="margin:0 0 10px">${esc(L.when)}</p>`:"") + liftHTML(id).replace('<details class="lift">','<details class="lift" open>') }; }
-  if (kind==="wu" || kind==="cd") { const WU = {d:[WARMUPS.distance,"Distance & mid-distance"], s:[WARMUPS.sprint,"Sprints, hurdles & jumps"], j:[WARMUPS.sprintjh||WARMUPS.sprint,"Junior high sprints, hurdles & jumps"], p:[WARMUPS.practice,"Every practice"]}[id] || [WARMUPS.practice,"Every practice"];
-    const L = kind==="wu" ? (WU[0] || WARMUPS.practice) : WARMUPS.cooldown;
+  if (kind==="wu" || kind==="cd") { const SPW = [WARMUPS.sprint,"Sprints, hurdles & jumps · HS and JH"], DW = [WARMUPS.distance,"Distance & mid-distance · HS and JH"];
+    const WU = {d:DW, s:SPW, j:SPW, p: SPR_CATS.includes(LI_CTX) ? SPW : DW}[id] || DW;   // two warm-ups for everyone
+    const L = kind==="wu" ? WU[0] : WARMUPS.cooldown;
     return {eye: kind==="wu" ? WU[1] : "End of practice", title: kind==="wu" ? "Warm-up" : "Cool-down",
       html: `<ol class="steps">${(L||[]).map(s=>`<li><span>${itemHTML(s)}</span><em>${esc(s.d||"")}</em></li>`).join("")}</ol>
         <p class="note" style="margin:10px 0 0">${kind==="wu" && id==="s" ? "Jumpers: add your event warm-up from the Warm-ups page. " : ""}<a href="#warmups" onclick="document.getElementById('abbrDlg').close()">Warm-ups &amp; stretching page →</a></p>` }; }
@@ -4583,17 +4583,10 @@ const views = {
     const area = (id,label,key,rows) => `<label class="ed-g all" for="${id}"><span>${label}</span><textarea id="${id}" rows="${rows}" oninput="${key}=this.value">${esc(eval(key))}</textarea></label>`;
     return `<div class="panel ed-help"><b>How to write it.</b> One step per line: <code>Step | reps | link</code>. Reps and link are optional. A link can be a video (becomes a ▶ Video button) or a page in the hub like <code>#warmups</code>.<br>Example: <code>A-skips | 2 x 20m | https://youtu.be/…</code></div>
       <div class="panel ed">
-        ${area("wu-d","Distance & mid-distance warm-up","wu.distance",10)}
-        ${area("wu-s","Sprints, hurdles & jumps warm-up (HS fast day)","wu.sprint",10)}
-        ${area("wu-sj","Sprints, hurdles & jumps warm-up (JH fast day)","wu.sprintjh",7)}
-        ${area("wu-p","General warm-up (everyone else / days with no group)","wu.practice",9)}
+        <p class="note" style="margin:0 0 6px">Two warm-ups, used every day by both high school and junior high.</p>
+        ${area("wu-d","Distance & Mid-Distance warm-up","wu.distance",12)}
+        ${area("wu-s","Sprinters warm-up (sprints, hurdles, jumps)","wu.sprint",12)}
         ${area("wu-c","Cool-down","wu.cooldown",4)}
-        <div class="ed-day"><h3>Field events</h3></div>
-        ${wu.field.map((f,i)=>`<div class="ed-fe">
-          <div class="ed-dayhead"><label class="ed-row" for="wu-fn-${i}" style="flex:1"><span>Event</span><input id="wu-fn-${i}" type="text" value="${esc(f.ev)}" oninput="wu.field[${i}].ev=this.value"></label>
-            <button type="button" class="btn sm" onclick="wu.field.splice(${i},1);render()">Remove</button></div>
-          <textarea id="wu-ft-${i}" rows="5" aria-label="${esc(f.ev)} steps" oninput="wu.field[${i}].txt=this.value">${esc(f.txt)}</textarea></div>`).join("")}
-        <div class="ed-add"><button type="button" class="btn sm" onclick="wu.field.push({ev:'New event',txt:''});render()">+ Add field event</button></div>
         <div class="ed-day"><h3>Stretching by muscle</h3><p class="note" style="margin:0">Same format: <code>Stretch | hold or reps | link</code>. "Also try" is for foam rolling, strength, or mobility work.</p></div>
         ${wu.stretch.map((g,i)=>`<div class="ed-fe">
           <div class="ed-dayhead"><label class="ed-row" for="st-m-${i}" style="flex:1"><span>Muscle</span><input id="st-m-${i}" type="text" value="${esc(g.m)}" oninput="wu.stretch[${i}].m=this.value"></label>
@@ -4917,11 +4910,8 @@ const views = {
           <p class="inj-flag"><b>See the athletic trainer:</b> ${esc(i.flag)}</p></div>`).join("")}</div>
         <p class="note">Wondering why ice isn't front and center? See <a href="#warmups" onclick="wtab='ice';render();return false">Ice: the research</a>.</p>${tellCoach}`;
     } else {
-      body = `<div class="cols">${block("Distance &amp; Mid-Distance", WARMUPS.distance||WARMUPS.practice, "Every distance and 400/800 practice")}${block("Sprints, Hurdles &amp; Jumps", WARMUPS.sprint||WARMUPS.practice, "High school fast days")}</div>
-        <div class="cols">${block("Sprints, Hurdles &amp; Jumps · Junior High", WARMUPS.sprintjh||WARMUPS.sprint, "Junior high fast days. One cue at a time.")}</div>
-        <div class="cols">${block("General", WARMUPS.practice, "Throwers, combined days, or no group yet")}${block("Cool-down", WARMUPS.cooldown, "Everyone, end of practice")}</div>
-        <div><h2>Field events</h2><p class="note" style="margin:4px 0 0">After the Practice warm-up, go to your event.</p></div>
-        <div class="cols">${Object.entries(WARMUPS.field).map(([ev,arr])=>block(ev,arr)).join("")}</div>
+      body = `<div class="cols">${block("Distance &amp; Mid-Distance", WARMUPS.distance, "Every day · high school and junior high")}${block("Sprinters", WARMUPS.sprint, "Sprints, hurdles and jumps · every day · high school and junior high")}</div>
+        <div class="cols">${block("Cool-down", WARMUPS.cooldown, "Everyone, end of practice")}</div>
         <p class="note">After practice, hit the <a href="#warmups" onclick="wtab='stretch';render();return false">Stretching</a> tab for your event's muscles.</p>`;
     }
     return head + body + `</div>`;
@@ -5480,7 +5470,7 @@ async function loadAll(){
   if (rj && Array.isArray(rj.list)) REC = {list: rj.list, contacts: (rj.contacts||[]).map(({note, ...c})=>c)};
   approvedFlags = {d: byKey.distance_rev === true, s: byKey.sprint_rev === true};
   if (Array.isArray(w)) { RAW_STARTS = w.filter(x=>x && typeof x.start==="string").map(x=>x.start); WORKOUTS = mergeWeeks(w); applyApproved(); }
-  if (wu0 && wu0.practice) WARMUPS = Object.assign({}, WARMUPS, wu0);
+  if (wu0 && (wu0.distance || wu0.sprint)) WARMUPS = Object.assign({}, WARMUPS, wu0);
   if (lg && typeof lg === "object") LOGS = lg;
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
