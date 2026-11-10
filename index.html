@@ -893,7 +893,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10e";
+const HUB_VERSION = "11-10f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4405,7 +4405,7 @@ let ptab = "sec";
 function meetKit(C){
   const BC = "Benton Central";
   const ord = n => n+((n%100>=11&&n%100<=13)?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));
-  const pts = p => p==null ? "—" : String(p).replace(/\.5$/,"½");
+  const pts = p => p==null ? "—" : String(p).replace(/\.5$/,"½").replace(/\.25$/,"¼").replace(/\.75$/,"¾");
   const list = (y,g) => Array.isArray(y[g]) && y[g].length ? y[g] : null;
   const fin = (y,g) => { const L = list(y,g); if(!L) return null; const r = L.find(x=>x[0]===BC); return r ? {pl:r[1], pts:r[2], of:L.filter(x=>x[1]).length} : {out:true}; };
   const prevOf = (y,g,team) => { const py = C.rows.find(x=>x.yr===y.yr-1); const L = py && list(py,g); if(!L) return undefined; return L.find(r=>r[0]===team) || null; };
@@ -4413,10 +4413,10 @@ function meetKit(C){
     const d = prev[1]-cur[1]; return d>0?`<span class="cf-d up" title="Up ${d} from ${ord(prev[1])}">▲${d}</span>`:d<0?`<span class="cf-d dn" title="Down ${-d} from ${ord(prev[1])}">▼${-d}</span>`:`<span class="cf-d" title="Same place">–</span>`; };
   const ptD = (cur,prev) => { if(!prev || cur[2]==null || prev[2]==null) return ""; const d = Math.round((cur[2]-prev[2])*2)/2;
     return `<span class="cf-p ${d>0?"up":d<0?"dn":""}">${d>0?"+":d<0?"−":"±"}${pts(Math.abs(d))}</span>`; };
-  const yrs = g => `<div class="cf-yrs">${C.rows.slice().reverse().map(y=>{ const f = fin(y,g), msg = y["msg"+g];
+  const yrs = (g,n) => `<div class="cf-yrs">${C.rows.slice(0,n||99).reverse().map(y=>{ const f = fin(y,g), msg = y["msg"+g];
       const bcRow = list(y,g) && list(y,g).find(x=>x[0]===BC), pv = bcRow ? prevOf(y,g,BC) : undefined;
       return `<div class="cf-yr ${f&&f.pl&&f.pl<=3?"top":""}"><span>${y.yr}</span><b>${f&&f.pl?ord(f.pl):"—"}</b><small>${f&&f.pl?pts(f.pts)+" pts · of "+f.of:msg?esc(msg.short||""):f&&f.out?"no team points":"not added yet"}</small>${pv?`<div class="cf-yd">${plD(bcRow,pv)}${ptD(bcRow,pv)}</div>`:""}</div>`; }).join("")}</div>`;
-  const trend = g => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div>${yrs(g)}</div>`;
+  const trend = (g,n) => `<div class="panel cf-trend"><div class="mlabel">${GN[g]}</div>${yrs(g,n)}</div>`;
   const table = (y,g) => { const L = list(y,g), msg = y["msg"+g];
     if(!L) return `<div class="panel cf-card"><h3 style="margin:0 0 6px">${GN[g]}</h3><p class="note" style="margin:0">${msg?esc(msg.long):"Results not added yet."}</p></div>`;
     const hasPrev = prevOf(y,g,"__")!==undefined; const rows = L.slice().sort((a,b)=>(a[1]??999)-(b[1]??999)); const bc = rows.find(r=>r[0]===BC);
@@ -4424,7 +4424,7 @@ function meetKit(C){
     return `<div class="panel cf-card"><div class="bar"><h3 style="margin:0">${GN[g]}</h3>${bc?`<span class="muted" style="margin:0">BC ${bc[1]?ord(bc[1]):"—"}${above?` · ${pts(above[2]-bc[2])} pts out of ${ord(above[1])}`:""}</span>`:""}</div>
       <div class="tbl" style="border:0"><table><thead><tr><th>Pl</th><th>Team</th><th style="text-align:right">Pts</th>${hasPrev?`<th class="cf-ch" title="Change from ${y.yr-1}">vs ${y.yr-1}</th>`:""}</tr></thead><tbody>
       ${rows.map(r=>{ const pv = prevOf(y,g,r[0]); return `<tr class="${r[0]===BC?"cf-bc":""}"><td class="mono">${r[1]??"—"}</td><td>${esc(r[0])}</td><td class="mono" style="text-align:right">${pts(r[2])}</td>${hasPrev?`<td class="cf-ch">${plD(r,pv)}${ptD(r,pv)}</td>`:""}</tr>`; }).join("")}</tbody></table></div></div>`; };
-  const years = () => C.rows.map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("");
+  const years = n => C.rows.slice(0,n||99).map(y=>`<div><h2 style="margin-bottom:10px">${y.yr}${y.note?` <span class="muted" style="font-size:15px">${esc(y.note)}</span>`:""}</h2><div class="cols">${table(y,"G")}${table(y,"B")}</div></div>`).join("");
   const unscored = C.rows.some(y=>["G","B"].some(g=>(list(y,g)||[]).some(r=>r[1]===null)));
   const legend = `<p class="note"><span class="cf-d up">▲</span> <span class="cf-d dn">▼</span> = places gained or lost from the year before. <span class="cf-p up">+pts</span> <span class="cf-p dn">−pts</span> = points scored compared to the year before, so a team can drop a place and still have improved. <span class="cf-d new">new</span> = not in that meet the year before.</p>${unscored?`<p class="note">— = listed on the results sheet but not scored.</p>`:""}${C.foot?`<p class="note">${esc(C.foot)}</p>`:""}`;
   return {trend, yrs, years, legend};
@@ -5047,12 +5047,11 @@ const views = {
   conference(){
     const C = CONF[level], K = meetKit(C);
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
-      ${level==="HS" ? `<div class="panel cf-streak"><div class="eyebrow">Girls · Hoosier Conference</div><h2>2022: Benton Central snaps the streak</h2>
-        <p style="margin:6px 0 10px">West Lafayette had won the Hoosier Conference girls track title every year since 2000. On May 9, 2022, Benton Central edged them <b>124–122</b> to win the conference, the only year West Lafayette didn't win from 2000 through 2025. Hamilton Heights won in 2026.</p>
-        <a class="btn sm" href="https://www.jconline.com/story/sports/2022/05/10/benton-central-snaps-west-lafayette-hoosier-conference-track-streak/9712839002/" target="_blank" rel="noopener">Read the Journal &amp; Courier story →</a></div>` : ""}
-      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G")}${K.trend("B")}</div></div>
-      ${level==="HS" ? confChampsHTML() : ""}
-      ${K.years()}${K.legend}</div>`;
+      ${level==="HS" ? `<div class="panel cf-streak"><div class="eyebrow">Girls highlight</div>
+        <p style="margin:4px 0 10px"><b>2022: Benton Central won the Hoosier Conference, 124–122.</b> It's the only girls title West Lafayette lost from 2000 to 2025.</p>
+        <a class="btn sm" href="https://www.jconline.com/story/sports/2022/05/10/benton-central-snaps-west-lafayette-hoosier-conference-track-streak/9712839002/" target="_blank" rel="noopener">Read the J&amp;C story →</a></div>` : ""}
+      <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G",4)}${K.trend("B",4)}</div></div>
+      ${K.years(4)}${K.legend}</div>`;
   },
   postseason(){
     const kits = POST.map(C=>({C, K:meetKit(C)}));
