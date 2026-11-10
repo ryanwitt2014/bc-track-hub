@@ -695,6 +695,11 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 @media (max-width:600px){.aud-row{grid-template-columns:1fr}}
 .ed-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
 .cf-streak{border-left:4px solid var(--gold)}
+.lt-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;min-width:80px}.lt-bar>i{display:block;height:100%;background:var(--accent)}
+.lt-bar.done>i{background:var(--gold)}.lt-ok{color:var(--accent);font-weight:700}
+.lt-pol{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0}.lt-pol b{font-family:ui-monospace,monospace;text-align:right}
+.lt-chk{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0}.lt-chk label{display:flex;gap:6px;align-items:center}
+.lt-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.lt-form label{display:grid;gap:4px;font-size:13px}
 tr.cf-win td{background:rgba(252,184,39,.12)}
 .today.cdash{display:grid;gap:14px;grid-template-columns:1fr}
 .cd-top{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
@@ -893,7 +898,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10f";
+const HUB_VERSION = "11-10g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1209,6 +1214,73 @@ const CONF = {
     {yr:2014, note:"66th annual", G:[["West Lafayette",1,195],["Benton Central",2,140],["Twin Lakes",3,98],["Central Catholic",4,62],["Rensselaer Central",5,52],["Tipton",6,38],["Delphi",7,34]],
               B:[["West Lafayette",1,193],["Benton Central",2,91],["Rensselaer Central",3,90],["Twin Lakes",4,87.5],["Tipton",5,80],["Delphi",6,63.5],["Central Catholic",7,8]]}]},
 };
+/* ---- Varsity letters (HS). Stored in hub_data key "letters": {entries:[{id,a,meet,date,ev,t,pts,season,by}], awards:[{id,a,note,season,by}]} ---- */
+const LT_GOAL = 30;
+const LT_TYPES = [["sec","Sectional finalist",30],["rec","Broke a school record",30],["conf","Hoosier Conference champion",20],["state","HSR State qualifier",20],["win","Won the event",3],["score","Scored in the event",2],["pr","Personal best",3]];
+const LT_EVS = ["100","200","400","800","1600","3200","100H","110H","300H","4x100","4x400","4x800","HJ","LJ","PV","SP","DT"];
+let LETTERS = {entries:[], awards:[]}, ltUI = {meet:"", date:"", ev:"", a:["","","",""], t:{}, award:"", note:"", open:"", msg:{kind:"",text:""}};
+const ltCur = x => (x.season||SEASON)===SEASON;
+function ltOf(id){ const E = LETTERS.entries.filter(e=>e.a===id && ltCur(e)), aw = LETTERS.awards.find(w=>w.a===id && ltCur(w));
+  const pts = E.reduce((s,e)=>s+(+e.pts||0),0); return {E, aw, pts, done: pts>=LT_GOAL || !!aw}; }
+const ltName = t => (LT_TYPES.find(x=>x[0]===t)||[t,t])[1];
+const ltBar = L => `<div class="lt-bar ${L.done?"done":""}"><i style="width:${Math.min(100,Math.round(L.pts/LT_GOAL*100))}%"></i></div>`;
+function ltPolicyHTML(){ return `<div class="lt-pol">${[[30,"Sectional finalist, or breaking a school record in a meet"],[20,"Hoosier Conference champion or HSR State qualifier (per event)"],[3,"Winning an event at a meet or invitational (per event)"],[2,"Scoring in an event (per event)"],[3,"Personal best in a meet (per event)"],["★","If injured, a letter can be awarded at the coach's discretion"]].map(([p,l])=>`<b>${p}</b><span>${esc(l)}</span>`).join("")}</div>`; }
+async function ltSave(next, ok){
+  const err = await publishFiles({"letters.json": JSON.stringify(next)});
+  if (err) ltUI.msg = {kind:"err", text:err}; else { LETTERS = next; ltUI.msg = {kind:"ok", text:ok}; }
+  render();
+}
+function ltAdd(){
+  const ids = (ltUI.ev.startsWith("4x") ? ltUI.a : ltUI.a.slice(0,1)).filter(Boolean), ts = LT_TYPES.filter(x=>ltUI.t[x[0]]);
+  if (!ltUI.meet.trim()) { ltUI.msg = {kind:"err", text:"Pick or type the meet."}; return render(); }
+  if (!ids.length) { ltUI.msg = {kind:"err", text:"Pick the athlete."}; return render(); }
+  if (!ts.length) { ltUI.msg = {kind:"err", text:"Check at least one way they earned points."}; return render(); }
+  const by = (meCoach()||{}).name || "", now = Date.now().toString(36);
+  const add = []; ids.forEach((a,i)=>ts.forEach(([k,,p],j)=>add.push({id:`e${now}${i}${j}`, a, meet:ltUI.meet.trim(), date:ltUI.date, ev:ltUI.ev, t:k, pts:p, season:SEASON, by})));
+  const next = {entries:[...LETTERS.entries, ...add], awards:[...LETTERS.awards]};
+  const who = ids.map(id=>(ATHLETES.find(x=>x.id===id)||{}).name||id).join(", ");
+  ltUI.a = ["","","",""]; ltUI.t = {};
+  ltSave(next, `Added ${ts.reduce((s,x)=>s+x[2],0)} pts for ${who}.`);
+}
+function ltDel(id){ ltSave({entries:LETTERS.entries.filter(e=>e.id!==id), awards:LETTERS.awards.filter(w=>w.id!==id)}, "Removed."); }
+function ltAward(){
+  if (!ltUI.award) { ltUI.msg = {kind:"err", text:"Pick the athlete for the coach's award."}; return render(); }
+  const next = {entries:[...LETTERS.entries], awards:[...LETTERS.awards.filter(w=>!(w.a===ltUI.award && ltCur(w))), {id:"w"+Date.now().toString(36), a:ltUI.award, note:ltUI.note.trim(), season:SEASON, by:(meCoach()||{}).name||""}]};
+  ltUI.award = ""; ltUI.note = ""; ltSave(next, "Coach's award saved. They're marked as lettered.");
+}
+function ltEntriesHTML(L, del){
+  const rows = [...L.E].sort((x,y)=>(y.date||"").localeCompare(x.date||""));
+  return (rows.length ? `<div class="tbl"><table><thead><tr><th>Meet</th><th>Event</th><th>Earned for</th><th style="text-align:right">Pts</th>${del?"<th></th>":""}</tr></thead><tbody>
+    ${rows.map(e=>`<tr><td>${esc(e.meet)}${e.date?` <span class="muted mono">${esc(fmtD(e.date))}</span>`:""}</td><td>${esc(e.ev?evn(e.ev):"—")}</td><td>${esc(ltName(e.t))}</td><td class="mono" style="text-align:right">${e.pts}</td>${del?`<td><button type="button" class="btn sm" onclick="ltDel('${e.id}')" aria-label="Remove">✕</button></td>`:""}</tr>`).join("")}</tbody></table></div>`
+    : `<p class="note" style="margin:0">No points yet this season.</p>`)
+    + (L.aw ? `<p class="note" style="margin:8px 0 0">★ Coach's award${L.aw.note?`: ${esc(L.aw.note)}`:""}${del?` <button type="button" class="btn sm" onclick="ltDel('${L.aw.id}')">Remove award</button>`:""}</p>` : "");
+}
+function ltAthleteHTML(a){
+  if (a.level!=="HS") return ""; const L = ltOf(a.id);
+  return `<div class="panel"><div class="bar"><h2>Varsity letter</h2><span class="${L.done?"lt-ok":"muted"}">${L.done?"✓ Lettered":`${L.pts} / ${LT_GOAL} pts`}</span></div>
+    <div style="margin:8px 0 12px">${ltBar(L)}</div>${ltEntriesHTML(L, false)}<p class="note" style="margin:8px 0 0"><a href="#letters">How letter points work →</a></p></div>`;
+}
+function ltFormHTML(){
+  const pool = ATHLETES.filter(a=>a.level==="HS").sort((x,y)=>x.name.localeCompare(y.name));
+  const opt = v => `<option value="">Pick athlete</option>`+["G","B"].map(g=>`<optgroup label="${GN[g]}">${pool.filter(a=>a.g===g).map(a=>`<option value="${a.id}" ${v===a.id?"selected":""}>${esc(a.name)}</option>`).join("")}</optgroup>`).join("");
+  const meets = SCHEDULE.filter(m=>m.level==="HS").sort((a,b)=>a.date.localeCompare(b.date));
+  const relay = ltUI.ev.startsWith("4x");
+  return `<div class="panel ed"><h2>Add points from a meet</h2>
+    <div class="lt-form" style="margin-top:8px">
+      <label>Meet<select onchange="const m=SCHEDULE.find(x=>x.level==='HS'&&x.date+'|'+x.meet===this.value);if(m){ltUI.meet=m.meet;ltUI.date=m.date;}render()"><option value="">Pick a meet</option>${meets.map(m=>`<option value="${esc(m.date+"|"+m.meet)}" ${ltUI.meet===m.meet&&ltUI.date===m.date?"selected":""}>${esc(fmtD(m.date)+" · "+m.meet)}</option>`).join("")}</select></label>
+      <label>Or type the meet<input type="text" value="${esc(ltUI.meet)}" oninput="ltUI.meet=this.value" placeholder="Meet name"></label>
+      <label>Date<input type="date" value="${esc(ltUI.date)}" onchange="ltUI.date=this.value"></label>
+      <label>Event<select onchange="ltUI.ev=this.value;render()"><option value="">Pick event</option>${LT_EVS.map(e=>`<option value="${e}" ${ltUI.ev===e?"selected":""}>${esc(evn(e))}</option>`).join("")}</select></label>
+      ${(relay?[0,1,2,3]:[0]).map(i=>`<label>${relay?`Leg ${i+1}`:"Athlete"}<select onchange="ltUI.a[${i}]=this.value">${opt(ltUI.a[i])}</select></label>`).join("")}
+    </div>
+    <div class="lt-chk">${LT_TYPES.map(([k,l,p])=>`<label><input type="checkbox" ${ltUI.t[k]?"checked":""} onchange="ltUI.t['${k}']=this.checked"> ${esc(l)} <span class="muted">+${p}</span></label>`).join("")}</div>
+    <p class="note" style="margin:0 0 10px">Check every one that applies. A winner usually gets <b>Won</b> and <b>Scored</b>. Relays add the points to each leg.</p>
+    <button type="button" class="btn primary" onclick="ltAdd()" ${saving?"disabled":""}>${saving?"Saving…":"Add points"}</button>
+    <div class="ed-day" style="margin-top:16px"><h3>Injured: coach's award</h3></div>
+    <div class="lt-form"><label>Athlete<select onchange="ltUI.award=this.value">${opt(ltUI.award)}</select></label><label>Note (optional)<input type="text" value="${esc(ltUI.note)}" oninput="ltUI.note=this.value" placeholder="e.g. Hamstring, out from April 10"></label></div>
+    <button type="button" class="btn" style="margin-top:10px" onclick="ltAward()" ${saving?"disabled":""}>Award letter</button>
+    ${ltUI.msg.text?`<p class="ed-msg ${ltUI.msg.kind}" style="margin:10px 0 0">${esc(ltUI.msg.text)}</p>`:""}</div>`;
+}
 // Hoosier Conference champions + BC's finish by year (from CONF.HS rows; gaps are years without team scores yet)
 function confChampsHTML(){
   const R = CONF.HS.rows, yrs = []; for (let y = 2026; y >= 2014; y--) yrs.push(y);
@@ -1824,6 +1896,7 @@ const SECTIONS = [
   {id:"records", g:"results", name:"Records", blurb:"HS, JH and elementary school records"},
   {id:"conference", g:"results", name:"Conference", blurb:"WCJC and Hoosier Conference team scores by year"},
   {id:"postseason", g:"results", name:"Postseason", blurb:"HS sectional and regional team scores by year"},
+  {id:"letters", g:"results", name:"Letters", blurb:"Varsity letter points: 30 to letter"},
   {id:"coverage", g:"coach", coach:true, name:"Coverage", blurb:"Two athletes in every event"},
   {id:"data", g:"coach", coach:true, name:"Data Log", blurb:"Workout logs, splits, PRs and goals per athlete"},
   {id:"gear", g:"more", name:"Gear", blurb:"Team store, shoe fitting, spikes, group runs"},
@@ -5053,6 +5126,18 @@ const views = {
       <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G",4)}${K.trend("B",4)}</div></div>
       ${K.years(4)}${K.legend}</div>`;
   },
+  letters(){
+    const pool = ATHLETES.filter(a=>a.level==="HS" && a.g===gsel).map(a=>({a, L:ltOf(a.id)})).sort((x,y)=>(y.L.done-x.L.done)||(y.L.pts-x.L.pts)||x.a.name.localeCompare(y.a.name));
+    const nDone = pool.filter(x=>x.L.done).length;
+    return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">High school · ${SEASON}</div><h1>Varsity Letters</h1></div>${segBtns(gsel,[["B","Boys"],["G","Girls"]],"setG")}</div>
+      <div class="panel"><h2>Earn ${LT_GOAL} points in regularly scheduled meets</h2>${ltPolicyHTML()}</div>
+      ${canPost ? ltFormHTML() : ""}
+      <div><div class="bar" style="margin-bottom:10px"><h2>${GN[gsel]}</h2><span class="muted">${nDone} lettered</span></div>
+      <div class="tbl"><table><thead><tr><th>Athlete</th><th style="width:40%">Progress</th><th style="text-align:right">Pts</th></tr></thead><tbody>
+      ${pool.map(({a,L})=>`<tr${canPost?` style="cursor:pointer" onclick="ltUI.open=ltUI.open==='${a.id}'?'':'${a.id}';render()"`:""}><td><a href="#a-${a.id}" onclick="event.stopPropagation()">${esc(a.name)}</a>${L.aw?' <span class="muted" title="Coach\'s award">★</span>':""}</td><td>${ltBar(L)}</td><td class="mono" style="text-align:right">${L.done?`<span class="lt-ok">✓ ${L.pts}</span>`:L.pts}</td></tr>
+        ${canPost && ltUI.open===a.id ? `<tr><td colspan="3">${ltEntriesHTML(L, true)}</td></tr>` : ""}`).join("")}
+      </tbody></table></div>${canPost?`<p class="note">Tap a row to see or remove that athlete's points.</p>`:""}</div></div>`;
+  },
   postseason(){
     const kits = POST.map(C=>({C, K:meetKit(C)}));
     const tab = kits.find(x=>x.C.id===ptab) || kits[0];
@@ -5542,6 +5627,7 @@ const views = {
           <div class="prgrid">${[["Easy","/mi",`${p.easy[0]}–${p.easy[1]}`],["Tempo","/mi",p.tempo],["Tempo","/400",p.tempo400],["Interval","/400",p.int400],["Interval","/800",p.int800],["Rep","/200",p.rep200],["Rep","/400",p.rep400]]
             .map(([l,u,v])=>`<div class="pr"><div class="ev">${l} ${u}</div><div class="mk">${v}</div></div>`).join("")}</div>
           <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+``; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
+      ${ltAthleteHTML(a)}
       ${myWeekHTML(a)}
       ${sptPanel(a)}
       ${checkHTML(a)}
@@ -5618,6 +5704,7 @@ async function loadAll(){
   applyLogs();
   applySelfSignups();
   if (byKey.exvideos && typeof byKey.exvideos === "object") { EXV = byKey.exvideos; exvDraft = null; }
+  if (byKey.letters && typeof byKey.letters === "object") LETTERS = {entries: byKey.letters.entries||[], awards: byKey.letters.awards||[]};
   if (byKey.drills && typeof byKey.drills === "object" && Array.isArray(byKey.drills.lib)) { DRILLS = Object.assign({lib:[], sets:[], assign:[]}, byKey.drills); drDraft = null; }
   if (byKey.sptests && typeof byKey.sptests === "object") { SPT = byKey.sptests; spt.draft = null; }
   window.HUB_BYKEY = byKey; if (window.SP && SP.onData) SP.onData(byKey);
