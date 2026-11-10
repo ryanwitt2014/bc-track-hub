@@ -695,6 +695,7 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 @media (max-width:600px){.aud-row{grid-template-columns:1fr}}
 .ed-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
 .cf-streak{border-left:4px solid var(--gold)}
+tr.cf-win td{background:rgba(252,184,39,.12)}
 .today.cdash{display:grid;gap:14px;grid-template-columns:1fr}
 .cd-top{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .cd-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
@@ -892,7 +893,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10d";
+const HUB_VERSION = "11-10e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -1193,10 +1194,34 @@ const CONF = {
               B:[["West Lafayette",1,192],["Rensselaer Central",2,91],["Hamilton Heights",3,86],["Logansport",4,67],["Western",5,64],["Tipton",6,48],["Twin Lakes",7,44],["Central Catholic",8,25],["Benton Central",9,6]]},
     {yr:2024, G:[["West Lafayette",1,171],["Hamilton Heights",2,157],["Western",3,95],["Northwestern",4,70],["Rensselaer Central",5,43],["Benton Central",6,40],["Twin Lakes",7,23],["Tipton",8,16],["Central Catholic",9,6]],
               B:[["West Lafayette",1,165],["Rensselaer Central",2,104],["Hamilton Heights",3,96],["Twin Lakes",4,69],["Tipton",5,61],["Northwestern",6,43.5],["Western",7,38.5],["Central Catholic",8,33],["Benton Central",9,13]]},
-    {yr:2023, note:"74th annual", G:[["West Lafayette",1,137],["Northwestern",2,100],["Benton Central",3,80],["Hamilton Heights",4,70.5],["Western",5,66.5],["Cass",6,54],["Twin Lakes",7,49],["Rensselaer Central",8,38],["Tipton",9,15],["Central Catholic",10,13]]},
+    {yr:2023, note:"74th annual", G:[["West Lafayette",1,137],["Northwestern",2,100],["Benton Central",3,80],["Hamilton Heights",4,70.5],["Western",5,66.5],["Cass",6,54],["Twin Lakes",7,49],["Rensselaer Central",8,38],["Tipton",9,15],["Central Catholic",10,13]],
+              B:[["West Lafayette",1,145.75],["Rensselaer Central",2,107],["Hamilton Heights",3,100],["Cass",4,64.75],["Twin Lakes",5,49.75],["Western",6,48.5],["Tipton",7,42.25],["Northwestern",8,28],["Benton Central",9,19],["Central Catholic",10,18]]},
     {yr:2022, note:"73rd annual · Benton Central girls champions", G:[["Benton Central",1,124],["West Lafayette",2,122],["Northwestern",3,75.5],["Hamilton Heights",4,74.5],["Rensselaer Central",5,63.5],["Tipton",6,37.5],["Cass",7,37],["Twin Lakes",7,37],["Western",9,29],["Central Catholic",10,23]],
-              B:[["West Lafayette",1,170],["Northwestern",2,76],["Hamilton Heights",3,61],["Twin Lakes",4,57],["Rensselaer Central",5,55.5],["Cass",6,52],["Benton Central",7,46],["Tipton",8,39.5],["Western",9,35.5],["Central Catholic",10,31.5]]}]},
+              B:[["West Lafayette",1,170],["Northwestern",2,76],["Hamilton Heights",3,61],["Twin Lakes",4,57],["Rensselaer Central",5,55.5],["Cass",6,52],["Benton Central",7,46],["Tipton",8,39.5],["Western",9,35.5],["Central Catholic",10,31.5]]},
+    {yr:2019, note:"71st annual", G:[["West Lafayette",1,183],["Northwestern",2,91],["Hamilton Heights",3,90],["Benton Central",4,75.5],["Rensselaer Central",5,56.5],["Twin Lakes",6,40],["Central Catholic",7,29.5],["Western",8,28.5],["Cass",9,19],["Tipton",10,10]],
+              B:[["West Lafayette",1,134],["Northwestern",2,110],["Rensselaer Central",3,80.5],["Western",4,72],["Hamilton Heights",5,67],["Twin Lakes",6,49.5],["Central Catholic",7,43],["Cass",8,30],["Benton Central",9,28],["Tipton",10,9]]},
+    {yr:2017, note:"69th annual", G:[["West Lafayette",1,181],["Benton Central",2,92],["Hamilton Heights",3,74],["Twin Lakes",4,64],["Rensselaer Central",5,59],["Northwestern",6,48],["Central Catholic",7,40],["Cass",8,22],["Western",9,17],["Tipton",10,12]],
+              B:[["Western",1,127],["West Lafayette",2,118.5],["Hamilton Heights",3,92],["Rensselaer Central",4,61],["Twin Lakes",5,57.5],["Tipton",6,45],["Benton Central",7,41],["Central Catholic",8,40],["Northwestern",9,22],["Cass",10,20]]},
+    {yr:2016, note:"68th annual", G:[["West Lafayette",1,211],["Benton Central",2,90],["Twin Lakes",3,75.5],["Hamilton Heights",4,75],["Tipton",5,48],["Western",6,31],["Northwestern",7,29.5],["Central Catholic",8,27.5],["Rensselaer Central",9,26],["Cass",10,10.5]],
+              B:[["West Lafayette",1,155],["Hamilton Heights",2,113],["Twin Lakes",3,77],["Western",3,77],["Central Catholic",5,43],["Benton Central",6,40.5],["Northwestern",7,35.5],["Rensselaer Central",8,34],["Tipton",9,25],["Cass",10,23]]},
+    {yr:2015, note:"67th annual", G:[["West Lafayette",1,205],["Benton Central",2,121],["Twin Lakes",3,61],["Tipton",4,51],["Central Catholic",5,36],["Rensselaer Central",6,20],["Delphi",7,2]],
+              B:[["West Lafayette",1,177],["Twin Lakes",2,104.5],["Benton Central",3,83],["Rensselaer Central",4,44],["Tipton",5,42],["Delphi",6,26.5],["Central Catholic",7,19]]},
+    {yr:2014, note:"66th annual", G:[["West Lafayette",1,195],["Benton Central",2,140],["Twin Lakes",3,98],["Central Catholic",4,62],["Rensselaer Central",5,52],["Tipton",6,38],["Delphi",7,34]],
+              B:[["West Lafayette",1,193],["Benton Central",2,91],["Rensselaer Central",3,90],["Twin Lakes",4,87.5],["Tipton",5,80],["Delphi",6,63.5],["Central Catholic",7,8]]}]},
 };
+// Hoosier Conference champions + BC's finish by year (from CONF.HS rows; gaps are years without team scores yet)
+function confChampsHTML(){
+  const R = CONF.HS.rows, yrs = []; for (let y = 2026; y >= 2014; y--) yrs.push(y);
+  const cell = (r, g) => { const L = r && r[g]; if (!L || !L.length) return ["—","—"]; const ch = L.find(x=>x[1]===1), bc = L.find(x=>x[0]==="Benton Central");
+    const bcTxt = bc ? (bc[1]===1 ? "<b>1st</b>" : `${bc[1]}${["th","st","nd","rd"][(bc[1]%100>10&&bc[1]%100<14)?0:Math.min(bc[1]%10,4)%4]||"th"}`) + ` <span class="muted">of ${L.length}</span>` : "—";
+    return [ch ? (ch[0]==="Benton Central" ? "<b>Benton Central</b>" : esc(ch[0])) : "—", bcTxt]; };
+  return `<div class="panel"><h2>Champions by year</h2><div class="tbl"><table><thead><tr><th>Year</th><th>Girls champion</th><th>BC girls</th><th>Boys champion</th><th>BC boys</th></tr></thead><tbody>
+    ${yrs.map(y => { const r = R.find(x=>x.yr===y);
+      if (y===2020) return `<tr><td class="mono">2020</td><td colspan="4" class="muted">No meet (COVID-19 cancelled the spring season)</td></tr>`;
+      if (!r) return `<tr><td class="mono">${y}</td><td colspan="4" class="muted">Team scores not added yet</td></tr>`;
+      const g = cell(r,"G"), b = cell(r,"B"); return `<tr${g[0].includes("Benton")?' class="cf-win"':""}><td class="mono">${y}</td><td>${g[0]}</td><td>${g[1]}</td><td>${b[0]}</td><td>${b[1]}</td></tr>`; }).join("")}
+    </tbody></table></div><p class="note" style="margin:8px 0 0">From the official meet results (TFRRS). Girls: West Lafayette every year since 2000 except Benton Central in 2022 and Hamilton Heights in 2026.</p></div>`;
+}
 // IHSAA postseason team scores (HS). Same row format as CONF. Boys still to come.
 const POST = [
   {id:"sec", short:"Sectional", meet:"IHSAA Sectional", foot:"Our sectional moved for 2025: through 2024 it was the Benton Central Sectional; since 2025 it's the Harrison Sectional (Sectional 14), so 2025 shows most teams as new.", rows:[
@@ -5023,9 +5048,10 @@ const views = {
     const C = CONF[level], K = meetKit(C);
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${esc(C.meet)}</div><h1>Conference</h1></div><div class="bar">${levelToggle()}</div></div>
       ${level==="HS" ? `<div class="panel cf-streak"><div class="eyebrow">Girls · Hoosier Conference</div><h2>2022: Benton Central snaps the streak</h2>
-        <p style="margin:6px 0 10px">West Lafayette had won the Hoosier Conference girls track title every year since 2000. On May 9, 2022, Benton Central edged them <b>124–122</b> to win the conference, the only year West Lafayette didn't win from 2000 through 2025.</p>
+        <p style="margin:6px 0 10px">West Lafayette had won the Hoosier Conference girls track title every year since 2000. On May 9, 2022, Benton Central edged them <b>124–122</b> to win the conference, the only year West Lafayette didn't win from 2000 through 2025. Hamilton Heights won in 2026.</p>
         <a class="btn sm" href="https://www.jconline.com/story/sports/2022/05/10/benton-central-snaps-west-lafayette-hoosier-conference-track-streak/9712839002/" target="_blank" rel="noopener">Read the Journal &amp; Courier story →</a></div>` : ""}
       <div><h2 style="margin-bottom:10px">Benton Central's finish</h2><div class="cols">${K.trend("G")}${K.trend("B")}</div></div>
+      ${level==="HS" ? confChampsHTML() : ""}
       ${K.years()}${K.legend}</div>`;
   },
   postseason(){
