@@ -518,6 +518,9 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-dist th:not(:first-child){border:1px solid #777;background:#fffbe6}
 .sh-g{font-size:9px;color:#666}
 .sh-foot{margin-top:6px;font-size:9.5px;color:#555}
+.att-t td.att-c{min-width:62px}.att-t th.att-d{min-width:62px;white-space:normal}.att-t .sh-notes{min-width:160px}
+.bus-t .bus-c{width:58px;white-space:normal}.bus-t .bus-sig{min-width:170px}.bus-t .bus-t2{width:60px}
+.sheet thead{display:table-header-group}.sheet tr{break-inside:avoid}
 @media print{
   @page{size:letter landscape;margin:0.35in}
   html,body{background:#fff!important}
@@ -906,7 +909,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11d";
+const HUB_VERSION = "11-11e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3881,7 +3884,7 @@ const EV_CAT = {"100":"Sprints","200":"Sprints","400":"Sprints","4x100":"Sprints
   "100H":"Hurdles","110H":"Hurdles","300H":"Hurdles","LJ":"Long Jump","HJ":"High Jump","PV":"Pole Vault","SP":"Shot Put","DT":"Discus"};
 const FIELD_CATS = new Set(["Long Jump","High Jump","Pole Vault","Shot Put","Discus"]);
 const PACE_CATS = new Set(["Distance","Mid Distance"]);
-let sh = {mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
+let sh = {alv:"HS", aweek:"", aall:"", blv:"HS", bmeet:"", mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
 // Winter conditioning roster: starred kids are the only ones printed on sheets before official practice starts.
 const OFFICIAL_START = "2027-02-15";
 // WINTER = {ids:[starred], maybe:{id:note} (can do some sessions), follow:{id:note} (coach should reach out), done:[applied coach decisions]}
@@ -3924,7 +3927,7 @@ function groupRoster(lv, cat){
       if (inIt) out.push(a);
     });
   });
-  return out.sort((x,y)=> x.g.localeCompare(y.g) || x.name.localeCompare(y.name));
+  return out.sort((x,y)=> x.name.localeCompare(y.name));
 }
 function sheetItems(d, cat, lv){
   if (!d) return [];
@@ -4068,13 +4071,66 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
       ${field || runCols || timed ? "" : `<tr class="sh-dist"><th colspan="${3 + (withPace?1:0) + (withLast?1:0)}" style="text-align:right">Rep distance →</th>${Array.from({length:n},()=>`<th></th>`).join("")}<th></th></tr>`}
       <tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${withPace?`<th class="sh-pace">Target pace</th>`:""}${withLast?`<th class="sh-last">Last time</th>`:""}
         ${workHead}<th class="sh-notes">Notes</th></tr></thead>
-      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)} <span class="sh-g">${a.g}${lv==="Both"?" "+a.level:""}</span>${tagNote(a)}${wOn && isWinterMaybe(a) ? ` <span class="sh-g">(maybe)</span>` : ""}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}${lastCell(a)}
+      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)}${lv==="Both"?` <span class="sh-g">${a.level}</span>`:""}${tagNote(a)}${wOn && isWinterMaybe(a) ? ` <span class="sh-g">(maybe)</span>` : ""}</td><td>${a.grade??""}</td>${withPace?paceCells(a):""}${lastCell(a)}
         ${timed ? autoCells(a) : workCells}<td></td></tr>`).join("")}
         ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${withPace?"<td></td>":""}${withLast?"<td></td>":""}${timed ? Array.from({length:nAuto},()=>`<td></td>`).join("") : workCells}<td></td></tr>`).join("")}
       </tbody></table>
     <div class="sh-foot">${field ? "Write each attempt as feet-inches (15-4.5). X = foul or miss." : (timed ? "Each box shows the rep (400 = 400m, 5′ = 5 min, fly 20 = flying 20m). Write the time in the box; for minute reps (5′), write the average 400 split. Shaded = not in that kid's workout." + (withLast ? " Last time = the most recent logged session of this same workout." : "") : runCols ? "Write how far each kid ran (miles or minutes) and their average pace." : "Write the rep distance at the top of each column, then each kid's time (78.4 or 1:18.4).")}
       Take a photo at the end of practice and send it in. · ${esc(dayName||"")} ${esc(cat)} ${lv}</div>
   </section>`;
+}
+/* ---- Attendance + bus sheets (printable) ---- */
+// On the team = filled out the interest Google Form (same rule as the Athletes count; gold there = still needs Final Forms)
+const onTeam = a => !!(SIGN[a.id]||{}).gf;
+const needsFF = a => onTeam(a) && !(SIGN[a.id]||{}).ff;
+const attWeeks = () => { const out = []; for (let d = parseD("2026-11-30"); d <= parseD("2027-05-31"); d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+7)) out.push(iso(d)); return out; };
+const mdD = d => d.toLocaleDateString("en-US",{month:"numeric",day:"numeric"});
+function attRoster(lv, winter){
+  let pool = ATHLETES.filter(a=>a.level===lv);
+  if (winter && WINTER.ids.length) pool = pool.filter(isWinter); else pool = pool.filter(onTeam);
+  return pool.sort((x,y)=>x.name.localeCompare(y.name));
+}
+function attSheet(mon, lv){
+  const m = parseD(mon), winter = m < parseD(OFFICIAL_START);
+  const days = (winter ? [1,3] : [0,1,2,3,4]).map(i=>new Date(m.getFullYear(), m.getMonth(), m.getDate()+i)).filter(d => d >= parseD(SEASON_START));
+  if (!days.length) return "";
+  const kids = attRoster(lv, winter), blanks = 6;
+  const meetOn = d => SCHEDULE.find(x=>x.level===lv && x.date===iso(d));
+  const dn = d => d.toLocaleDateString("en-US",{weekday:"short"});
+  const rows = kids.length + blanks, dense = rows > 34 ? "dense2" : rows > 24 ? "dense" : "";
+  return `<section class="sheet att ${dense}"><div class="sh-head">
+      <div><div class="sh-brand">Benton Central Track &amp; Field · Attendance</div>
+        <div class="sh-title">${lv==="JH"?"Junior High":"High School"} · ${winter?"Winter conditioning (Tue/Thu)":"Practice"}</div></div>
+      <div class="sh-meta"><div><b>Week of ${esc(m.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}))}</b></div><div>Coach: ______________</div></div></div>
+    <table class="sh-table att-t"><thead><tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>
+      ${days.map(d=>{ const mt = meetOn(d); return `<th class="att-d">${dn(d)} ${mdD(d)}${mt?`<br><span class="sh-g">Meet: ${esc(mt.meet)}</span>`:""}</th>`; }).join("")}<th class="sh-notes">Notes</th></tr></thead>
+      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)}${winter && isWinterMaybe(a)?` <span class="sh-g">(some sessions)</span>`:""}${needsFF(a)?` <span class="sh-g">· needs Final Forms</span>`:""}</td><td>${a.grade??""}</td>${days.map(()=>`<td class="att-c"></td>`).join("")}<td></td></tr>`).join("")}
+      ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${days.map(()=>`<td class="att-c"></td>`).join("")}<td></td></tr>`).join("")}</tbody></table>
+    <div class="sh-foot">✓ here &nbsp;·&nbsp; A = absent &nbsp;·&nbsp; E = excused &nbsp;·&nbsp; L = late &nbsp;·&nbsp; I = injured / modified. ${winter?(WINTER.ids.length?"Listed: kids starred for winter conditioning.":"Listed: everyone who filled out the interest form (no one is starred for winter yet)."):"Listed: everyone who filled out the interest form."} Write walk-ons in the blank rows.</div></section>`;
+}
+function buildAttendance(){
+  const lvs = sh.alv==="Both" ? ["HS","JH"] : [sh.alv];
+  const wks = sh.aall ? attWeeks().filter(w => sh.aall==="winter" ? parseD(w) < parseD(OFFICIAL_START) : parseD(w) >= parseD(OFFICIAL_START) || parseD(w).getTime()+4*864e5 >= parseD(OFFICIAL_START).getTime()) : [sh.aweek];
+  return wks.flatMap(w=>lvs.map(l=>attSheet(w,l))).join("");
+}
+function busSheet(m, lvs){
+  const kids = ATHLETES.filter(a=>lvs.includes(a.level) && onTeam(a)).sort((x,y)=>x.name.localeCompare(y.name)), blanks = 5, both = lvs.length>1;
+  const rows = kids.length + blanks, dense = rows > 30 ? "dense2" : rows > 22 ? "dense" : "";
+  const d = m ? parseD(m.date) : null;
+  return `<section class="sheet bus ${dense}"><div class="sh-head">
+      <div><div class="sh-brand">Benton Central Track &amp; Field · Bus &amp; Sign-out</div>
+        <div class="sh-title">${m?esc(m.meet):"Meet: ____________________"}</div>
+        <div>${both?"HS + JH":lvs[0]==="JH"?"Junior High":"High School"}${m&&(m.loc||m.home)?` · ${esc(m.home?"Home":m.loc)}`:""}</div></div>
+      <div class="sh-meta"><div><b>${d?esc(d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})):"Date: __________"}</b></div><div>Bus leaves: ________ &nbsp; Coach: ______________</div></div></div>
+    <table class="sh-table bus-t"><thead><tr><th>#</th><th class="sh-name">Name</th><th>Gr</th>${both?"<th>Lvl</th>":""}<th class="bus-c">On bus<br>to meet</th><th class="bus-c">On bus<br>home</th><th class="bus-sig">Signed out to (print name)</th><th class="bus-sig">Parent / guardian signature</th><th class="bus-t2">Time</th></tr></thead>
+      <tbody>${kids.map((a,i)=>`<tr><td>${i+1}</td><td class="sh-name">${esc(a.name)}${needsFF(a)?` <span class="sh-g">· needs Final Forms</span>`:""}</td><td>${a.grade??""}</td>${both?`<td>${a.level}</td>`:""}<td></td><td></td><td></td><td></td><td></td></tr>`).join("")}
+      ${Array.from({length:blanks},(_,i)=>`<tr><td>${kids.length+i+1}</td><td class="sh-name"></td><td></td>${both?"<td></td>":""}<td></td><td></td><td></td><td></td><td></td></tr>`).join("")}</tbody></table>
+    <div class="sh-foot">Check each kid on the bus before leaving and before heading home. A kid riding home with a parent or guardian must be signed out here. Listed: everyone on the Athletes page (filled out the interest form).</div></section>`;
+}
+function buildBus(){
+  const lvs = sh.blv==="Both" ? ["HS","JH"] : [sh.blv];
+  const m = SCHEDULE.find(x=>x.date+"|"+x.meet===sh.bmeet);
+  return busSheet(m, lvs);
 }
 function buildSheets(){
   const weeks = printWeeks(); const w = printWeek(weeks.find(x=>x.start===sh.week));
@@ -4867,8 +4923,30 @@ const views = {
     const w = printWeek(weeks.find(x=>x.start===sh.week));
     const toggleG = g => `sh.groups = sh.groups.includes('${g}') ? sh.groups.filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||sh.groups.includes(c)); render()`;
     const packet = sh.mode==="packet";
+    const modeRow = `<div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["packet","Week packet"],["attend","Attendance"],["bus","Bus sheet"]],"(v=>{sh.mode=v;render()})")}</div>`;
+    const printRow = lbl => `<div class="ed-save"><button type="button" class="btn primary" onclick="window.print()">${lbl}</button><span class="note" style="margin:0">To save a PDF, choose <b>Save as PDF</b> as the printer.</span></div>`;
+    const wrap = s => `<div class="sheets-wrap"><div class="no-print mlabel" style="margin:0">Preview · ${(s.match(/<section class="sheet/g)||[]).length} page${(s.match(/<section class="sheet/g)||[]).length===1?"":"s"} (long lists run onto extra pages)</div>${s}</div>`;
+    if (sh.mode==="attend") {
+      const wk = attWeeks(); if (!sh.aweek) { const now = iso(today); sh.aweek = [...wk].reverse().find(w=>w<=now) || wk[0]; }
+      const wl = w => { const d = parseD(w), win = d < parseD(OFFICIAL_START); return `Week of ${d.toLocaleDateString("en-US",{month:"short",day:"numeric"})} · ${win?"Tue/Thu conditioning":"Mon–Fri practice"}`; };
+      return `<div class="panel ed no-print">${modeRow}
+        <p style="margin:0">A check-off sheet for each week. Before official practice (${parseD(OFFICIAL_START).toLocaleDateString("en-US",{month:"short",day:"numeric"})}) it has Tuesday and Thursday conditioning; after, Monday to Friday. Before then it lists ★ winter kids (${WINTER.ids.length} starred); after, everyone on the Athletes page.</p>
+        <div class="ed-grid2"><label class="ed-row" for="at-wk"><span>Week</span><select id="at-wk" onchange="sh.aweek=this.value;render()" ${sh.aall?"disabled":""}>${wk.map(w=>`<option value="${w}" ${w===sh.aweek?"selected":""}>${esc(wl(w))}</option>`).join("")}</select></label>
+          <div class="ed-row"><span>Level</span>${segBtns(sh.alv,[["HS","HS"],["JH","JH"],["Both","HS and JH"]],"(v=>{sh.alv=v;render()})")}</div></div>
+        <div class="ed-row"><span>Weeks</span>${segBtns(sh.aall,[["","Just this week"],["winter","Every conditioning week"],["season","Every practice week"]],"(v=>{sh.aall=v;render()})")}</div>
+        ${printRow("Print attendance")}</div>` + wrap(buildAttendance());
+    }
+    if (sh.mode==="bus") {
+      const ms = SCHEDULE.filter(m=>sh.blv==="Both"||m.level===sh.blv).sort((a,b)=>a.date.localeCompare(b.date));
+      if (!ms.some(m=>m.date+"|"+m.meet===sh.bmeet)) { const nx = ms.find(m=>m.date>=iso(today)) || ms[0]; sh.bmeet = nx ? nx.date+"|"+nx.meet : ""; }
+      return `<div class="panel ed no-print">${modeRow}
+        <p style="margin:0">Everyone on the Athletes page, with boxes for the bus there and back and a parent sign-out. Kids still missing Final Forms are marked.</p>
+        <div class="ed-grid2"><label class="ed-row" for="bs-m"><span>Meet</span><select id="bs-m" onchange="sh.bmeet=this.value;render()">${ms.map(m=>`<option value="${esc(m.date+"|"+m.meet)}" ${m.date+"|"+m.meet===sh.bmeet?"selected":""}>${esc(mdD(parseD(m.date))+" · "+(sh.blv==="Both"?m.level+" · ":"")+m.meet)}</option>`).join("")}<option value="" ${!sh.bmeet?"selected":""}>Blank (write in the meet)</option></select></label>
+          <div class="ed-row"><span>Level</span>${segBtns(sh.blv,[["HS","HS"],["JH","JH"],["Both","HS + JH on one bus"]],"(v=>{sh.blv=v;render()})")}</div></div>
+        ${printRow("Print bus sheet")}</div>` + wrap(buildBus());
+    }
     const controls = `<div class="panel ed no-print">
-        <div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["packet","Week packet"]],"(v=>{sh.mode=v;render()})")}</div>
+        ${modeRow}
         ${packet ? `<p style="margin:0">A week packet is a cover page with every workout for the week, then a sheet for each group for each practice day (rest days skipped). Pick <b>Full program</b> for the whole thing, or a coach to print just their groups.</p>
         <label class="ed-row" for="sh-coach"><span>Packet for</span><select id="sh-coach" onchange="pickCoach(this.value)"><option value="" ${!sh.coach?"selected":""}>Full program (all groups)</option>
           ${STAFF.filter(s=>s.name).map(s=>`<option value="${esc(s.name)}" ${sh.coach===s.name?"selected":""}>${esc(s.name)} · ${esc(s.groups||s.role)}</option>`).join("")}</select></label>` : ""}
