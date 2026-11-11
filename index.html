@@ -118,6 +118,10 @@ td a{font-weight:600}
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .ath{display:grid;gap:4px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:5px;padding:12px 14px}
 .ath:hover{border-color:var(--accent)}
+.ath.ath-dim{opacity:.55;border-left-color:var(--line);background:transparent}.ath.ath-dim:hover{opacity:.85}
+.ath .new-chip{justify-self:start;align-self:start}
+.ath-need{font-size:12px;font-weight:700;color:var(--gold)}
+.ath-sep{grid-column:1/-1;margin:14px 0 2px;font-size:18px}
 .ath strong{font-size:17px}
 .ath span{font-size:13px;color:var(--muted)}
 .lk-ed{display:grid;gap:10px;max-width:560px;margin-top:10px}
@@ -901,7 +905,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11b";
+const HUB_VERSION = "11-11c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4356,7 +4360,7 @@ function ifStar(ids){ if (!canPost) return; WINTER = Object.assign({}, WINTER, {
 const NICK = {libby:"elizabeth",liz:"elizabeth",lizzie:"elizabeth",beth:"elizabeth",eliza:"elizabeth",ellie:"eleanor",maggie:"margaret",meg:"margaret",maddie:"madison",addie:"addison",abby:"abigail",kate:"katherine",katie:"katherine",kat:"katherine",sam:"samantha",alex:"alexander",ben:"benjamin",will:"william",jake:"jacob",nick:"nicholas",matt:"matthew",mike:"michael",chris:"christopher",tony:"anthony",josh:"joshua",zach:"zachary",dan:"daniel",danny:"daniel",tom:"thomas",jim:"james",jimmy:"james",bella:"isabella",izzy:"isabella",gabby:"gabrielle",mandy:"amanda",becca:"rebecca",tori:"victoria",jenny:"jennifer"};
 const ifRecords = () => Object.entries(INTEREST).filter(([k])=>!k.startsWith("_"));
 /* ---- Add athletes to the roster from the Hub (stored in hub_data key "roster_add", merged into ATHLETES on load) ---- */
-let ROSTER_ADD = [], ra = null;
+let ROSTER_ADD = [], ra = null, athNone = false;
 function rosterMerge(list){ (list||[]).forEach(a => { if (a && a.id && a.name && !ATHLETES.some(x=>x.id===a.id))
   ATHLETES.push(Object.assign({cats:[], events:[], prs:{}, goals:{}, log:[], meets:[], pri:{}, isNew:true}, a)); }); }
 const raCats = evs => { const s = (evs||[]).join(" ").toLowerCase(), c = [];
@@ -4498,6 +4502,9 @@ async function lkSave(id){
   catch(e){ lk.msg = {kind:"err", text:saveErr(e)}; }
   render();
 }
+const lockedIn = a => { const s = SIGN[a.id]||{}; return !!(s.ff && s.gf); };          // Final Forms + Google Form = locked in
+const halfIn = a => { const s = SIGN[a.id]||{}; return !!(s.ff || s.gf) && !(s.ff && s.gf); };
+const recLockedIds = () => new Set(ATHLETES.filter(lockedIn).map(a=>recFor(a)).filter(Boolean).map(r=>r.id));
 const recFor = a => REC.list.find(r => (r.fullName||r.name).toLowerCase()===(a.fullName||a.name).toLowerCase() && r.lvl===a.level && r.g===a.g);
 function suStatus(a){
   const rec = recFor(a);
@@ -4708,23 +4715,30 @@ const views = {
   },
   athletes(){
     const base = ATHLETES.filter(a => (alv==="All"||a.level===alv) && (ag==="All"||a.g===ag) && (!q || a.name.toLowerCase().includes(q.toLowerCase())));
-    const list = base.filter(a => cat==="All" || a.cats.includes(cat)).sort((a,b)=>a.level.localeCompare(b.level)*-1 || (b.grade||0)-(a.grade||0) || a.name.localeCompare(b.name));
-    const count = c => base.filter(a=>a.cats.includes(c)).length;
-    return `${back}<div class="stack"><div><div class="eyebrow">${list.length} of ${ATHLETES.length} athletes</div><h1>Athletes</h1></div>
+    const tier = a => lockedIn(a) ? 0 : halfIn(a) ? 1 : 2;
+    const list = base.filter(a => (cat==="All" || a.cats.includes(cat)) && (tier(a)<2 || (canPost && athNone)))
+      .sort((a,b)=>tier(a)-tier(b) || a.level.localeCompare(b.level)*-1 || (b.grade||0)-(a.grade||0) || a.name.localeCompare(b.name));
+    const locked = base.filter(lockedIn), count = c => locked.filter(a=>a.cats.includes(c)).length;
+    const nLock = list.filter(a=>tier(a)===0).length, nHalf = list.filter(a=>tier(a)===1).length, nNone = base.filter(a=>tier(a)===2 && (cat==="All"||a.cats.includes(cat))).length;
+    const missing = a => { const s = SIGN[a.id]||{}; return !s.ff ? "Needs Final Forms" : "Needs the Google Form"; };
+    return `${back}<div class="stack"><div><div class="eyebrow">${nLock} locked in${nHalf?` · ${nHalf} almost`:""}</div><h1>Athletes</h1>
+      <p class="lede">Locked in means Final Forms and the interest Google Form are both done. Kids with just one of the two are listed at the bottom and don't count yet.</p></div>
       <div class="bar" style="justify-content:flex-start">
         ${segBtns(alv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>setA('lv',v))")}
         ${segBtns(ag,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>setA('g',v))")}
         <input id="asearch" class="search" type="search" placeholder="Search name" value="${esc(q)}" oninput="q=this.value;render();const e=document.getElementById('asearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
       </div>
       <div class="filters" role="group" aria-label="Filter by category">
-        ${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${cat===c}" onclick="cat='${c}';render()">${c}<span>${c==="All"?base.length:count(c)}</span></button>`).join("")}
+        ${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${cat===c}" onclick="cat='${c}';render()">${c}<span>${c==="All"?locked.length:count(c)}</span></button>`).join("")}
       </div>
-      ${list.length?`<div class="roster">${list.map(a=>`<a class="ath" href="#a-${a.id}">
+      ${list.length?`<div class="roster">${list.map((a,k)=>`${tier(a)>0 && (k===0 || tier(list[k-1])!==tier(a)) ? `<h2 class="ath-sep">${tier(a)===1?`Almost there <span class="muted">(${nHalf}, not counted yet)</span>`:`Not signed up yet <span class="muted">(${nNone}, coaches only)</span>`}</h2>` : ""}<a class="ath ${tier(a)?"ath-dim":""}" href="#a-${a.id}">
         <div class="athtop"><strong>${esc(a.name)}</strong><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>${a.isNew?`<span class="chip new-chip">New</span>`:""}
         <span>Grade ${a.grade??"—"} · ${a.isNew?"New this season":a.events[0]==="XC"?"Cross country":a.events.map(evn).join(", ")}</span>
         ${(()=>{ const {best,bestHs} = bestRank(a); return best||bestHs ? `<div class="card-rank">${best?`<span class="rk ${best.r===1?"r1":best.r<=3?"r3":""}">#${best.r} ${esc(evn(best.k))}</span>`:""}${bestHs?`<span class="hs-tag">★ Top 3 overall · ${esc(evn(bestHs.k))}</span>`:""}</div>` : ""; })()}
+        ${tier(a)===1?`<span class="ath-need">${missing(a)}</span>`:""}
         <div>${a.cats.map(c=>`<span class="chip ${c===cat?"on":""}">${esc(c)}</span>`).join("")}</div></a>`).join("")}</div>`
       :`<p class="note">No athletes match these filters.</p>`}
+      ${canPost && nNone ? `<p><button type="button" class="btn sm" onclick="athNone=!athNone;render()">${athNone?"Hide":"Show"} the ${nNone} not signed up yet</button> <span class="muted">Coaches only. Check boxes on <a href="#signups">Sign-ups</a>.</span></p>` : ""}
       <p class="note">Track marks are spring 2026 bests. Cross country times are from this fall (JH 3000m, HS 5000m). <b>#</b> is the athlete's best rank on their team. <span class="hs-tag">★ Top 3 overall</span> means a JH athlete is top 3 in that event among all boys or girls, HS and JH combined (flat races and jumps only, since hurdles, shot, and discus use different heights and weights).</p></div>`;
   },
   calendar(){
@@ -5258,12 +5272,13 @@ const views = {
       <p class="note">${xc?`${xc} ${lv} athletes only have cross country times so far.`:""}</p></div>`;
   },
   recruiting(){
-    const list = REC.list.filter(r=>(rf.lv==="All"||r.lvl===rf.lv)&&(rf.g==="All"||r.g===rf.g)&&(rf.gr==="All"||(rf.gr==="JH"?r.lvl==="JH":r.lvl==="HS"&&String(r.grade)===rf.gr))&&(!rf.q||r.name.toLowerCase().includes(rf.q.toLowerCase()))&&(!rf.sport||String(r.sport||"").toLowerCase().includes(rf.sport)));
+    const LK = recLockedIds(), RL = REC.list.filter(r=>!LK.has(r.id));
+    const list = RL.filter(r=>(rf.lv==="All"||r.lvl===rf.lv)&&(rf.g==="All"||r.g===rf.g)&&(rf.gr==="All"||(rf.gr==="JH"?r.lvl==="JH":r.lvl==="HS"&&String(r.grade)===rf.gr))&&(!rf.q||r.name.toLowerCase().includes(rf.q.toLowerCase()))&&(!rf.sport||String(r.sport||"").toLowerCase().includes(rf.sport)));
     const rows = list.map(r=>({r, h:heat(r), cs:REC.contacts.filter(c=>c.rid===r.id)}));
     const ORDER = {joined:6,hot:5,warm:4,warming:3,cool:2,cold:1,none:0,closed:-1};
     const pub = !canPost;   // ratings and contact notes are coach-only
     rows.sort((a,b)=> (rf.sort==="name" || pub) ? a.r.name.localeCompare(b.r.name) : (ORDER[b.h.k]-ORDER[a.h.k]) || (b.h.score||0)-(a.h.score||0) || a.r.name.localeCompare(b.r.name));
-    const all = REC.list.map(heat);
+    const all = RL.map(heat);
     const stat = (n,l) => `<div class="rstat"><b>${n}</b><span>${l}</span></div>`;
     const credit = {};
     REC.contacts.filter(c=>!c.self).forEach(c=>{ const x = credit[c.by] ||= {n:0,y:0}; x.n++; if(cHeat(c)>=4) x.y++; });
@@ -5280,7 +5295,7 @@ const views = {
         <p class="note" style="margin:0">${me?"Saved on this device, so you only pick it once.":"Pick it once and it's remembered on this device."}</p></div>
       ${talk?views._talk():""}
       ${canPost ? friendsHTML() : ""}
-      ${pub ? `<div class="rstats">${stat(REC.list.length,"On the list")}${stat(all.filter(h=>h.k==="joined").length,"Joined")}</div>` : `<div class="rstats">${stat(REC.list.length,"On the list")}${stat(all.filter(h=>!["none","closed","joined"].includes(h.k)).length,"Contacted")}${stat(all.filter(h=>h.k==="hot"||h.k==="warm").length,"Warm or hot")}${stat(all.filter(h=>h.k==="joined").length,"Joined")}</div>`}
+      ${pub ? `<div class="rstats">${stat(RL.length,"On the list")}${stat(all.filter(h=>h.k==="joined").length,"Joined")}</div>` : `<div class="rstats">${stat(RL.length,"On the list")}${stat(all.filter(h=>!["none","closed","joined"].includes(h.k)).length,"Contacted")}${stat(all.filter(h=>h.k==="hot"||h.k==="warm").length,"Warm or hot")}${stat(all.filter(h=>h.k==="joined").length,"Joined")}</div>`}
       ${top.length?`<div class="panel"><h2>Top recruiters</h2><ol class="toprec">${top.map(([n,x])=>`<li><b>${esc(n)}</b><span>${joinedBy[n]?`${joinedBy[n]} joined · `:""}${x.y} warm/hot · ${x.n} talk${x.n===1?"":"s"}</span></li>`).join("")}</ol></div>`:""}
       <div class="bar" style="justify-content:flex-start">
         ${segBtns(rf.lv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>{rf.lv=v;render()})")}
@@ -5290,6 +5305,7 @@ const views = {
         ${rf.sport?`<button type="button" class="chip" onclick="rf.sport='';render()">Only ${rf.g==="G"?"girls ":""}${esc(rf.sport)} ✕</button>`:""}
         <input id="rsearch" class="search" type="search" placeholder="Search name" value="${esc(rf.q)}" oninput="rf.q=this.value;render();const e=document.getElementById('rsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
       </div>
+      ${LK.size ? `<p class="note">✓ ${LK.size} recruit${LK.size===1?" is":"s are"} locked in (Final Forms + Google Form) and moved to <a href="#athletes">Athletes</a>.</p>` : ""}
       ${pub ? "" : `<div class="legend">${["none","cold","cool","warming","warm","hot","joined"].map(k=>meter({k,l:HEAT_NAMES[k],lvl:{none:0,cold:1,cool:2,warming:3,warm:4,hot:5,joined:5}[k]})).join("")}</div>`}
       <div class="tbl"><table class="rtable"><thead><tr><th>Name</th>${pub?"":"<th>Heat</th>"}<th>Talked to</th>${pub?"":"<th>Last contact</th>"}<th></th></tr></thead><tbody>
         ${rows.map(({r,h,cs})=>{ const last = cs[cs.length-1]; const by = [...new Set(cs.filter(c=>!c.self).map(c=>c.by))];
