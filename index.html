@@ -518,6 +518,14 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-dist th:not(:first-child){border:1px solid #777;background:#fffbe6}
 .sh-g{font-size:9px;color:#666}
 .sh-foot{margin-top:6px;font-size:9.5px;color:#555}
+.gl{border-left:4px solid var(--gold)}.gl-top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}
+.gl-num{text-align:right;line-height:1}.gl-num b{font:800 40px var(--display);color:var(--gold)}.gl-num span{display:block;font-size:13px;color:var(--muted)}
+.gl-bar{position:relative;height:22px;border-radius:11px;background:var(--line);margin-bottom:22px}.gl-bar>i{display:block;height:100%;border-radius:11px;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .6s}
+.gl-bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);opacity:.35;text-decoration:none}.gl-bar s.hit{opacity:.8}
+.gl-bar s em{position:absolute;top:100%;left:50%;transform:translateX(-50%);font:600 11px var(--mono);color:var(--muted);margin-top:4px}
+.gl-bar.sm{height:10px;margin:4px 0 0}.gl-subs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.gl-lbl{display:flex;justify-content:space-between;font-size:13px}.gl-lbl b{font-weight:700}
+@media (max-width:520px){.gl-subs{grid-template-columns:1fr}.gl-num b{font-size:32px}}
 .att-t td.att-c{min-width:62px}.att-t th.att-d{min-width:62px;white-space:normal}.att-t .sh-notes{min-width:160px}
 .bus-t .bus-c{width:58px;white-space:normal}.bus-t .bus-sig{min-width:170px}.bus-t .bus-t2{width:60px}
 .sheet thead{display:table-header-group}.sheet tr{break-inside:avoid}
@@ -909,7 +917,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11e";
+const HUB_VERSION = "11-11f";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4079,6 +4087,27 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
       Take a photo at the end of practice and send it in. · ${esc(dayName||"")} ${esc(cat)} ${lv}</div>
   </section>`;
 }
+/* ---- Team goal thermometer (hub_data key "goal": {hs, jh}) ---- */
+let GOAL = {hs:90, jh:60}, gEdit = null, gMsg = {kind:"",text:""};
+function goalHTML(){
+  const n = l => ATHLETES.filter(a=>a.level===l && onTeam(a)).length, hs = n("HS"), jh = n("JH"), tot = hs+jh, G = GOAL.hs+GOAL.jh;
+  const pct = (x,g) => Math.min(100, g ? Math.round(x/g*100) : 0);
+  const marks = [...new Set([Math.round(G*2/3/5)*5, Math.round(G*5/6/5)*5])].filter(m=>m>0&&m<G);
+  const sub = (lbl,x,g) => `<div class="gl-sub"><div class="gl-lbl"><b>${lbl}</b><span><b>${x}</b> / ${g}${x>=g?" ✓":""}</span></div><div class="gl-bar sm"><i style="width:${pct(x,g)}%"></i></div></div>`;
+  return `<div class="panel gl"><div class="gl-top"><div><div class="eyebrow">${SEASON} team goal</div><h2 style="margin:0">${tot>=G?"Goal reached! 🎉":`${G-tot} to go`}</h2></div>
+      <div class="gl-num"><b>${tot}</b><span>/ ${G} athletes</span></div></div>
+    <div class="gl-bar"><i style="width:${pct(tot,G)}%"></i>${marks.map(m=>`<s style="left:${m/G*100}%" class="${tot>=m?"hit":""}"><em>${m}</em></s>`).join("")}</div>
+    <div class="gl-subs">${sub("High school",hs,GOAL.hs)}${sub("Junior high",jh,GOAL.jh)}</div>
+    <p class="note" style="margin:8px 0 0">Counts everyone who's filled out the interest Google Form. <a href="#athletes">See who's on the team →</a>${canPost?` · <a href="#" onclick="gEdit={...GOAL};render();return false">Change goal</a>`:""}</p>
+    ${canPost && gEdit ? `<div class="lt-form" style="margin-top:10px"><label>HS goal<input type="number" min="1" value="${gEdit.hs}" oninput="gEdit.hs=+this.value"></label><label>JH goal<input type="number" min="1" value="${gEdit.jh}" oninput="gEdit.jh=+this.value"></label></div>
+      <div class="ed-save" style="border:0;padding-top:8px"><button type="button" class="btn primary" onclick="goalSave()">Save goal</button><button type="button" class="btn" onclick="gEdit=null;render()">Cancel</button><span class="ed-msg ${gMsg.kind}">${esc(gMsg.text)}</span></div>` : ""}</div>`;
+}
+async function goalSave(){
+  const next = {hs: Math.max(1, Math.round(+gEdit.hs||0)), jh: Math.max(1, Math.round(+gEdit.jh||0))};
+  gMsg = {kind:"",text:"Saving…"}; render();
+  try { await saveKey("goal", next); GOAL = next; gEdit = null; gMsg = {kind:"",text:""}; } catch(e){ gMsg = {kind:"err", text:saveErr(e)}; }
+  render();
+}
 /* ---- Attendance + bus sheets (printable) ---- */
 // On the team = filled out the interest Google Form (same rule as the Athletes count; gold there = still needs Final Forms)
 const onTeam = a => !!(SIGN[a.id]||{}).gf;
@@ -4687,6 +4716,7 @@ const views = {
       ${meC ? `<div class="td-who"><span class="chip">${esc(meC.role)}</span>${meC.groups?`<span class="chip">${esc(meC.groups)}</span>`:""}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>` : meX ? `<div class="td-who"><span class="chip">${meX.level==="JH"?"Junior High":"High School"}</span>${(meX.cats||[]).slice(0,3).map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<button type="button" class="btn sm" onclick="setMe('')">Not you?</button></div>`
         : coachM ? "" : `<p class="lede">Everything for the season in one place: meets, rosters, workouts, warm-ups, records, and each athlete's data page.</p>`}</div></div>
       ${todayHTML()}
+      ${goalHTML()}
       ${meX ? hubWeekHTML(meX) : ""}
       ${meX || coachM ? "" : `<div>
       <div class="anetrow">${["JH","HS"].map(l=>`<a class="anet" href="${anetTeam(l)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${ANET_TEAMS[l].name} ↗</a>`).join("")}</div></div>`}
@@ -4780,6 +4810,7 @@ const views = {
     const nFF = list.filter(gfOnly).length, nLock = list.filter(a=>tier(a)===0).length, nHalf = list.filter(a=>tier(a)===1).length, nNone = base.filter(a=>tier(a)===2 && (cat==="All"||a.cats.includes(cat))).length;
     const missing = a => { const s = SIGN[a.id]||{}; return !s.ff ? "Needs Final Forms" : "Needs the Google Form"; };
     return `${back}<div class="stack"><div><div class="eyebrow">${nLock} on the team${nFF?` · ${nFF} still need Final Forms`:""}${nHalf?` · ${nHalf} almost`:""}</div><h1>Athletes</h1>
+      </div>${goalHTML()}<div>
       <p class="lede">Kids count once they've filled out the interest Google Form. <span class="ath-need">Gold</span> cards still need Final Forms. Kids in Final Forms who haven't done the Google Form are listed at the bottom and don't count yet.</p></div>
       <div class="bar" style="justify-content:flex-start">
         ${segBtns(alv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>setA('lv',v))")}
@@ -5839,6 +5870,7 @@ async function loadAll(){
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
+  if (byKey.goal && byKey.goal.hs) GOAL = {hs:+byKey.goal.hs, jh:+byKey.goal.jh||60};
   if (Array.isArray(byKey.roster_add)) { ROSTER_ADD = byKey.roster_add; rosterMerge(ROSTER_ADD); }
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
