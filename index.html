@@ -120,6 +120,7 @@ td a{font-weight:600}
 .ath:hover{border-color:var(--accent)}
 .ath.ath-dim{opacity:.55;border-left-color:var(--line);background:transparent}.ath.ath-dim:hover{opacity:.85}
 .ath .new-chip{justify-self:start;align-self:start}
+.ath.ath-ff{border-color:var(--gold);background:rgba(252,184,39,.10)}
 .ath-need{font-size:12px;font-weight:700;color:var(--gold)}
 .ath-sep{grid-column:1/-1;margin:14px 0 2px;font-size:18px}
 .ath strong{font-size:17px}
@@ -905,7 +906,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11c";
+const HUB_VERSION = "11-11d";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4715,14 +4716,15 @@ const views = {
   },
   athletes(){
     const base = ATHLETES.filter(a => (alv==="All"||a.level===alv) && (ag==="All"||a.g===ag) && (!q || a.name.toLowerCase().includes(q.toLowerCase())));
-    const tier = a => lockedIn(a) ? 0 : halfIn(a) ? 1 : 2;
+    const gfOnly = a => { const s = SIGN[a.id]||{}; return !!s.gf && !s.ff; };     // counts (showed interest) but flagged: still needs Final Forms
+    const tier = a => lockedIn(a) || gfOnly(a) ? 0 : halfIn(a) ? 1 : 2;
     const list = base.filter(a => (cat==="All" || a.cats.includes(cat)) && (tier(a)<2 || (canPost && athNone)))
-      .sort((a,b)=>tier(a)-tier(b) || a.level.localeCompare(b.level)*-1 || (b.grade||0)-(a.grade||0) || a.name.localeCompare(b.name));
-    const locked = base.filter(lockedIn), count = c => locked.filter(a=>a.cats.includes(c)).length;
-    const nLock = list.filter(a=>tier(a)===0).length, nHalf = list.filter(a=>tier(a)===1).length, nNone = base.filter(a=>tier(a)===2 && (cat==="All"||a.cats.includes(cat))).length;
+      .sort((a,b)=>tier(a)-tier(b) || gfOnly(a)-gfOnly(b) || a.level.localeCompare(b.level)*-1 || (b.grade||0)-(a.grade||0) || a.name.localeCompare(b.name));
+    const locked = base.filter(a=>tier(a)===0), count = c => locked.filter(a=>a.cats.includes(c)).length;
+    const nFF = list.filter(gfOnly).length, nLock = list.filter(a=>tier(a)===0).length, nHalf = list.filter(a=>tier(a)===1).length, nNone = base.filter(a=>tier(a)===2 && (cat==="All"||a.cats.includes(cat))).length;
     const missing = a => { const s = SIGN[a.id]||{}; return !s.ff ? "Needs Final Forms" : "Needs the Google Form"; };
-    return `${back}<div class="stack"><div><div class="eyebrow">${nLock} locked in${nHalf?` · ${nHalf} almost`:""}</div><h1>Athletes</h1>
-      <p class="lede">Locked in means Final Forms and the interest Google Form are both done. Kids with just one of the two are listed at the bottom and don't count yet.</p></div>
+    return `${back}<div class="stack"><div><div class="eyebrow">${nLock} on the team${nFF?` · ${nFF} still need Final Forms`:""}${nHalf?` · ${nHalf} almost`:""}</div><h1>Athletes</h1>
+      <p class="lede">Kids count once they've filled out the interest Google Form. <span class="ath-need">Gold</span> cards still need Final Forms. Kids in Final Forms who haven't done the Google Form are listed at the bottom and don't count yet.</p></div>
       <div class="bar" style="justify-content:flex-start">
         ${segBtns(alv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>setA('lv',v))")}
         ${segBtns(ag,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>setA('g',v))")}
@@ -4731,11 +4733,11 @@ const views = {
       <div class="filters" role="group" aria-label="Filter by category">
         ${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${cat===c}" onclick="cat='${c}';render()">${c}<span>${c==="All"?locked.length:count(c)}</span></button>`).join("")}
       </div>
-      ${list.length?`<div class="roster">${list.map((a,k)=>`${tier(a)>0 && (k===0 || tier(list[k-1])!==tier(a)) ? `<h2 class="ath-sep">${tier(a)===1?`Almost there <span class="muted">(${nHalf}, not counted yet)</span>`:`Not signed up yet <span class="muted">(${nNone}, coaches only)</span>`}</h2>` : ""}<a class="ath ${tier(a)?"ath-dim":""}" href="#a-${a.id}">
+      ${list.length?`<div class="roster">${list.map((a,k)=>`${tier(a)>0 && (k===0 || tier(list[k-1])!==tier(a)) ? `<h2 class="ath-sep">${tier(a)===1?`Almost there <span class="muted">(${nHalf}, not counted yet)</span>`:`Not signed up yet <span class="muted">(${nNone}, coaches only)</span>`}</h2>` : ""}<a class="ath ${tier(a)?"ath-dim":gfOnly(a)?"ath-ff":""}" href="#a-${a.id}">
         <div class="athtop"><strong>${esc(a.name)}</strong><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>${a.isNew?`<span class="chip new-chip">New</span>`:""}
         <span>Grade ${a.grade??"—"} · ${a.isNew?"New this season":a.events[0]==="XC"?"Cross country":a.events.map(evn).join(", ")}</span>
         ${(()=>{ const {best,bestHs} = bestRank(a); return best||bestHs ? `<div class="card-rank">${best?`<span class="rk ${best.r===1?"r1":best.r<=3?"r3":""}">#${best.r} ${esc(evn(best.k))}</span>`:""}${bestHs?`<span class="hs-tag">★ Top 3 overall · ${esc(evn(bestHs.k))}</span>`:""}</div>` : ""; })()}
-        ${tier(a)===1?`<span class="ath-need">${missing(a)}</span>`:""}
+        ${tier(a)===1||gfOnly(a)?`<span class="ath-need">${missing(a)}</span>`:""}
         <div>${a.cats.map(c=>`<span class="chip ${c===cat?"on":""}">${esc(c)}</span>`).join("")}</div></a>`).join("")}</div>`
       :`<p class="note">No athletes match these filters.</p>`}
       ${canPost && nNone ? `<p><button type="button" class="btn sm" onclick="athNone=!athNone;render()">${athNone?"Hide":"Show"} the ${nNone} not signed up yet</button> <span class="muted">Coaches only. Check boxes on <a href="#signups">Sign-ups</a>.</span></p>` : ""}
