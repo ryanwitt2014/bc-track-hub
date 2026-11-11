@@ -518,6 +518,10 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-dist th:not(:first-child){border:1px solid #777;background:#fffbe6}
 .sh-g{font-size:9px;color:#666}
 .sh-foot{margin-top:6px;font-size:9.5px;color:#555}
+.m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.m-ev{display:grid;gap:8px;align-content:start}
+.m-ev.m-hit{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}.m-names{display:flex;flex-wrap:wrap;gap:6px}.m-x{border:0;background:none;color:inherit;cursor:pointer;padding:0 0 0 4px}
+.m-legs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.m-legs label{display:grid;gap:2px;font-size:12px;min-width:0}.m-ev{min-width:0}.m-ev select{width:100%;min-width:0;max-width:100%}.m-legs-v{margin:0;padding-left:0;list-style:none;display:grid;gap:2px}
+.m-empty{margin:0;font-size:13px}.m-mine{border-left:4px solid var(--gold)}.me-hl{font-weight:800;color:var(--gold)}
 .gl{border-left:4px solid var(--gold)}.gl-top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}
 .gl-num{text-align:right;line-height:1}.gl-num b{font:800 40px var(--display);color:var(--gold)}.gl-num span{display:block;font-size:13px;color:var(--muted)}
 .gl-bar{position:relative;height:22px;border-radius:11px;background:var(--line);margin-bottom:22px}.gl-bar>i{display:block;height:100%;border-radius:11px;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .6s}
@@ -917,7 +921,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11h";
+const HUB_VERSION = "11-11i";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4093,6 +4097,80 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
       Take a photo at the end of practice and send it in. · ${esc(dayName||"")} ${esc(cat)} ${lv}</div>
   </section>`;
 }
+/* ---- Indoor (Purdue) meet entries. Events from the 2026 meet docs; entries stored in hub_data key "meetentries": {meetKey: {"G|55":[ids], "B|4x400":[leg1..leg4, alt1, alt2]}} ---- */
+const HSR_EVS = [["55H","55m Hurdles"],["55","55m Dash"],["3200","3200m"],["4x800","4×800 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["4x200","4×200 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["DMR","Distance Medley Relay",["1200","400","800","1600"]],["4x400","4×400 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["PV","Pole Vault"],["HJ","High Jump"],["LJ","Long Jump"],["SP","Shot Put"]];
+const IND_FIELD = {PV:{G:"Opens 7-6",B:"Opens 10-6"}, HJ:{G:"Opens 4-8",B:"Opens 5-6"}, LJ:{G:"Min. 13-0",B:"Min. 17-0"}, SP:{G:"Min. 28-0",B:"Min. 40-0"}};
+const HSR_QUAL = "State Finals (Sat, Mar 27 at the Fairgrounds): top 24 statewide in running events, LJ and SP; top 18 in HJ; top 12 in PV.";
+const IND_MEETS = {
+  wli: {rx:/West Lafayette Individuals/i, name:"West Lafayette Individuals", start:"5:00 PM", where:"Lambert Fieldhouse, Purdue University",
+    evs:[["55H","55m Hurdles (prelims & finals)"],["55","55m Dash (prelims & finals)"],["200","200m"],["400","400m"],["800","800m"],["1600","1600m"],["3200","3200m"],["PV","Pole Vault"],["HJ","High Jump"],["LJ","Long Jump"],["SP","Shot Put"]],
+    notes:["Individual events only, no relays. No limit on entries.","Girls run first in every running event except the 55 finals.","LJ and SP get 4 attempts (may drop to 3). HJ and PV go until eliminated. Don't bring your own shot.", "HJ opens at 4-6 for girls at this meet.", HSR_QUAL],
+    field:{HJ:{G:"Opens 4-6",B:"Opens 5-6"}}},
+  wlq: {rx:/West Lafayette HSR Qualifier/i, name:"West Lafayette HSR Qualifier", start:"5:00 PM", where:"Lambert Fieldhouse, Purdue University", evs:HSR_EVS,
+    notes:["Hoosier State Relays trials. No limit on individual or relay entries.","Girls run first in every running event. Relays start after the boys 3200: 4×800, 4×200, DMR, 4×400.","DMR legs: 1200, 400, 800, 1600.", HSR_QUAL]},
+  mav: {rx:/Maverick HSR Qualifier/i, name:"Maverick HSR Qualifier", start:"TBD", where:"Lambert Fieldhouse, Purdue University", evs:HSR_EVS,
+    notes:["Events follow the standard HSR trials (same as the West Lafayette qualifier). They'll be updated once the meet info is posted.", HSR_QUAL]},
+  hsrf: {rx:/HSR Finals/i, name:"Hoosier State Relays Finals", start:"TBD", where:"Fall Creek Pavilion, Indiana State Fairgrounds", evs:HSR_EVS,
+    notes:["Qualifiers only: top 24 statewide in running events, LJ and SP; top 18 in HJ; top 12 in PV."]},
+};
+const indKeyOf = m => m && m.level==="HS" ? Object.keys(IND_MEETS).find(k=>IND_MEETS[k].rx.test(m.meet)) : null;
+const indMeetRow = k => SCHEDULE.find(m=>indKeyOf(m)===k);
+let MENT = {}, mDraft = null, mUI = {g:"G", edit:false, msg:{kind:"",text:""}};
+const mSlots = ev => ev[2] ? [...ev[2], "Alt", "Alt"] : null;
+function mEntriesOf(id){ const out = [];
+  Object.keys(IND_MEETS).forEach(k => { const E = MENT[k]||{}, M = IND_MEETS[k];
+    M.evs.forEach(ev => ["G","B"].forEach(g => { const L = E[g+"|"+ev[0]]||[], i = L.indexOf(id);
+      if (i>=0) out.push({k, ev:ev[1], leg: ev[2] ? (i<4 ? ev[2][i] : "Alt") : ""}); })); });
+  return out; }
+function mAthOpts(g, cur){
+  const pool = ATHLETES.filter(a=>a.level==="HS" && a.g===g).sort((x,y)=>(onTeam(y)-onTeam(x)) || x.name.localeCompare(y.name));
+  return `<option value="">—</option>` + pool.map(a=>`<option value="${a.id}" ${a.id===cur?"selected":""}>${esc(a.name)}${onTeam(a)?"":" (not signed up)"}</option>`).join("");
+}
+function mSet(key, i, v){ if (!mDraft) mDraft = JSON.parse(JSON.stringify(MENT[mUI.k]||{}));
+  const L = (mDraft[key] ||= []); if (i===-1) { if (v && !L.includes(v)) L.push(v); } else if (i===-2) mDraft[key] = L.filter(x=>x!==v); else L[i] = v;
+  mUI.msg = {kind:"", text:"Changed. Hit Save entries."}; render(); }
+async function mSave(){
+  const clean = {}; Object.entries(mDraft||{}).forEach(([k,L]) => { const ev = k.split("|")[1], rel = (IND_MEETS[mUI.k].evs.find(e=>e[0]===ev)||[])[2];
+    const v = rel ? Array.from({length:6},(_,i)=>L[i]||"") : L.filter(Boolean); if (v.some(Boolean)) clean[k] = v; });
+  const next = Object.assign({}, MENT, {[mUI.k]: clean});
+  mUI.msg = {kind:"", text:"Saving…"}; render();
+  try { await saveKey("meetentries", next); MENT = next; mDraft = null; mUI.edit = false; mUI.msg = {kind:"ok", text:"Saved. Athletes can see their events now."}; }
+  catch(e){ mUI.msg = {kind:"err", text:saveErr(e)}; }
+  render();
+}
+function meetPage(k){
+  const M = IND_MEETS[k]; if (!M) return views.schedule();
+  if (mUI.k !== k) { mUI = {k, g:mUI.g||"G", edit:false, msg:{kind:"",text:""}}; mDraft = null; }
+  const row = indMeetRow(k), g = mUI.g, E = (mUI.edit && mDraft) ? mDraft : (MENT[k]||{}), ed = canPost && mUI.edit;
+  const me = meA(), mine = me ? mEntriesOf(me.id).filter(x=>x.k===k) : [];
+  const nm = id => { const a = ATHLETES.find(x=>x.id===id); return a ? `<a href="#a-${a.id}" class="${me&&me.id===id?"me-hl":""}">${esc(a.name)}</a>` : ""; };
+  const fieldNote = ev => { const f = (M.field&&M.field[ev]) || IND_FIELD[ev]; return f ? `<span class="muted">${esc(f[g])}</span>` : ""; };
+  const card = ev => { const key = g+"|"+ev[0], L = E[key]||[], slots = mSlots(ev);
+    let body;
+    if (slots) body = ed ? `<div class="m-legs">${slots.map((s,i)=>`<label>${esc(s)}<select onchange="mSet('${key}',${i},this.value)">${mAthOpts(g, L[i])}</select></label>`).join("")}</div>`
+      : (L.some(Boolean) ? `<ol class="m-legs-v">${slots.map((s,i)=>L[i]?`<li><span class="muted">${esc(s)}</span> ${nm(L[i])}</li>`:"").join("")}</ol>` : `<p class="muted m-empty">Not set yet</p>`);
+    else body = (L.length ? `<div class="m-names">${L.map(id=>`<span class="chip">${nm(id)}${ed?` <button type="button" class="m-x" aria-label="Remove" onclick="mSet('${key}',-2,'${id}')">✕</button>`:""}</span>`).join("")}</div>` : (ed?"":`<p class="muted m-empty">No one entered yet</p>`))
+      + (ed ? `<select class="m-add" onchange="if(this.value)mSet('${key}',-1,this.value)">${mAthOpts(g,"").replace('<option value="">—</option>','<option value="">＋ Add athlete</option>')}</select>` : "");
+    const hit = me && L.includes(me.id);
+    return `<div class="panel m-ev ${ed?"ed":""} ${hit?"m-hit":""}"><div class="bar"><h3 style="margin:0">${esc(ev[1])}</h3>${fieldNote(ev[0])}</div>${body}</div>`; };
+  const rel = M.evs.filter(e=>e[2]), ind = M.evs.filter(e=>!e[2]);
+  return `<div class="stack"><p class="no-print"><a href="#schedule">← Schedule</a></p>
+    <div><div class="eyebrow">Indoor · ${row?esc(fmtD(row.date)):"Date TBD"}${row&&/Anticipated/.test(row.meet)?" (anticipated)":""}</div><h1>${esc(M.name)}</h1>
+      <p class="lede" style="margin:4px 0 0">Starts ${esc(M.start)} · ${esc(M.where)}</p></div>
+    ${me ? `<div class="panel m-mine"><b>${mine.length?"You're entered in:":"You're not entered in this meet yet."}</b> ${mine.map(x=>`${esc(x.ev)}${x.leg?` <span class="muted">(${esc(x.leg)})</span>`:""}`).join(" · ")}</div>` : ""}
+    <div class="bar">${segBtns(g,[["G","Girls"],["B","Boys"]],"(v=>{mUI.g=v;render()})")}
+      ${canPost ? (ed ? `<span class="ed-save" style="border:0;padding:0;margin:0"><button type="button" class="btn primary" onclick="mSave()" ${saving?"disabled":""}>Save entries</button><button type="button" class="btn" onclick="mDraft=null;mUI.edit=false;mUI.msg={kind:'',text:''};render()">Cancel</button></span>`
+        : `<button type="button" class="btn" onclick="mUI.edit=true;mDraft=JSON.parse(JSON.stringify(MENT['${k}']||{}));render()">Edit entries</button>`) : ""}</div>
+    ${mUI.msg.text?`<p class="ed-msg ${mUI.msg.kind}" style="margin:0">${esc(mUI.msg.text)}</p>`:""}
+    <h2 style="margin:6px 0 0">Events</h2><div class="m-grid">${ind.map(card).join("")}</div>
+    ${rel.length?`<h2 style="margin:6px 0 0">Relays</h2><div class="m-grid">${rel.map(card).join("")}</div>`:""}
+    <div class="panel"><h2>Meet notes</h2><ul style="margin:6px 0 0;padding-left:18px">${M.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div></div>`;
+}
+function mAthleteHTML(a){
+  if (a.level!=="HS") return ""; const L = mEntriesOf(a.id); if (!L.length) return "";
+  return `<div class="panel"><h2>Indoor meets</h2><ul style="margin:6px 0 0;padding-left:18px">${Object.keys(IND_MEETS).filter(k=>L.some(x=>x.k===k)).map(k=>{ const r = indMeetRow(k);
+    return `<li><a href="#m-${k}"><b>${esc(IND_MEETS[k].name)}</b></a>${r?` <span class="muted">${esc(fmtD(r.date))}</span>`:""}: ${L.filter(x=>x.k===k).map(x=>esc(x.ev)+(x.leg?` (${esc(x.leg)})`:"")).join(", ")}</li>`; }).join("")}</ul></div>`;
+}
 /* ---- Team goal thermometer (hub_data key "goal": {hs, jh}) ---- */
 let GOAL = {hs:90, jh:60}, gEdit = null, gMsg = {kind:"",text:""};
 function goalHTML(){
@@ -4781,7 +4859,7 @@ const views = {
     const isSample = false;
     return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">${SEASON}</div><h1>Schedule</h1></div>${levelToggle()}</div>
       <div class="tbl"><table><thead><tr><th>Date</th><th>Start</th><th>Meet</th><th>Location</th><th>Bus</th><th>Notes</th><th>Results</th></tr></thead><tbody>
-      ${rows.map(m=>{const past=parseD(m.date)<today;return `<tr style="${past?"opacity:.55":""}"><td class="mono">${fmtD(m.date)}</td><td class="mono">${esc(m.time||"—")}</td><td><strong>${esc(m.meet)}</strong></td>
+      ${rows.map(m=>{const past=parseD(m.date)<today;return `<tr style="${past?"opacity:.55":""}"><td class="mono">${fmtD(m.date)}</td><td class="mono">${esc(m.time||"—")}</td><td>${indKeyOf(m)?`<a href="#m-${indKeyOf(m)}"><strong>${esc(m.meet)}</strong></a><br><span class="note" style="margin:0">Events &amp; entries →</span>`:`<strong>${esc(m.meet)}</strong>`}</td>
         <td>${m.home?`<span class="chip home">Home</span>`:`<span class="chip">Away</span> ${esc(m.loc||"")}`}</td><td class="mono">${esc(m.bus)}</td><td>${esc(m.notes)}</td><td>${m.results?`<a href="${esc(m.results)}" target="_blank" rel="noopener">Athletic.net ↗</a>`:`<span class="muted">${past?"Not posted":"—"}</span>`}</td></tr>`}).join("")}
       </tbody></table></div>
       ${level==="HS"?`<p class="note">*Anticipated* Purdue indoor meets use the same weekday as 2026 and will be updated once 2027 dates are posted.</p>`:""}
@@ -5790,6 +5868,7 @@ const views = {
           <div class="prgrid">${[["Easy","/mi",`${p.easy[0]}–${p.easy[1]}`],["Tempo","/mi",p.tempo],["Tempo","/400",p.tempo400],["Interval","/400",p.int400],["Interval","/800",p.int800],["Rep","/200",p.rep200],["Rep","/400",p.rep400]]
             .map(([l,u,v])=>`<div class="pr"><div class="ev">${l} ${u}</div><div class="mk">${v}</div></div>`).join("")}</div>
           <p class="note" style="margin:8px 0 0">${a.level==="HS"?(()=>{ const t = DTAGS[a.id]||{}; return (t.lv?`<span class="tchip">${esc(TAG_CHIP[t.lv])}</span>`:"")+(t.path?`<span class="tchip">${esc(TAG_CHIP[t.path])}</span>`:"")+``; })():""}<a href="#paces">What each pace means →</a></p></div>`; })()}
+      ${mAthleteHTML(a)}
       ${ltAthleteHTML(a)}
       ${myWeekHTML(a)}
       ${sptPanel(a)}
@@ -5814,9 +5893,9 @@ function applyNameMode(){
 function render(){
   applyNameMode();
   const h = (location.hash || "#hub").slice(1);
-  const isAth = h.startsWith("a-");
+  const isAth = h.startsWith("a-"), isMeet = h.startsWith("m-");
   if (h==="post") { ctab="workouts"; }
-  const key = isAth ? "athletes" : h==="post" ? "coaches" : (views[h] && h!=="athlete" && !h.startsWith("_") ? h : "hub");
+  const key = isAth ? "athletes" : isMeet ? "schedule" : h==="post" ? "coaches" : (views[h] && h!=="athlete" && !h.startsWith("_") ? h : "hub");
   let curG = (SECTIONS.find(x=>x.id===key)||{}).g || ""; if (curG==="coach" && !canPost) curG = "";
   const top = [`<a href="#hub" ${key==="hub"?'aria-current="page"':""}>Hub</a>`,
     ...NAV_GROUPS.map(([g,l])=>{ const first = SECTIONS.find(x=>x.g===g); return `<a href="#${first.id}" ${curG===g?'aria-current="page"':""}>${l}</a>`; }),
@@ -5830,8 +5909,8 @@ function render(){
       return `<a href="#${x.id}" ${x.id===key?'aria-current="page"':""}>${x.name}</a>`; }).join("")}</div>`; }
   else { sub.hidden = true; sub.innerHTML = ""; }
   const sec0 = SECTIONS.find(x=>x.id===key);
-  document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : (sec0 && sec0.coach && !canPost) ? views.coaches() : views[key]();
-  { const P = !isAth && PAGE_GROUPS.find(p=>p.kids.some(([k])=>k===key));
+  document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : isMeet ? meetPage(h.slice(2)) : (sec0 && sec0.coach && !canPost) ? views.coaches() : views[key]();
+  { const P = !isAth && !isMeet && PAGE_GROUPS.find(p=>p.kids.some(([k])=>k===key));
     if (P) document.getElementById("view").insertAdjacentHTML("afterbegin", `<div class="pg-tabs"><div class="eyebrow">${esc(P.name)}</div><div class="seg" role="group" aria-label="${esc(P.name)}">${P.kids.filter(([k])=>SECTIONS.some(s=>s.id===k && navOK(s))).map(([k,l])=>`<a role="button" href="#${k}" aria-pressed="${k===key}">${esc(l)}</a>`).join("")}</div></div>`); }
   const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
   thmIcon(); LI_ATH = null;
@@ -5857,6 +5936,7 @@ async function loadAll(){
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
+  if (byKey.meetentries && typeof byKey.meetentries === "object") MENT = byKey.meetentries;
   if (byKey.throwers && typeof byKey.throwers === "object") THROW = byKey.throwers;
   if (byKey.goal && byKey.goal.hs) GOAL = {hs:+byKey.goal.hs, jh:+byKey.goal.jh||60};
   if (Array.isArray(byKey.roster_add)) { ROSTER_ADD = byKey.roster_add; rosterMerge(ROSTER_ADD); }
