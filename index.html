@@ -521,7 +521,8 @@ a.btn{text-decoration:none;display:inline-block}
 .m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.m-ev{display:grid;gap:8px;align-content:start}
 .m-ev.m-hit{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}.m-names{display:flex;flex-wrap:wrap;gap:6px}.m-x{border:0;background:none;color:inherit;cursor:pointer;padding:0 0 0 4px}
 .m-legs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.m-legs label{display:grid;gap:2px;font-size:12px;min-width:0}.m-ev{min-width:0}.m-ev select{width:100%;min-width:0;max-width:100%}.m-legs-v{margin:0;padding-left:0;list-style:none;display:grid;gap:2px}
-.m-empty{margin:0;font-size:13px}.m-mine{border-left:4px solid var(--gold)}.me-hl{font-weight:800;color:var(--gold)}
+.m-empty{margin:0;font-size:13px}.m-hsr{border-left:4px solid var(--accent)}.m-hsr li{margin:3px 0}
+.chip.m-hsrc{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:800;letter-spacing:.04em}.m-mine{border-left:4px solid var(--gold)}.me-hl{font-weight:800;color:var(--gold)}
 .gl{border-left:4px solid var(--gold)}.gl-top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}
 .gl-num{text-align:right;line-height:1}.gl-num b{font:800 40px var(--display);color:var(--gold)}.gl-num span{display:block;font-size:13px;color:var(--muted)}
 .gl-bar{position:relative;height:22px;border-radius:11px;background:var(--line);margin-bottom:22px}.gl-bar>i{display:block;height:100%;border-radius:11px;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .6s}
@@ -921,7 +922,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11i";
+const HUB_VERSION = "11-11j";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4100,18 +4101,27 @@ function sheetHTML({dateLabel, dayName, focus, cat, lv, items, d, date}){
 /* ---- Indoor (Purdue) meet entries. Events from the 2026 meet docs; entries stored in hub_data key "meetentries": {meetKey: {"G|55":[ids], "B|4x400":[leg1..leg4, alt1, alt2]}} ---- */
 const HSR_EVS = [["55H","55m Hurdles"],["55","55m Dash"],["3200","3200m"],["4x800","4×800 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["4x200","4×200 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["DMR","Distance Medley Relay",["1200","400","800","1600"]],["4x400","4×400 Relay",["Leg 1","Leg 2","Leg 3","Leg 4"]],["PV","Pole Vault"],["HJ","High Jump"],["LJ","Long Jump"],["SP","Shot Put"]];
 const IND_FIELD = {PV:{G:"Opens 7-6",B:"Opens 10-6"}, HJ:{G:"Opens 4-8",B:"Opens 5-6"}, LJ:{G:"Min. 13-0",B:"Min. 17-0"}, SP:{G:"Min. 28-0",B:"Min. 40-0"}};
-const HSR_QUAL = "State Finals (Sat, Mar 27 at the Fairgrounds): top 24 statewide in running events, LJ and SP; top 18 in HJ; top 12 in PV.";
+const HSR_QUAL = "HSR qualifying: see the box at the top of this page.";
+const HSR_EV = new Set(["55H","55","3200","4x800","4x200","DMR","4x400","PV","HJ","LJ","SP"]);   // events contested at the HSR Finals
+function hsrBlurb(k){ return `<div class="panel m-hsr"><h2 style="margin:0 0 6px">How to qualify for the Hoosier State Relays</h2>
+  <ul style="margin:0;padding-left:18px">
+    <li>Marks from approved <b>HSR qualifier meets</b> go on a statewide list on MileSplit. Running times have to be fully automatic timed (F.A.T.), and 55m times are converted to 60m.</li>
+    <li>The top <b>24</b> on each list make the Finals, except <b>High Jump (18)</b> and <b>Pole Vault (12)</b>, plus ties. Schools can enter only one team per relay at the Finals.</li>
+    <li>Events marked <span class="chip m-hsrc">HSR</span> are on the Finals program: 55, 55H, 3200, 4×200, 4×400, 4×800, DMR, HJ, LJ, PV, SP.${k==="wli"?" The 200, 400, 800 and 1600 at this meet don't count toward HSR.":""}</li>
+    <li><b>Two divisions</b>, based on IHSAA football class: <b>Small School</b> (1A–3A) and <b>Large School</b> (4A–6A). Each has its own list and its own Finals. <b>Benton Central (3A) is in the Small School division</b>, so we're ranked only against 1A–3A schools.</li>
+    <li>Marks are due <b>Sunday, Mar 21</b>, registration is Mar 21–22, and the Finals are <b>Saturday, Mar 27</b> at the Fall Creek Pavilion in Indianapolis.</li>
+  </ul></div>`; }
 const IND_MEETS = {
   wli: {rx:/West Lafayette Individuals/i, name:"West Lafayette Individuals", start:"5:00 PM", where:"Lambert Fieldhouse, Purdue University",
     evs:[["55H","55m Hurdles (prelims & finals)"],["55","55m Dash (prelims & finals)"],["200","200m"],["400","400m"],["800","800m"],["1600","1600m"],["3200","3200m"],["PV","Pole Vault"],["HJ","High Jump"],["LJ","Long Jump"],["SP","Shot Put"]],
-    notes:["Individual events only, no relays. No limit on entries.","Girls run first in every running event except the 55 finals.","LJ and SP get 4 attempts (may drop to 3). HJ and PV go until eliminated. Don't bring your own shot.", "HJ opens at 4-6 for girls at this meet.", HSR_QUAL],
+    notes:["Individual events only, no relays. No limit on entries.","Girls run first in every running event except the 55 finals.","LJ and SP get 4 attempts (may drop to 3). HJ and PV go until eliminated. Don't bring your own shot.", "HJ opens at 4-6 for girls at this meet."],
     field:{HJ:{G:"Opens 4-6",B:"Opens 5-6"}}},
   wlq: {rx:/West Lafayette HSR Qualifier/i, name:"West Lafayette HSR Qualifier", start:"5:00 PM", where:"Lambert Fieldhouse, Purdue University", evs:HSR_EVS,
-    notes:["Hoosier State Relays trials. No limit on individual or relay entries.","Girls run first in every running event. Relays start after the boys 3200: 4×800, 4×200, DMR, 4×400.","DMR legs: 1200, 400, 800, 1600.", HSR_QUAL]},
+    notes:["Hoosier State Relays trials. No limit on individual or relay entries.","Girls run first in every running event. Relays start after the boys 3200: 4×800, 4×200, DMR, 4×400.","DMR legs: 1200, 400, 800, 1600."]},
   mav: {rx:/Maverick HSR Qualifier/i, name:"Maverick HSR Qualifier", start:"TBD", where:"Lambert Fieldhouse, Purdue University", evs:HSR_EVS,
-    notes:["Events follow the standard HSR trials (same as the West Lafayette qualifier). They'll be updated once the meet info is posted.", HSR_QUAL]},
+    notes:["Events follow the standard HSR trials (same as the West Lafayette qualifier). They'll be updated once the meet info is posted."]},
   hsrf: {rx:/HSR Finals/i, name:"Hoosier State Relays Finals", start:"TBD", where:"Fall Creek Pavilion, Indiana State Fairgrounds", evs:HSR_EVS,
-    notes:["Qualifiers only: top 24 statewide in running events, LJ and SP; top 18 in HJ; top 12 in PV."]},
+    notes:["Qualifiers only. Small School division (1A–3A, which includes BC) competes first."]},
 };
 const indKeyOf = m => m && m.level==="HS" ? Object.keys(IND_MEETS).find(k=>IND_MEETS[k].rx.test(m.meet)) : null;
 const indMeetRow = k => SCHEDULE.find(m=>indKeyOf(m)===k);
@@ -4151,12 +4161,14 @@ function meetPage(k){
       : (L.some(Boolean) ? `<ol class="m-legs-v">${slots.map((s,i)=>L[i]?`<li><span class="muted">${esc(s)}</span> ${nm(L[i])}</li>`:"").join("")}</ol>` : `<p class="muted m-empty">Not set yet</p>`);
     else body = (L.length ? `<div class="m-names">${L.map(id=>`<span class="chip">${nm(id)}${ed?` <button type="button" class="m-x" aria-label="Remove" onclick="mSet('${key}',-2,'${id}')">✕</button>`:""}</span>`).join("")}</div>` : (ed?"":`<p class="muted m-empty">No one entered yet</p>`))
       + (ed ? `<select class="m-add" onchange="if(this.value)mSet('${key}',-1,this.value)">${mAthOpts(g,"").replace('<option value="">—</option>','<option value="">＋ Add athlete</option>')}</select>` : "");
-    const hit = me && L.includes(me.id);
-    return `<div class="panel m-ev ${ed?"ed":""} ${hit?"m-hit":""}"><div class="bar"><h3 style="margin:0">${esc(ev[1])}</h3>${fieldNote(ev[0])}</div>${body}</div>`; };
+    const hit = me && L.includes(me.id), hsr = HSR_EV.has(ev[0]);
+    return `<div class="panel m-ev ${ed?"ed":""} ${hit?"m-hit":""}"><div class="bar"><h3 style="margin:0">${esc(ev[1])}</h3>${fieldNote(ev[0])}</div>
+      <div>${hsr?`<span class="chip m-hsrc">HSR</span>`:`<span class="muted" style="font-size:12px">Not an HSR event</span>`}</div>${body}</div>`; };
   const rel = M.evs.filter(e=>e[2]), ind = M.evs.filter(e=>!e[2]);
   return `<div class="stack"><p class="no-print"><a href="#schedule">← Schedule</a></p>
     <div><div class="eyebrow">Indoor · ${row?esc(fmtD(row.date)):"Date TBD"}${row&&/Anticipated/.test(row.meet)?" (anticipated)":""}</div><h1>${esc(M.name)}</h1>
       <p class="lede" style="margin:4px 0 0">Starts ${esc(M.start)} · ${esc(M.where)}</p></div>
+    ${hsrBlurb(k)}
     ${me ? `<div class="panel m-mine"><b>${mine.length?"You're entered in:":"You're not entered in this meet yet."}</b> ${mine.map(x=>`${esc(x.ev)}${x.leg?` <span class="muted">(${esc(x.leg)})</span>`:""}`).join(" · ")}</div>` : ""}
     <div class="bar">${segBtns(g,[["G","Girls"],["B","Boys"]],"(v=>{mUI.g=v;render()})")}
       ${canPost ? (ed ? `<span class="ed-save" style="border:0;padding:0;margin:0"><button type="button" class="btn primary" onclick="mSave()" ${saving?"disabled":""}>Save entries</button><button type="button" class="btn" onclick="mDraft=null;mUI.edit=false;mUI.msg={kind:'',text:''};render()">Cancel</button></span>`
