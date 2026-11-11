@@ -700,7 +700,7 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 .lt-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;min-width:80px}.lt-bar>i{display:block;height:100%;background:var(--accent)}
 .lt-bar.done>i{background:var(--gold)}.lt-ok{color:var(--accent);font-weight:700}
 .lt-pol{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0}.lt-pol b{font-family:ui-monospace,monospace;text-align:right}
-.ra-list{display:flex;flex-wrap:wrap;gap:6px}.ra-form{background:var(--chip)}
+.ra-top{border-left:4px solid var(--gold)}.ra-list{display:flex;flex-wrap:wrap;gap:6px}.ra-form{background:var(--chip)}
 .lt-chk{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0}.lt-chk label{display:flex;gap:6px;align-items:center}
 .lt-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.lt-form label{display:grid;gap:4px;font-size:13px}
 tr.cf-win td{background:rgba(252,184,39,.12)}
@@ -901,7 +901,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11a";
+const HUB_VERSION = "11-11b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4444,6 +4444,14 @@ async function ifSave(){
   render();
 }
 const ifLine = f => `<div class="su-form"><span>📝 Form ${esc((f.ts||"").split(" ")[0])}</span>${f.grade?`<span>Gr <b>${esc(f.grade)}</b></span>`:""}${f.events&&f.events.length?`<span>Interested in <b>${esc(f.events.join(", "))}</b></span>`:""}${(f.answers||[]).map(([q,v])=>`<span${(q==="Physical on file" && /^no/i.test(v)) || (q==="Winter conditioning" && /^yes/i.test(v)) || (q==="Travel / AAU during track" && /^yes/i.test(v)) ? ' style="color:var(--fg);font-weight:600"' : ""}>${q==="Physical on file" && /^no/i.test(v) ? "⚠️ " : q==="Winter conditioning" && /^yes/i.test(v) ? "❄️ " : q==="Travel / AAU during track" && /^yes/i.test(v) ? "🗓️ " : ""}${esc(q)}: <b>${esc(v)}</b></span>`).join("")}${f.friends&&f.friends.length?`<span>Friends to recruit: <b>${esc(f.friends.join(", "))}</b></span>`:""}</div>`;
+function ifAddHTML(){
+  const unmatched = ifRecords().filter(([k])=>k.startsWith("new:"));
+  return `<div class="panel ra-top"><h2 style="margin:0 0 6px">Add kids to the roster</h2>
+    ${unmatched.length ? `<p style="margin:0 0 8px">${unmatched.length} filled out the interest form but aren't on the roster yet:</p><div class="ra-list">${unmatched.map(([k,f])=>`<button type="button" class="btn sm primary" onclick="raOpen('${esc(k)}')">＋ Add ${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}</button>`).join("")}</div>`
+      : `<p class="note" style="margin:0">Everyone who filled out the interest form is on the roster. Paste new form rows below and anyone new shows up here.</p>`}
+    <p style="margin:10px 0 0"><button type="button" class="btn sm" onclick="raOpen('')">＋ Add an athlete by hand</button></p>
+    ${raFormHTML()}${ifx.msg.kind==="ok"?`<p class="ed-msg ok" style="margin:8px 0 0">${esc(ifx.msg.text)}</p>`:""}</div>`;
+}
 function ifPanel(){
   const all = ifRecords();
   const unmatched = all.filter(([k])=>k.startsWith("new:"));
@@ -4460,9 +4468,7 @@ function ifPanel(){
     ${wantW.length ? `<p style="margin:10px 0 0">❄️ <b>${wantW.length}</b> said yes to winter conditioning and aren't starred yet. <button type="button" class="btn sm primary" onclick='ifStar(${JSON.stringify(wantW)})'>Star them for winter</button></p>` : ""}
     ${travel.length ? `<p style="margin:10px 0 0">🗓️ <b>Travel / AAU sports during track season</b> (plan around possible conflicts): ${travel.map(esc).join(", ")}</p>` : ""}
     ${noPhys.length ? `<p style="margin:10px 0 0">⚠️ <b>No physical on file:</b> ${noPhys.map(esc).join(", ")}</p>` : ""}
-    ${unmatched.length ? `<p style="margin:10px 0 6px"><b>Filled out the form, not on the roster:</b></p><div class="ra-list">${unmatched.map(([k,f])=>`<button type="button" class="btn sm" onclick="raOpen('${esc(k)}')">＋ Add ${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}</button>`).join("")}</div>` : ""}
-    <p style="margin:10px 0 0"><button type="button" class="btn sm" onclick="raOpen('')">＋ Add an athlete by hand</button></p>
-    ${raFormHTML()}
+
     <div style="margin-top:10px">${friendsHTML()}</div>
   </details>`;
 }
@@ -4575,6 +4581,7 @@ const views = {
     const setSu = (k,v) => `su.${k}='${v}';render()`;
     return `${back}<div class="stack"><div><div class="eyebrow">${inLvG.length} athletes</div><h1>Sign-ups</h1>
         <p class="lede">Check off who's in Final Forms and who's filled out the Google Form. Kids add Final Forms at different times, so an empty box is a reminder, not a problem.${canPost?"":` <a href="#coaches">Coach login</a> to check boxes.`}</p></div>
+      ${canPost ? ifAddHTML() + ifPanel() : ""}
       <div class="su-stats">
         <div class="panel su-stat"><b>${ffN}</b><span>in Final Forms</span></div>
         <div class="panel su-stat"><b>${gfN}</b><span>Google Form done</span></div>
@@ -4593,7 +4600,6 @@ const views = {
         ${[["All","All"],["noff","Not in Final Forms"],["nogf","No Google Form"],["ffnogf","In Final Forms, no Google Form"]].map(([k,l])=>`<button type="button" aria-pressed="${su.show===k}" onclick="${setSu('show',k)}">${l}</button>`).join("")}
       </div>
       <span class="ed-msg ${su.msg.kind}" role="status">${esc(su.msg.text)}</span>
-      ${canPost ? ifPanel() : ""}
       ${list.length?`<div class="su-list">${list.map(r=>`<div class="su-row ${r.c.ff?"":"su-out"}">
           <div class="su-who"><a href="#a-${r.a.id}"><b>${esc(r.a.name)}</b></a>
             <small>${r.a.level} ${r.a.g==="B"?"Boys":"Girls"} · Gr ${r.a.grade??"—"}${r.a.cats.length?" · "+esc(r.a.cats.slice(0,2).join(", ")):""}</small></div>
