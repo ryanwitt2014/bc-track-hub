@@ -917,7 +917,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11g";
+const HUB_VERSION = "11-11h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2539,14 +2539,18 @@ function planCheckHTML(){
 
 /* ---- Training groups (quick): one dropdown per kid. Distance/Hybrid/Mid go to Runner Tags (pathway);
    Sprints 100/200, 200/400, Hurdles, Jumps go to the sprint groups. Level (A/B/C) can be set later. ---- */
-const GRP_OPTS = [["","Not set"],["D","Distance (1600/3200)"],["H8","Hybrid 800/1600"],["M","Mid-Distance (400/800)"],["S1","Sprints 100/200"],["S2","Sprints 200/400"],["H","Hurdles"],["J","Jumps"]];
+const GRP_OPTS = [["","Not set"],["D","Distance (1600/3200)"],["H8","Hybrid 800/1600"],["M","Mid-Distance (400/800)"],["S1","Sprints 100/200"],["S2","Sprints 200/400"],["H","Hurdles"],["J","Jumps"],["T","Throws (shot & discus)"]];
 const GRP_PATH = {D:"Distance", H8:"Hybrid", M:"Mid"};
+let THROW = {}, thrDraft = null;   // throwers group (hub_data key "throwers": {id:true})
 let grpDraft = null, grpSel = new Set(), grpUI = {lv:"HS", open:false, bulk:""}, grpMsg = {kind:"",text:""};
-function grpOf(id){ const t = (dtDraft||DTAGS)[id] || {}; if (t.path) return Object.keys(GRP_PATH).find(k=>GRP_PATH[k]===t.path) || ""; const g = (grpDraft||{})[id]; return g && g.p && g.p!=="S3" ? g.p : (g && g.p==="S3" ? "M" : ""); }
+function grpOf(id){ if ((thrDraft||THROW)[id]) return "T"; const t = (dtDraft||DTAGS)[id] || {}; if (t.path) return Object.keys(GRP_PATH).find(k=>GRP_PATH[k]===t.path) || ""; const g = (grpDraft||{})[id]; return g && g.p && g.p!=="S3" ? g.p : (g && g.p==="S3" ? "M" : ""); }
 function grpSet(id, v){
   if (!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
   if (!grpDraft) grpDraft = JSON.parse(JSON.stringify((window.SP && SP.groups) || {}));
-  if (GRP_PATH[v]) { dtSet(id, "path", GRP_PATH[v]); delete grpDraft[id]; }
+  if (!thrDraft) thrDraft = Object.assign({}, THROW);
+  delete thrDraft[id];
+  if (v==="T") { dtSet(id, "path", ""); dtSet(id, "lv", ""); delete grpDraft[id]; thrDraft[id] = true; }
+  else if (GRP_PATH[v]) { dtSet(id, "path", GRP_PATH[v]); delete grpDraft[id]; }
   else if (v) { dtSet(id, "path", ""); dtSet(id, "lv", ""); grpDraft[id] = Object.assign({}, grpDraft[id], {p:v}); }
   else { dtSet(id, "path", ""); delete grpDraft[id]; }
   grpMsg = {kind:"", text:"Changed. Hit Save groups."};
@@ -2555,9 +2559,10 @@ function grpBulk(){ const v = grpUI.bulk; if (!grpSel.size) return; grpSel.forEa
 async function grpSave(){
   if (!dtDraft) dtDraft = JSON.parse(JSON.stringify(DTAGS));
   if (!grpDraft) grpDraft = JSON.parse(JSON.stringify((window.SP && SP.groups) || {}));
-  const err = await publishFiles({"dtags.json": JSON.stringify(dtDraft), "sgroups.json": JSON.stringify(grpDraft)});
+  if (!thrDraft) thrDraft = Object.assign({}, THROW);
+  const err = await publishFiles({"dtags.json": JSON.stringify(dtDraft), "sgroups.json": JSON.stringify(grpDraft), "throwers.json": JSON.stringify(thrDraft)});
   if (err) grpMsg = {kind:"err", text:err};
-  else { DTAGS = JSON.parse(JSON.stringify(dtDraft)); if (window.SP) { SP.groups = JSON.parse(JSON.stringify(grpDraft)); SP.draft = null; } grpMsg = {kind:"ok", text:"Saved. Kids now see only their group's workouts."}; }
+  else { THROW = Object.assign({}, thrDraft); DTAGS = JSON.parse(JSON.stringify(dtDraft)); if (window.SP) { SP.groups = JSON.parse(JSON.stringify(grpDraft)); SP.draft = null; } grpMsg = {kind:"ok", text:"Saved. Kids now see only their group's workouts."}; }
   render();
 }
 function grpHTML(){
@@ -3130,13 +3135,14 @@ function athGroups(a){
   if (t.path) out.push(t.path==="Mid" ? "Mid Distance" : "Distance");
   const sg = window.SP && SP.groups && SP.groups[a.id];
   if (sg && sg.p && sg.p!=="S3") out.push("Sprints");
+  if (THROW[a.id]) out.push("Throws");
   return out;
 }
 // Event groups a kid sees on Workouts / home / calendar
 function athCats(a){
   const g = athGroups(a);
   if (!g.length) return (a.cats||[]).filter(c=>CATEGORIES.includes(c));
-  return [...g.filter(x=>x!=="Sprints"), ...(g.includes("Sprints") ? ["Sprints", ...(a.cats||[]).filter(c=>SPR_CATS.includes(c) && c!=="Sprints")] : [])];
+  return [...g.filter(x=>x!=="Sprints").flatMap(x=>x==="Throws"?["Shot Put","Discus"]:[x]), ...(g.includes("Sprints") ? ["Sprints", ...(a.cats||[]).filter(c=>SPR_CATS.includes(c) && c!=="Sprints")] : [])];
 }
 const athMode = () => (!canPost && meA()) || null;   // a kid who picked their name (coaches see everything)
 const ctxOf = a => planGroup(a) || ((a.cats||[]).some(c=>SPR_CATS.includes(c)) ? "Sprints" : "");
@@ -5851,6 +5857,7 @@ async function loadAll(){
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
+  if (byKey.throwers && typeof byKey.throwers === "object") THROW = byKey.throwers;
   if (byKey.goal && byKey.goal.hs) GOAL = {hs:+byKey.goal.hs, jh:+byKey.goal.jh||60};
   if (Array.isArray(byKey.roster_add)) { ROSTER_ADD = byKey.roster_add; rosterMerge(ROSTER_ADD); }
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
