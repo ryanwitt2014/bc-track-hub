@@ -917,7 +917,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11f";
+const HUB_VERSION = "11-11g";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4760,25 +4760,6 @@ const views = {
         return `<section class="hub-week" id="hub-week"><div class="bar"><div><div class="eyebrow">Weekly outlook</div><h2>Rest of the ${esc(weekLabel(w).replace(/^Week of/,"week of"))}</h2></div>
           <a class="anet" href="#workouts"><b>Workouts</b> →</a></div>
           ${outlookHTML(w, rest)}</section>`; })()}
-      ${!(meC || canPost) ? "" : (()=>{ const cg = coverageGaps(), hr = hotRecruits(5), rw = recordWatch(5);
-        const totalGaps = cg.reduce((a,t)=>a+t.gaps.length,0);
-        return `<section class="fires"><div class="fires-head"><div class="eyebrow">Heads up</div><h2>What needs attention</h2></div>
-        <div class="fires-grid">
-          <div class="panel fire"><div class="fire-h"><h3>Coverage gaps</h3><span class="fire-n">${totalGaps}</span></div>
-            <p class="note" style="margin:0">Events with fewer than 2 athletes.</p>
-            ${cg.map(t=>`<div class="fire-team"><b>${t.lv} ${GN[t.g]}</b>${t.gaps.length?t.gaps.map(x=>`<span class="cov ${x.n?"thin":"gap"} gchip">${esc(evLabel(x.ev))} · ${x.n}</span>`).join(""):`<span class="muted">All covered</span>`}</div>`).join("")}
-            <a class="fire-link" href="#coverage">Coverage →</a></div>
-          <div class="panel fire"><div class="fire-h"><h3>Recruits to follow up with</h3><span class="fire-n">${hr.length}</span></div>
-            <p class="note" style="margin:0">Closest to joining.</p>
-            ${hr.length?`<ol class="fire-list">${hr.map(({r,h,cs})=>`<li><span><b>${esc(r.name)}</b><small>${r.lvl} ${r.g==="B"?"Boys":"Girls"}${r.sport&&r.sport!=="Other"?" · "+esc(r.sport):""} · ${cs[cs.length-1].self?esc(cs[cs.length-1].by.toLowerCase()):"last: "+esc(cs[cs.length-1].by)}</small></span>${meter(h)}</li>`).join("")}</ol>`
-              :`<p class="fire-empty">No warm leads yet. Once kids start reporting talks, the top 5 show up here.</p>`}
-            <a class="fire-link" href="#recruiting">Recruiting →</a></div>
-          <div class="panel fire"><div class="fire-h"><h3>Record watch</h3><span class="fire-n">${rw.length}</span></div>
-            <p class="note" style="margin:0">Closest to a school record.</p>
-            ${rw.length?`<ol class="fire-list">${rw.map(x=>`<li><span><b><a href="#a-${x.a.id}">${esc(x.a.name)}</a></b><small>${x.lv} ${GN[x.g]} ${esc(x.r.ev)} · ${esc(x.a.prs[x.r.key])} vs ${esc(x.r.mk)}</small></span><span class="rw-gap">${gapText(x)}</span></li>`).join("")}</ol>`
-              :`<p class="fire-empty">Nobody within striking distance yet.</p>`}
-            <a class="fire-link" href="#records">Records →</a></div>
-        </div></section>`; })()}
       ${meX || coachM ? "" : `<p class="note">Roster from the 2027 coaches packet, with track bests from spring 2026 and XC times from this fall.</p>`}
     </div>`;
   },
