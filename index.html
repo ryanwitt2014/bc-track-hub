@@ -700,6 +700,7 @@ ul.cal-ls{list-style:none;padding:0;margin:4px 0 0}
 .lt-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;min-width:80px}.lt-bar>i{display:block;height:100%;background:var(--accent)}
 .lt-bar.done>i{background:var(--gold)}.lt-ok{color:var(--accent);font-weight:700}
 .lt-pol{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0}.lt-pol b{font-family:ui-monospace,monospace;text-align:right}
+.ra-list{display:flex;flex-wrap:wrap;gap:6px}.ra-form{background:var(--chip)}
 .lt-chk{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0}.lt-chk label{display:flex;gap:6px;align-items:center}
 .lt-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.lt-form label{display:grid;gap:4px;font-size:13px}
 tr.cf-win td{background:rgba(252,184,39,.12)}
@@ -900,7 +901,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-10i";
+const HUB_VERSION = "11-11a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4354,6 +4355,44 @@ function ifStar(ids){ if (!canPost) return; WINTER = Object.assign({}, WINTER, {
 /* ---- Friends named on the interest form -> recruiting list ---- */
 const NICK = {libby:"elizabeth",liz:"elizabeth",lizzie:"elizabeth",beth:"elizabeth",eliza:"elizabeth",ellie:"eleanor",maggie:"margaret",meg:"margaret",maddie:"madison",addie:"addison",abby:"abigail",kate:"katherine",katie:"katherine",kat:"katherine",sam:"samantha",alex:"alexander",ben:"benjamin",will:"william",jake:"jacob",nick:"nicholas",matt:"matthew",mike:"michael",chris:"christopher",tony:"anthony",josh:"joshua",zach:"zachary",dan:"daniel",danny:"daniel",tom:"thomas",jim:"james",jimmy:"james",bella:"isabella",izzy:"isabella",gabby:"gabrielle",mandy:"amanda",becca:"rebecca",tori:"victoria",jenny:"jennifer"};
 const ifRecords = () => Object.entries(INTEREST).filter(([k])=>!k.startsWith("_"));
+/* ---- Add athletes to the roster from the Hub (stored in hub_data key "roster_add", merged into ATHLETES on load) ---- */
+let ROSTER_ADD = [], ra = null;
+function rosterMerge(list){ (list||[]).forEach(a => { if (a && a.id && a.name && !ATHLETES.some(x=>x.id===a.id))
+  ATHLETES.push(Object.assign({cats:[], events:[], prs:{}, goals:{}, log:[], meets:[], pri:{}, isNew:true}, a)); }); }
+const raCats = evs => { const s = (evs||[]).join(" ").toLowerCase(), c = [];
+  if (/distance|1600|3200|mile/.test(s)) c.push("Distance"); if (/mid|800/.test(s)) c.push("Mid Distance"); if (/sprint|\b100m|\b200m|\b400/.test(s)) c.push("Sprints");
+  if (/hurdle/.test(s)) c.push("Hurdles"); if (/long jump/.test(s)) c.push("Long Jump"); if (/high jump/.test(s)) c.push("High Jump"); if (/pole/.test(s)) c.push("Pole Vault");
+  if (/shot|throw/.test(s)) c.push("Shot Put"); if (/discus|throw/.test(s)) c.push("Discus"); return c; };
+function raOpen(key){ const f = key ? INTEREST[key] : null, gr = f ? parseInt(f.grade,10) : NaN;
+  ra = {key, name: f ? String(f.name||"").replace(/\b\w/g, c=>c.toUpperCase()) : "", grade: isFinite(gr) ? gr : "", level: isFinite(gr) && gr<=8 ? "JH" : "HS", g:"", cats: f ? raCats(f.events) : [], msg:{kind:"",text:""}}; render();
+  setTimeout(()=>{ const el = document.getElementById("ra-name"); if (el) { el.scrollIntoView({block:"center"}); if (!ra.name) el.focus(); } }, 0); }
+function raFormHTML(){
+  if (!ra) return "";
+  return `<div class="panel ra-form" style="margin-top:10px"><h3 style="margin:0 0 8px">${ra.key?"Add to roster from the form":"Add an athlete"}</h3>
+    <div class="lt-form"><label>Name<input id="ra-name" type="text" value="${esc(ra.name)}" oninput="ra.name=this.value"></label>
+      <label>Grade<input type="number" min="5" max="12" value="${esc(ra.grade)}" oninput="ra.grade=parseInt(this.value,10)||'';ra.level=ra.grade&&ra.grade<=8?'JH':'HS';render()"></label></div>
+    <div class="bar" style="margin:10px 0;justify-content:flex-start;gap:10px">${segBtns(ra.level,[["HS","High school"],["JH","Junior high"]],"(v=>{ra.level=v;render()})")}${segBtns(ra.g,[["G","Girl"],["B","Boy"]],"(v=>{ra.g=v;render()})")}</div>
+    ${ra.cats.length?`<p class="note" style="margin:0 0 10px">Event groups from the form: <b>${esc(ra.cats.join(", "))}</b></p>`:""}
+    <div class="ed-save" style="border:0;padding-top:0"><button type="button" class="btn primary" onclick="raSave()" ${saving?"disabled":""}>Add to roster</button><button type="button" class="btn" onclick="ra=null;render()">Cancel</button></div>
+    <p class="ed-msg ${ra.msg.kind}" role="status" style="margin:6px 0 0">${esc(ra.msg.text)}</p></div>`;
+}
+async function raSave(){
+  const name = String(ra.name||"").trim().replace(/\s+/g," ");
+  if (!name || !/\s/.test(name)) { ra.msg = {kind:"err", text:"Type their first and last name."}; return render(); }
+  if (!ra.g) { ra.msg = {kind:"err", text:"Pick girl or boy."}; return render(); }
+  if (!ra.grade) { ra.msg = {kind:"err", text:"Type their grade."}; return render(); }
+  const same = ATHLETES.find(a=>ifNorm(a.name)===ifNorm(name) && a.level===ra.level);
+  if (same) { ra.msg = {kind:"err", text:`${same.name} is already on the ${same.level} roster.`}; return render(); }
+  let id = (ra.level==="JH"?"jh-":"hs-") + ifNorm(name).replace(/ /g,"-"), n = 2; while (ATHLETES.some(a=>a.id===id)) id = id.replace(/-\d+$/,"") + "-" + n++;
+  const ath = {id, name, level:ra.level, g:ra.g, grade:ra.grade, cats:ra.cats, added:iso(new Date())};
+  const nextAdd = [...ROSTER_ADD, ath], nextI = Object.assign({}, INTEREST), nextS = JSON.parse(JSON.stringify(SIGN));
+  if (ra.key && nextI[ra.key]) { nextI[id] = Object.assign({}, nextI[ra.key], {name}); delete nextI[ra.key]; nextS[id] = Object.assign({}, nextS[id], {gf:true}); }
+  ra.msg = {kind:"", text:"Saving…"}; render();
+  try { await saveKey("roster_add", nextAdd); if (ra.key) { await saveKey("interest", nextI); await saveKey("signups", nextS); INTEREST = nextI; SIGN = nextS; }
+    ROSTER_ADD = nextAdd; rosterMerge([ath]); ra = null; ifx.msg = {kind:"ok", text:`Added ${name} to the ${ath.level} roster.`}; }
+  catch(e){ ra.msg = {kind:"err", text:saveErr(e)}; }
+  render();
+}
 function recMatch(name){
   const L = (INTEREST._links||{})[name];
   if (L === "none") return null;
@@ -4421,7 +4460,9 @@ function ifPanel(){
     ${wantW.length ? `<p style="margin:10px 0 0">❄️ <b>${wantW.length}</b> said yes to winter conditioning and aren't starred yet. <button type="button" class="btn sm primary" onclick='ifStar(${JSON.stringify(wantW)})'>Star them for winter</button></p>` : ""}
     ${travel.length ? `<p style="margin:10px 0 0">🗓️ <b>Travel / AAU sports during track season</b> (plan around possible conflicts): ${travel.map(esc).join(", ")}</p>` : ""}
     ${noPhys.length ? `<p style="margin:10px 0 0">⚠️ <b>No physical on file:</b> ${noPhys.map(esc).join(", ")}</p>` : ""}
-    ${unmatched.length ? `<p style="margin:10px 0 0"><b>Filled out the form, not on the roster:</b> ${unmatched.map(([,f])=>`${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}`).join(" · ")}</p>` : ""}
+    ${unmatched.length ? `<p style="margin:10px 0 6px"><b>Filled out the form, not on the roster:</b></p><div class="ra-list">${unmatched.map(([k,f])=>`<button type="button" class="btn sm" onclick="raOpen('${esc(k)}')">＋ Add ${esc(f.name)}${f.grade?` (${esc(f.grade)})`:""}</button>`).join("")}</div>` : ""}
+    <p style="margin:10px 0 0"><button type="button" class="btn sm" onclick="raOpen('')">＋ Add an athlete by hand</button></p>
+    ${raFormHTML()}
     <div style="margin-top:10px">${friendsHTML()}</div>
   </details>`;
 }
@@ -5696,6 +5737,7 @@ async function loadAll(){
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
+  if (Array.isArray(byKey.roster_add)) { ROSTER_ADD = byKey.roster_add; rosterMerge(ROSTER_ADD); }
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
