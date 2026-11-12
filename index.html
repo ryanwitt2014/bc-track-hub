@@ -4548,7 +4548,7 @@ let ROSTER_ADD = [], ra = null, athNone = false;
 function rosterMerge(list){ (list||[]).forEach(a => { if (a && a.id && a.name && !ATHLETES.some(x=>x.id===a.id))
   ATHLETES.push(Object.assign({cats:[], events:[], prs:{}, goals:{}, log:[], meets:[], pri:{}, isNew:true}, a)); }); }
 const raCats = evs => { const s = (evs||[]).join(" ").toLowerCase(), c = [];
-  if (/distance|1600|3200|mile/.test(s)) c.push("Distance"); if (/mid|800/.test(s)) c.push("Mid Distance"); if (/sprint|\b100m|\b200m|\b400/.test(s)) c.push("Sprints");
+  if (/(^|[^d] )distance|1600|3200|mile/.test(s.replace(/mid distance/g,"mid"))) c.push("Distance"); if (/mid|800/.test(s)) c.push("Mid Distance"); if (/sprint|\b100m|\b200m|\b400/.test(s)) c.push("Sprints");
   if (/hurdle/.test(s)) c.push("Hurdles"); if (/long jump/.test(s)) c.push("Long Jump"); if (/high jump/.test(s)) c.push("High Jump"); if (/pole/.test(s)) c.push("Pole Vault");
   if (/shot|throw/.test(s)) c.push("Shot Put"); if (/discus|throw/.test(s)) c.push("Discus"); return c; };
 function raOpen(key){ const f = key ? INTEREST[key] : null, gr = f ? parseInt(f.grade,10) : NaN;
