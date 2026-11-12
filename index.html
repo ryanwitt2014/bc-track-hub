@@ -166,6 +166,15 @@ tr.cf-bc td{background:var(--gold-soft);font-weight:700}
 .filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .filters button[aria-pressed="true"] span{color:var(--accent-ink);opacity:.8}
 .athtop{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.av{flex:none;width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--accent);color:var(--accent-ink);display:inline-grid;place-items:center;font:700 15px var(--body);letter-spacing:.02em;border:2px solid var(--gold)}
+.av.lg{width:96px;height:96px;font-size:32px;border-width:3px}
+.ath-id{display:flex;align-items:center;gap:10px;min-width:0}.ath-id>div{min-width:0}
+.ath-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.ath-head>div{min-width:0}
+.ph-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ph-card{display:grid;justify-items:center;gap:6px;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px;font-size:13px}
+.ph-card.off{opacity:.55}
+.ph-btn{position:relative;overflow:hidden}.ph-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .lvlchip{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--track)}
 .chip.on{background:var(--accent);color:var(--accent-ink)}
 .weekpick button:disabled{opacity:.35;cursor:default}
@@ -923,7 +932,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11k";
+const HUB_VERSION = "11-11p";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4471,6 +4480,76 @@ async function edDelete(start){
   if(ed && ed.editing===start){ const msg=edMsg; edNew(); edMsg=msg; render(); }
 }
 /* ---- Interest form (Google Form) import. Answers live in the coach-only "interest" key; only the Google Form checkmark is public. ---- */
+const photoTools = a => { const p = PHOTOS[a.id]||{};
+  return `<div class="ph-tools">${p.none ? `<span class="muted">No photo for this athlete.</span><button type="button" class="btn sm" onclick="photoNone('${a.id}', false)">Allow a photo</button>`
+    : `<label class="btn sm ph-btn">${photoURL(a.id)?"Change photo":"Upload photo"}<input type="file" accept="image/*" aria-label="Upload a photo of ${esc(a.name)}" onchange="photoUp('${a.id}', this.files[0])" ${phx.busy?"disabled":""}></label>
+       ${photoURL(a.id)?`<button type="button" class="btn sm" onclick="photoDel('${a.id}')">Remove</button>`:""}<button type="button" class="btn sm" onclick="photoNone('${a.id}', true)">No photo (opted out)</button>`}
+    <span class="ed-msg ${phx.msg.kind}" role="status">${esc(phx.msg.text)}</span><span class="muted" style="font-size:12px">Coaches only</span></div>`; };
+/* ---- Athlete photos (school pictures). Coaches upload; files live in the Supabase Storage bucket "photos". ---- */
+let PHOTOS = {}, phx = {msg:{kind:"",text:""}, bulk:null, busy:false, q:"", lv:"All"};
+const photoURL = id => { const p = PHOTOS[id]; return p && p.v && !p.none && window.HUB_CONFIG ? `${window.HUB_CONFIG.url}/storage/v1/object/public/photos/${encodeURIComponent(id)}.jpg?v=${p.v}` : ""; };
+const initialsOf = a => String(a.name||"").split(/\s+/).filter(Boolean).map(x=>x[0]).slice(0,2).join("").toUpperCase();
+const avatarHTML = (a, cls) => { const u = photoURL(a.id); return u ? `<img class="av ${cls||""}" src="${esc(u)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'av ${cls||""}',textContent:'${esc(initialsOf(a))}'}))">` : `<span class="av ${cls||""}" aria-hidden="true">${esc(initialsOf(a))}</span>`; };
+// School portraits are taller than wide: crop a square from near the top so the face stays centered
+function squareJPEG(file){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { const w = img.naturalWidth, h = img.naturalHeight, side = Math.min(w, h), sx = (w - side) / 2, sy = h > w ? (h - side) * 0.18 : 0;
+      const c = document.createElement("canvas"); c.width = c.height = 400; const g = c.getContext("2d");
+      g.drawImage(img, sx, sy, side, side, 0, 0, 400, 400); URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that picture.")), "image/jpeg", 0.85); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't a picture the browser can open. Try a JPG or PNG.")); };
+    img.src = url;
+  });
+}
+async function photoPut(id, file){
+  const blob = await squareJPEG(file);
+  const { error } = await SB.storage.from("photos").upload(`${id}.jpg`, blob, {upsert:true, contentType:"image/jpeg", cacheControl:"3600"});
+  if (error) throw new Error(/bucket/i.test(error.message) ? "The photo folder isn't set up yet. Run supabase/athlete_photos.sql in Supabase first." : error.message);
+  PHOTOS[id] = {v: Date.now()};
+}
+async function photoUp(id, file){
+  if (!canPost || !file) return;
+  phx.busy = true; phx.msg = {kind:"", text:"Uploading…"}; render();
+  try { await photoPut(id, file); await saveKey("photos", PHOTOS); phx.msg = {kind:"ok", text:"Photo saved."}; }
+  catch(e){ phx.msg = {kind:"err", text: e.message || saveErr(e)}; }
+  phx.busy = false; render();
+}
+async function photoDel(id){
+  if (!canPost) return;
+  try { await SB.storage.from("photos").remove([`${id}.jpg`]); delete PHOTOS[id]; await saveKey("photos", PHOTOS); phx.msg = {kind:"ok", text:"Photo removed."}; }
+  catch(e){ phx.msg = {kind:"err", text: e.message || saveErr(e)}; }
+  render();
+}
+async function photoNone(id, on){
+  if (!canPost) return;
+  try { if (on) { await SB.storage.from("photos").remove([`${id}.jpg`]); PHOTOS[id] = {none:true}; } else delete PHOTOS[id];
+    await saveKey("photos", PHOTOS); phx.msg = {kind:"ok", text: on ? "Marked: no photo for this athlete." : "Photo allowed again."}; }
+  catch(e){ phx.msg = {kind:"err", text: e.message || saveErr(e)}; }
+  render();
+}
+// Bulk: file names like "wesley-weigle.jpg", "Weigle, Wesley.jpg" or "Wesley Weigle 2026.jpg"
+function photoName(fn){
+  let n = String(fn).replace(/\.[a-z0-9]+$/i, "").replace(/[_\-.]+/g, " ").replace(/\d+/g, " ").trim();
+  if (n.includes(",")) { const [l, f] = n.split(","); n = `${f} ${l}`; }
+  return n.replace(/\s+/g, " ").trim();
+}
+function photoBulkPick(files){
+  phx.bulk = [...files].map(f => { const n = photoName(f.name), a = ifMatch(n) || ifMatch(n.split(" ").reverse().join(" ")); return {f, n, a}; });
+  const ok = phx.bulk.filter(x=>x.a).length;
+  phx.msg = {kind: ok===phx.bulk.length ? "ok" : "err", text: `${ok} of ${phx.bulk.length} matched to the roster.${ok<phx.bulk.length?" Rename the others (first-last.jpg) or upload them on the athlete's card.":""}`};
+  render();
+}
+async function photoBulkGo(){
+  const todo = (phx.bulk||[]).filter(x => x.a && !(PHOTOS[x.a.id]||{}).none); if (!todo.length) return;
+  phx.busy = true; let n = 0, bad = [];
+  for (const x of todo) { phx.msg = {kind:"", text:`Uploading ${++n} of ${todo.length}…`}; render();
+    try { await photoPut(x.a.id, x.f); } catch(e){ bad.push(`${x.a.name}: ${e.message}`); if (/isn't set up/.test(e.message)) break; } }
+  try { await saveKey("photos", PHOTOS); } catch(e){ bad.push(saveErr(e)); }
+  phx.busy = false; phx.bulk = null;
+  phx.msg = bad.length ? {kind:"err", text:`Uploaded ${todo.length - bad.length}. Problems: ${bad.join(" · ")}`} : {kind:"ok", text:`Uploaded ${todo.length} photos.`};
+  render();
+}
 let INTEREST = {}, ifx = {open:false, text:"", rows:null, msg:{kind:"",text:""}};
 function parseTSV(text){
   const rows = []; let row = [], cell = "", q = false;
@@ -4879,6 +4958,23 @@ const views = {
       ${level==="HS"?`<p class="note">*Anticipated* Purdue indoor meets use the same weekday as 2026 and will be updated once 2027 dates are posted.</p>`:""}
       <p class="note">All ${level} results: <a href="${anetTeam(level)}" target="_blank" rel="noopener">Athletic.net team page ↗</a></p>${isSample?sample:""}</div>`;
   },
+  _photos(){
+    const list = ATHLETES.filter(a => (phx.lv==="All"||a.level===phx.lv) && (!phx.q || a.name.toLowerCase().includes(phx.q.toLowerCase()))).sort((a,b)=>a.level.localeCompare(b.level)*-1 || a.name.localeCompare(b.name));
+    const have = ATHLETES.filter(a=>photoURL(a.id)).length, none = ATHLETES.filter(a=>(PHOTOS[a.id]||{}).none).length;
+    return `<p class="lede" style="margin:0">School pictures for each athlete's page and the Athletes list. Only coaches can upload. Kids without a photo show their initials.</p>
+      <div class="panel ed"><h2>Upload a batch</h2>
+        <p class="note" style="margin:0 0 8px">Pick a stack of pictures named by athlete, like <b>wesley-weigle.jpg</b> or <b>Weigle, Wesley.jpg</b>. Each one is matched to the roster, cropped square from the top of a school portrait, and shrunk to load fast. Athletes marked "No photo" are skipped.</p>
+        <label class="btn primary ph-btn">Choose pictures<input type="file" accept="image/*" multiple aria-label="Choose pictures" onchange="photoBulkPick(this.files)" ${phx.busy?"disabled":""}></label>
+        ${phx.bulk ? `<div class="tbl" style="margin-top:8px"><table><thead><tr><th>File</th><th>Matched to</th></tr></thead><tbody>${phx.bulk.map(x=>`<tr><td>${esc(x.f.name)}</td><td>${x.a ? ((PHOTOS[x.a.id]||{}).none ? `<span class="chip">${esc(x.a.name)} · no photo, skipped</span>` : `<span class="chip home">${esc(x.a.level)} · ${esc(x.a.name)}</span>`) : `<span class="chip">Not found: "${esc(x.n)}"</span>`}</td></tr>`).join("")}</tbody></table></div>
+          <div class="ed-save" style="border:0;padding-top:8px"><button type="button" class="btn primary" onclick="photoBulkGo()" ${phx.busy?"disabled":""}>Upload ${phx.bulk.filter(x=>x.a && !(PHOTOS[x.a.id]||{}).none).length} photos</button><button type="button" class="btn" onclick="phx.bulk=null;phx.msg={kind:'',text:''};render()">Cancel</button></div>` : ""}
+        <p class="ed-msg ${phx.msg.kind}" role="status" style="margin:6px 0 0">${esc(phx.msg.text)}</p></div>
+      <div class="bar" style="justify-content:flex-start">${segBtns(phx.lv,[["All","All"],["HS","HS"],["JH","JH"]],"(v=>{phx.lv=v;render()})")}
+        <input id="phsearch" class="search" type="search" placeholder="Search name" value="${esc(phx.q)}" oninput="phx.q=this.value;render();const e=document.getElementById('phsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+        <span class="muted">${have} with photos${none?` · ${none} opted out`:""}</span></div>
+      <div class="ph-grid">${list.map(a => { const p = PHOTOS[a.id]||{}; return `<div class="ph-card ${p.none?"off":""}">${avatarHTML(a, "lg")}<b>${esc(a.name)}</b><span class="muted">${a.level} · ${a.grade??""}</span>
+        ${p.none ? `<button type="button" class="btn sm" onclick="photoNone('${a.id}', false)">Opted out · undo</button>` : `<label class="btn sm ph-btn">${photoURL(a.id)?"Change":"Upload"}<input type="file" accept="image/*" aria-label="Photo for ${esc(a.name)}" onchange="photoUp('${a.id}', this.files[0])"></label>
+          <button type="button" class="btn sm" onclick="photoNone('${a.id}', true)">No photo</button>`}</div>`; }).join("")}</div>`;
+  },
   athletes(){
     const base = ATHLETES.filter(a => (alv==="All"||a.level===alv) && (ag==="All"||a.g===ag) && (!q || a.name.toLowerCase().includes(q.toLowerCase())));
     const gfOnly = a => { const s = SIGN[a.id]||{}; return !!s.gf && !s.ff; };     // counts (showed interest) but flagged: still needs Final Forms
@@ -4900,7 +4996,7 @@ const views = {
         ${["All",...CATEGORIES].map(c=>`<button type="button" aria-pressed="${cat===c}" onclick="cat='${c}';render()">${c}<span>${c==="All"?locked.length:count(c)}</span></button>`).join("")}
       </div>
       ${list.length?`<div class="roster">${list.map((a,k)=>`${tier(a)>0 && (k===0 || tier(list[k-1])!==tier(a)) ? `<h2 class="ath-sep">${tier(a)===1?`Almost there <span class="muted">(${nHalf}, not counted yet)</span>`:`Not signed up yet <span class="muted">(${nNone}, coaches only)</span>`}</h2>` : ""}<a class="ath ${tier(a)?"ath-dim":gfOnly(a)?"ath-ff":""}" href="#a-${a.id}">
-        <div class="athtop"><strong>${esc(a.name)}</strong><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>${a.isNew?`<span class="chip new-chip">New</span>`:""}
+        <div class="athtop"><span class="ath-id">${avatarHTML(a)}<strong>${esc(a.name)}</strong></span><span class="lvlchip">${a.level} · ${a.g==="B"?"Boys":"Girls"}</span></div>${a.isNew?`<span class="chip new-chip">New</span>`:""}
         <span>Grade ${a.grade??"—"} · ${a.isNew?"New this season":a.events[0]==="XC"?"Cross country":a.events.map(evn).join(", ")}</span>
         ${(()=>{ const {best,bestHs} = bestRank(a); return best||bestHs ? `<div class="card-rank">${best?`<span class="rk ${best.r===1?"r1":best.r<=3?"r3":""}">#${best.r} ${esc(evn(best.k))}</span>`:""}${bestHs?`<span class="hs-tag">★ Top 3 overall · ${esc(evn(bestHs.k))}</span>`:""}</div>` : ""; })()}
         ${tier(a)===1||gfOnly(a)?`<span class="ath-need">${missing(a)}</span>`:""}
@@ -4966,10 +5062,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Groups & Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Groups & Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["photos","Photos"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="sptest" ? views._sptEdit() : ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
+    const body = ctab==="photos" ? views._photos() : ctab==="sptest" ? views._sptEdit() : ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
   },
   _sptEdit(){
@@ -5869,7 +5965,8 @@ const views = {
     if(!a) return `${back}<h1>Athlete not found</h1><p><a href="#athletes">Back to Athletes</a></p>`;
     const evs = [...new Set([...Object.keys(a.prs), ...assignedEvents(a), ...Object.keys(a.goals||{}), ...a.events.filter(e=>e!=="XC" && !e.startsWith("4x"))])].sort((x,y)=>Object.keys(EV_NAME).indexOf(x)-Object.keys(EV_NAME).indexOf(y));
     return `<a class="backlink" href="#athletes">← Athletes</a>
-      <div class="stack"><div><div class="eyebrow">${a.level} · ${a.g==="B"?"Boys":"Girls"} · Grade ${a.grade??"—"}${a.cats.length?" · "+a.cats.map(esc).join(" · "):""}</div><h1>${esc(a.name)}</h1>
+      <div class="stack"><div><div class="ath-head">${avatarHTML(a, "lg")}<div><div class="eyebrow">${a.level} · ${a.g==="B"?"Boys":"Girls"} · Grade ${a.grade??"—"}${a.cats.length?" · "+a.cats.map(esc).join(" · "):""}</div><h1>${esc(a.name)}</h1></div></div>
+        ${canPost ? photoTools(a) : ""}
         <p class="lede">${a.isNew?"New this season. Events to be decided.":a.events[0]==="XC"?"Cross country runner, no track marks yet":`Events: ${a.events.map(e=>`<span class="chip">${esc(evn(e))}</span>`).join("")}`}</p>
         <div class="anetrow"><a class="anet" href="${anetTeam(a.level)}" target="_blank" rel="noopener"><b>Athletic.net</b> ${a.level==="JH"?"Junior High":"High School"} team page ↗</a></div></div>
       <div class="panel"><h2>Best marks &amp; goals</h2>${a.level==="JH"&&evs.some(e=>{const m=markRank(a,e);return m&&m.hs;})?`<p class="hs-note"><span class="hs-tag">★ Top 3 overall</span> = top 3 of all ${a.g==="B"?"boys":"girls"} in the program, high school included.</p>`:""}<div class="prgrid">
@@ -5955,6 +6052,7 @@ async function loadAll(){
   if (byKey.goal && byKey.goal.hs) GOAL = {hs:+byKey.goal.hs, jh:+byKey.goal.jh||60};
   if (Array.isArray(byKey.roster_add)) { ROSTER_ADD = byKey.roster_add; rosterMerge(ROSTER_ADD); }
   if (byKey.interest && typeof byKey.interest === "object") INTEREST = byKey.interest;
+  if (byKey.photos && typeof byKey.photos === "object") PHOTOS = byKey.photos;
   if (byKey.midnotes && typeof byKey.midnotes === "object") { MDNOTES = Object.assign({general:"", mods:""}, byKey.midnotes); mdn = null; }
   if (byKey.signups && typeof byKey.signups === "object") SIGN = Object.assign(JSON.parse(JSON.stringify(SIGNUPS_SEED)), byKey.signups);
   // "Izzy" on the interest form is Ezreall Roberson, not a new athlete: move anything saved under the old id
