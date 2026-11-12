@@ -923,7 +923,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11q";
+const HUB_VERSION = "11-12a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4526,7 +4526,7 @@ function ifParse(){
     const evI = r.findIndex(c => /distance|sprint|throw|jump|hurdle|vault|relay|not sure/i.test(c));
     const friendsI = r.length - 1;
     const friends = r[friendsI] && friendsI !== ni && friendsI !== evI && !/^(yes|no)$/i.test(String(r[friendsI]).trim())
-      ? String(r[friendsI]).split(/\n|,|;/).map(x=>x.trim()).filter(Boolean) : [];
+      ? String(r[friendsI]).split(/\n|,|;|\band\b/).map(x=>x.replace(/^\s*(and|&)\s+/i,"").replace(/[.\s]+$/,"").trim()).filter(x=>x && !/^(and|&)$/i.test(x)) : [];
     const answers = [];
     r.forEach((c,i) => { if (i===0 || i===ni || i===evI || (friends.length && i===friendsI) || !String(c).trim()) return; if (i===ni+1) return;
       if (head && /^(score)$/i.test(head[i]||"")) return;
