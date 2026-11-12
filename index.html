@@ -523,7 +523,8 @@ a.btn{text-decoration:none;display:inline-block}
 .m-legs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.m-legs label{display:grid;gap:2px;font-size:12px;min-width:0}.m-ev{min-width:0}.m-ev select{width:100%;min-width:0;max-width:100%}.m-legs-v{margin:0;padding-left:0;list-style:none;display:grid;gap:2px}
 .m-empty{margin:0;font-size:13px}.m-hsr{border-left:4px solid var(--accent)}.m-hsr li{margin:3px 0}
 .chip.m-hsrc{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:800;letter-spacing:.04em}.m-mine{border-left:4px solid var(--gold)}.me-hl{font-weight:800;color:var(--gold)}
-.gl{border-left:4px solid var(--gold)}.gl-top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}
+.gl{border-left:4px solid var(--gold)}
+.pv-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--gold);color:#111;border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:14px}.pv-bar .btn{background:#111;color:#fff;border-color:#111}.gl-top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}
 .gl-num{text-align:right;line-height:1}.gl-num b{font:800 40px var(--display);color:var(--gold)}.gl-num span{display:block;font-size:13px;color:var(--muted)}
 .gl-bar{position:relative;height:22px;border-radius:11px;background:var(--line);margin-bottom:22px}.gl-bar>i{display:block;height:100%;border-radius:11px;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .6s}
 .gl-bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);opacity:.35;text-decoration:none}.gl-bar s.hit{opacity:.8}
@@ -922,7 +923,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-11j";
+const HUB_VERSION = "11-11k";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3149,7 +3150,8 @@ function athCats(a){
   if (!g.length) return (a.cats||[]).filter(c=>CATEGORIES.includes(c));
   return [...g.filter(x=>x!=="Sprints").flatMap(x=>x==="Throws"?["Shot Put","Discus"]:[x]), ...(g.includes("Sprints") ? ["Sprints", ...(a.cats||[]).filter(c=>SPR_CATS.includes(c) && c!=="Sprints")] : [])];
 }
-const athMode = () => (!canPost && meA()) || null;   // a kid who picked their name (coaches see everything)
+const athMode = () => meA() || null;   // a kid who picked their name (a signed-in coach who picks a kid previews what that kid sees)
+const previewHTML = () => { const a = canPost && meA(); return a ? `<div class="pv-bar no-print"><span>👀 Previewing as <b>${esc(a.name)}</b>: this is what they see.</span><button type="button" class="btn sm" onclick="setMe('')">Back to coach view</button></div>` : ""; };
 const ctxOf = a => planGroup(a) || ((a.cats||[]).some(c=>SPR_CATS.includes(c)) ? "Sprints" : "");
 function hubWeekHTML(a){
   LI_CTX = ctxOf(a); LI_ATH = a;
@@ -3728,7 +3730,7 @@ function mePickHTML(compact){
 function todayHTML(){
   { const a0 = meA(); if (a0) { LI_CTX = ctxOf(a0); LI_ATH = a0; } }
   const cs = meCoach(); if (cs) return coachTodayHTML(cs);
-  if (canPost) return mePickHTML(true) + coachTodayHTML(null);
+  if (canPost && !meA()) return mePickHTML(true) + coachTodayHTML(null);
   const a = meA();
   if (!a) return mePickHTML(false);
   const nx = myNext(a), m = myMeet(a);
@@ -4194,7 +4196,7 @@ function goalHTML(){
       <div class="gl-num"><b>${tot}</b><span>/ ${G} athletes</span></div></div>
     <div class="gl-bar"><i style="width:${pct(tot,G)}%"></i>${marks.map(m=>`<s style="left:${m/G*100}%" class="${tot>=m?"hit":""}"><em>${m}</em></s>`).join("")}</div>
     <div class="gl-subs">${sub("High school",hs,GOAL.hs)}${sub("Junior high",jh,GOAL.jh)}</div>
-    <p class="note" style="margin:8px 0 0">Counts everyone who's filled out the interest Google Form. <a href="#athletes">See who's on the team →</a>${canPost?` · <a href="#" onclick="gEdit={...GOAL};render();return false">Change goal</a>`:""}</p>
+    <p class="note" style="margin:8px 0 0">Counts everyone who's filled out the interest Google Form. <a href="#athletes">See who's on the team →</a>${canPost&&!meA()?` · <a href="#" onclick="gEdit={...GOAL};render();return false">Change goal</a>`:""}</p>
     ${canPost && gEdit ? `<div class="lt-form" style="margin-top:10px"><label>HS goal<input type="number" min="1" value="${gEdit.hs}" oninput="gEdit.hs=+this.value"></label><label>JH goal<input type="number" min="1" value="${gEdit.jh}" oninput="gEdit.jh=+this.value"></label></div>
       <div class="ed-save" style="border:0;padding-top:8px"><button type="button" class="btn primary" onclick="goalSave()">Save goal</button><button type="button" class="btn" onclick="gEdit=null;render()">Cancel</button><span class="ed-msg ${gMsg.kind}">${esc(gMsg.text)}</span></div>` : ""}</div>`;
 }
@@ -4805,7 +4807,7 @@ const views = {
     const nm = upcoming[0];
     const days = nm ? Math.round((parseD(nm.date) - today)/864e5) : null;
     const vw = visibleWeeks(); const wk = vw[vw.length-1];
-    const meX = canPost ? null : meA(), meC = meCoach(), coachM = !!(meC || canPost);
+    const meX = meA(), meC = meCoach(), coachM = !meX && !!(meC || canPost);
     return `<div class="stack${meX ? " has-me" : coachM ? " has-coach" : ""}">
       <div class="td-hi"><div><div class="eyebrow">${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})} · ${SEASON}</div>
       <h1>${meX ? `Hey, <span>${esc(meX.name.split(" ")[0])}</span>` : meC ? `Hey, <span>Coach ${esc(coachLast(meC))}</span>` : coachM ? "Coaches" : "Track &amp; Field Hub"}</h1>
@@ -5921,7 +5923,7 @@ function render(){
       return `<a href="#${x.id}" ${x.id===key?'aria-current="page"':""}>${x.name}</a>`; }).join("")}</div>`; }
   else { sub.hidden = true; sub.innerHTML = ""; }
   const sec0 = SECTIONS.find(x=>x.id===key);
-  document.getElementById("view").innerHTML = isAth ? views.athlete(h.slice(2)) : isMeet ? meetPage(h.slice(2)) : (sec0 && sec0.coach && !canPost) ? views.coaches() : views[key]();
+  document.getElementById("view").innerHTML = previewHTML() + (isAth ? views.athlete(h.slice(2)) : isMeet ? meetPage(h.slice(2)) : (sec0 && sec0.coach && !canPost) ? views.coaches() : views[key]());
   { const P = !isAth && !isMeet && PAGE_GROUPS.find(p=>p.kids.some(([k])=>k===key));
     if (P) document.getElementById("view").insertAdjacentHTML("afterbegin", `<div class="pg-tabs"><div class="eyebrow">${esc(P.name)}</div><div class="seg" role="group" aria-label="${esc(P.name)}">${P.kids.filter(([k])=>SECTIONS.some(s=>s.id===k && navOK(s))).map(([k,l])=>`<a role="button" href="#${k}" aria-pressed="${k===key}">${esc(l)}</a>`).join("")}</div></div>`); }
   const bn = document.getElementById("botnav"); if (bn) bn.innerHTML = botnavHTML(key, isAth);
