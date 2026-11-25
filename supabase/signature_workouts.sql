@@ -1,3 +1,6 @@
+-- ⚠️  DON'T RUN THIS FILE. Coach Witt took the hill workouts out (Nov 25, 2026), and running it would put
+-- BC Short Hills / BC Long Hills back on Feb 18, Feb 25 and Mar 18, and overwrite edits made in the Hub since.
+-- Make workout changes in the Hub: Coaches → Post Workouts.
 -- BC Track Hub: Benton Central signature workouts (approved Nov 5, 2026).
 -- Paste into Supabase > SQL Editor and click Run. Safe to run again (it replaces, never adds twice).
 -- Swaps 34 sessions between Feb 15 and May 14, 2027: 11 HS Distance/Hybrid, 7 HS Mid-Distance (3 are renames),
