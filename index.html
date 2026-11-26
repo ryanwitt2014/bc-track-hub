@@ -506,6 +506,11 @@ a.btn{text-decoration:none;display:inline-block}
 .sh-table .sh-last{text-align:left;font-size:9px;line-height:1.2;white-space:normal;max-width:150px;color:#333}
 .cover .cv-days{columns:3 260px;column-gap:18px;margin-top:10px;font-size:11px;color:#111}
 .cv-day{break-inside:avoid;margin:0 0 10px;border-top:2px solid #111;padding-top:4px}.cv-day h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.ms-lv{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #111}
+.ms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;font-size:11px;color:#111}
+.ms-blk{border:1px solid #999;border-radius:4px;padding:6px 8px;break-inside:avoid}.ms-blk h4{margin:0 0 3px;font-size:12px}.ms-blk ul{margin:0;padding-left:14px}.ms-blk .cv-f{font-weight:400}
+.ms-sess{font-size:11px;color:#444;margin-top:4px}
+.ms-blk .sh-lift{width:100%;table-layout:fixed;font-size:9.5px;margin-top:4px}.ms-blk .sh-lift td,.ms-blk .sh-lift th{overflow-wrap:anywhere;padding:1px 3px}.ms-blk .sh-lift th{font-size:9px;letter-spacing:.03em;white-space:normal}.ms-blk .sh-lift td:first-child{width:34%}.ms-blk .sh-lift td:nth-child(2){width:18%}
 .cv-blk{margin:0 0 5px}.cv-blk ul{margin:1px 0 0;padding-left:14px}.cv-blk li{margin:0}.cv-f{color:#666;font-style:italic}
 .wstars{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .wstar{font:600 14px var(--body);border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);padding:4px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
@@ -923,7 +928,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-25b";
+const HUB_VERSION = "11-26a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3920,7 +3925,7 @@ const EV_CAT = {"100":"Sprints","200":"Sprints","400":"Sprints","4x100":"Sprints
   "100H":"Hurdles","110H":"Hurdles","300H":"Hurdles","LJ":"Long Jump","HJ":"High Jump","PV":"Pole Vault","SP":"Shot Put","DT":"Discus"};
 const FIELD_CATS = new Set(["Long Jump","High Jump","Pole Vault","Shot Put","Discus"]);
 const PACE_CATS = new Set(["Distance","Mid Distance"]);
-let sh = {alv:"HS", aweek:"", aall:"", blv:"HS", bmeet:"", mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
+let sh = {mday:"All", mlv:"Both", mgroups:null, alv:"HS", aweek:"", aall:"", blv:"HS", bmeet:"", mode:"day", coach:"", plv:"HS", week:"", day:"All", lv:"HS", groups:["Distance"], cols:8, paces:true, blankDate:"", winter:"auto", wedit:false, wall:false};
 // Winter conditioning roster: starred kids are the only ones printed on sheets before official practice starts.
 const OFFICIAL_START = "2027-02-15";
 // WINTER = {ids:[starred], maybe:{id:note} (can do some sessions), follow:{id:note} (coach should reach out), done:[applied coach decisions]}
@@ -4322,6 +4327,32 @@ function coverHTML(w, lvs){
         <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`
       : `<p>Nothing posted for these groups this week.</p>`}
     <div class="sh-foot">Group sheets follow: ${lvs.join(" then ")}, one page per group per practice day.</div></section>`;
+}
+/* Master sheet: every group's workout for the day on one page, no athlete lists */
+function buildMaster(){
+  const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
+  const w = printWeek(w0), lvs = sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv], groups = sh.mgroups || CATEGORIES;
+  const its = (arr, lv) => forLv(arr, lv).map(it => it.t);
+  const out = [];
+  (sh.mday==="All" ? w.days : w.days.filter(d=>d.day===sh.mday)).forEach(d => {
+    const date = dayDate(w, d.day);
+    const parts = lvs.map(lv => {
+      const blocks = [{cat:"Everyone", items: its(d.all, lv)},
+        ...(d.combos||[]).filter(cb => cb.groups.some(g => groups.includes(g))).map(cb => ({cat: comboName(cb), items: its(cb.items, lv), combo:true})),
+        ...groups.map(cat => ({cat, items: its((d.groups||{})[cat], lv)}))].filter(b => b.items.length && !restOnly(b.items));
+      if (!blocks.length) return "";
+      const ss = sessOf(d, lv);
+      return `${lvs.length>1?`<div class="ms-lv">${lv==="HS"?"High School":"Junior High"}${focusFor(d,lv)?` · <span class="cv-f">${esc(focusFor(d,lv))}</span>`:""}</div>`:""}
+        <div class="ms-grid">${blocks.map(b => { const f = b.combo || b.cat==="Everyone" ? "" : (gFocus(d,b.cat,lv) || ""); return `<div class="ms-blk"><h4>${esc(b.cat)}${f?` <span class="cv-f">· ${esc(f)}</span>`:""}</h4>
+          <ul>${b.items.map(t=>`<li>${esc(sheetLine(t))}</li>`).join("")}</ul>${liftPrint(b.items)}</div>`; }).join("")}</div>
+        ${ss && SESS_K[ss.kind] ? `<div class="ms-sess">Session: ${esc(SESS_K[ss.kind][0])}${ss.cls?" · "+esc(ss.cls):""}</div>` : ""}`;
+    }).filter(Boolean);
+    if (!parts.length) return;
+    out.push(`<section class="sheet master"><div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Master Sheet</div>
+      <div class="sh-title">${esc(date.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</div></div>
+      <div class="sh-meta"><div><b>All groups</b></div><div>${lvs.join(" + ")}</div></div></div>${parts.join("")}</section>`);
+  });
+  return out.join("") || `<p class="note">Nothing posted for these days.</p>`;
 }
 function buildPacket(){
   const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
@@ -5048,7 +5079,7 @@ const views = {
     const w = printWeek(weeks.find(x=>x.start===sh.week));
     const toggleG = g => `sh.groups = sh.groups.includes('${g}') ? sh.groups.filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||sh.groups.includes(c)); render()`;
     const packet = sh.mode==="packet";
-    const modeRow = `<div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["packet","Week packet"],["attend","Attendance"],["bus","Bus sheet"]],"(v=>{sh.mode=v;render()})")}</div>`;
+    const modeRow = `<div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["master","Master sheet"],["packet","Week packet"],["attend","Attendance"],["bus","Bus sheet"]],"(v=>{sh.mode=v;render()})")}</div>`;
     const printRow = lbl => `<div class="ed-save"><button type="button" class="btn primary" onclick="window.print()">${lbl}</button><span class="note" style="margin:0">To save a PDF, choose <b>Save as PDF</b> as the printer.</span></div>`;
     const wrap = s => `<div class="sheets-wrap"><div class="no-print mlabel" style="margin:0">Preview · ${(s.match(/<section class="sheet/g)||[]).length} page${(s.match(/<section class="sheet/g)||[]).length===1?"":"s"} (long lists run onto extra pages)</div>${s}</div>`;
     if (sh.mode==="attend") {
@@ -5060,6 +5091,18 @@ const views = {
           <div class="ed-row"><span>Level</span>${segBtns(sh.alv,[["HS","HS"],["JH","JH"],["Both","HS and JH"]],"(v=>{sh.alv=v;render()})")}</div></div>
         <div class="ed-row"><span>Weeks</span>${segBtns(sh.aall,[["","Just this week"],["winter","Every conditioning week"],["season","Every practice week"]],"(v=>{sh.aall=v;render()})")}</div>
         ${printRow("Print attendance")}</div>` + wrap(buildAttendance());
+    }
+    if (sh.mode==="master") {
+      const mg = sh.mgroups || CATEGORIES;
+      const togM = g => `sh.mgroups = (sh.mgroups||CATEGORIES).includes('${g}') ? (sh.mgroups||CATEGORIES).filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||(sh.mgroups||CATEGORIES).includes(c)); render()`;
+      return `<div class="panel ed no-print">${modeRow}
+        <p style="margin:0">One page per practice day with every group's workout on it, no athlete lists. Good for the coaches' clipboard or posting on the wall.</p>
+        <div class="ed-grid2">
+          <label class="ed-row" for="ms-week"><span>Week</span><select id="ms-week" onchange="sh.week=this.value;sh.mday='All';render()">${weeks.map(x=>`<option value="${x.start}" ${x.start===sh.week?"selected":""}>${esc(weekLabel(x))}${parseD(x.start)>today?" (upcoming)":""}</option>`).join("")}</select></label>
+          ${w ? `<label class="ed-row" for="ms-day"><span>Day</span><select id="ms-day" onchange="sh.mday=this.value;render()"><option value="All" ${sh.mday==="All"?"selected":""}>Whole week (one page a day)</option>${w.days.map(d=>`<option ${sh.mday===d.day?"selected":""}>${d.day}</option>`).join("")}</select></label>` : ""}</div>
+        <div class="ed-row"><span>Level</span>${segBtns(sh.mlv,[["Both","HS and JH"],["HS","HS"],["JH","JH"]],"(v=>{sh.mlv=v;render()})")}</div>
+        <div class="ed-row" style="align-items:start"><span>Groups</span><div class="combo-picks">${CATEGORIES.map(g=>`<button type="button" class="pick" aria-pressed="${mg.includes(g)}" onclick="${togM(g)}">${g}</button>`).join("")}</div></div>
+        ${printRow("Print master sheet")}</div>` + wrap(buildMaster());
     }
     if (sh.mode==="bus") {
       const ms = SCHEDULE.filter(m=>sh.blv==="Both"||m.level===sh.blv).sort((a,b)=>a.date.localeCompare(b.date));
