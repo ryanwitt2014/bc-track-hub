@@ -509,6 +509,15 @@ a.btn{text-decoration:none;display:inline-block}
 .ms-lv{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #111}
 .ms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;font-size:11px;color:#111}
 .ms-blk{border:1px solid #999;border-radius:4px;padding:6px 8px;break-inside:avoid}.ms-blk h4{margin:0 0 3px;font-size:12px}.ms-blk ul{margin:0;padding-left:14px}.ms-blk .cv-f{font-weight:400}
+.mweek .mw-fit{width:10.3in;padding-left:2px;box-sizing:border-box;font-size:10px;color:#111}
+.mw-main{display:grid;gap:10px;margin-top:6px}.mw-day{border:2px solid #111;border-radius:5px;padding:6px 8px}
+.mw-dt{font-family:var(--display,inherit);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #111;margin-bottom:3px}
+.mw-sday .mw-dt{font-size:11px}.mw-lv{font-size:10px;color:#333;margin:4px 0 2px}
+.mw-blks{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:5px}
+.mw-blk{border:1px solid #aaa;border-radius:3px;padding:3px 5px;break-inside:avoid}.mw-blk h5{margin:0 0 1px;font-size:10.5px}.mw-blk .cv-f{font-weight:400}.mw-blk ul{margin:0;padding-left:12px}.mw-blk li{margin:0}
+.mw-other{display:grid;gap:6px;margin-top:8px;font-size:8.5px}.mw-sday{border:1px solid #777;border-radius:4px;padding:4px 6px}.mw-sday .mw-blk{border:0;padding:1px 0}.mw-sday .mw-blk h5{font-size:9px}.mw-sday .mw-lv{font-size:8.5px}
+.mw-lifts{margin-top:6px;font-size:8.5px;border-top:1px solid #999;padding-top:3px}.mw-lifts>b{display:block;font-size:9.5px}
+@media print{.sheet.mweek{overflow:hidden}}
 .ms-sess{font-size:11px;color:#444;margin-top:4px}
 .ms-blk .sh-lift{width:100%;table-layout:fixed;font-size:9.5px;margin-top:4px}.ms-blk .sh-lift td,.ms-blk .sh-lift th{overflow-wrap:anywhere;padding:1px 3px}.ms-blk .sh-lift th{font-size:9px;letter-spacing:.03em;white-space:normal}.ms-blk .sh-lift td:first-child{width:34%}.ms-blk .sh-lift td:nth-child(2){width:18%}
 .cv-blk{margin:0 0 5px}.cv-blk ul{margin:1px 0 0;padding-left:14px}.cv-blk li{margin:0}.cv-f{color:#666;font-style:italic}
@@ -928,7 +937,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-26a";
+const HUB_VERSION = "11-26b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4329,6 +4338,64 @@ function coverHTML(w, lvs){
     <div class="sh-foot">Group sheets follow: ${lvs.join(" then ")}, one page per group per practice day.</div></section>`;
 }
 /* Master sheet: every group's workout for the day on one page, no athlete lists */
+/* Week on one page: the coach-led days get the most room up top, the other days run small along the bottom */
+const MW_MAIN = ["coach","coachq","official"];
+function mwBlocks(d, lv, groups){
+  const its = arr => forLv(arr, lv).map(it => it.t);
+  const raw = [{cat:"Everyone", items: its(d.all)},
+    ...(d.combos||[]).filter(cb => cb.groups.some(g => groups.includes(g))).map(cb => ({cat: comboName(cb), items: its(cb.items), combo:true})),
+    ...groups.map(cat => ({cat, items: its((d.groups||{})[cat]), f: gFocus(d,cat,lv) || ""}))].filter(b => b.items.length && !restOnly(b.items));
+  const out = [];   // groups with the exact same workout share one box
+  raw.forEach(b => { const k = b.items.join("\n"), hit = out.find(o => o.k===k && !o.combo && !b.combo && o.cat!=="Everyone" && b.cat!=="Everyone");
+    if (hit) { hit.cats.push(b.cat); if (hit.f!==b.f) hit.f=""; } else out.push({...b, k, cats:[b.cat]}); });
+  return out;
+}
+const mwLine = t => {   // clipboard version of a line: the workout, not the explanation
+  let x = sheetLine(t).replace(/\s+/g," ").trim();
+  if (/^Sprint winter session$/i.test(x)) return "";
+  if (/^(Coaching|Indoor version|Note|Notes|Why|Progress|Outdoor plan|If )\b/i.test(x.replace(/^\([^)]*\)\s*/,""))) return "";
+  x = x.replace(/^((?:\([^)]*\)\s*)?[^:]{3,60}?(?:\([^)]*\))?):\s[^:]*→.*$/, "$1");   // warm-up: name + time, skip the drill list
+  x = x.split(" · ").slice(0,3).join(" · ").replace(/([a-z)])\. [A-Z].*$/, "$1");
+  return x.length > 95 ? x.slice(0,92).replace(/\s+\S*$/,"") + "…" : x;
+};
+function mwBlockHTML(b){ const ls = b.items.map(mwLine).filter(Boolean); return `<div class="mw-blk"><h5>${esc(b.cats.join(" · "))}${b.f?` <span class="cv-f">· ${esc(b.f)}</span>`:""}</h5><ul>${ls.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`; }
+function buildMasterWeek(){ return (sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv]).map(lv => mwPage(lv)).join("") || `<p class="note">Nothing posted for this week.</p>`; }
+function mwPage(lv1){
+  const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
+  const w = printWeek(w0), lvs = [lv1], groups = sh.mgroups || CATEGORIES;
+  const days = w.days.map(d => ({d, date: dayDate(w, d.day), lv: Object.fromEntries(lvs.map(lv => [lv, mwBlocks(d, lv, groups)]))}))
+    .filter(x => lvs.some(lv => x.lv[lv].length));
+  if (!days.length) return "";
+  const isMain = x => lvs.some(lv => { const ss = sessOf(x.d, lv); return ss && MW_MAIN.includes(ss.kind); });
+  let main = days.filter(isMain);
+  if (!main.length || main.length > 3) {   // no coach-led tags (or a full practice week): the two biggest days go on top
+    const size = x => lvs.reduce((n,lv) => n + x.lv[lv].reduce((m,b)=>m+b.items.length,0), 0);
+    main = [...days].sort((a,b)=>size(b)-size(a)).slice(0,2).sort((a,b)=>a.date-b.date);
+  }
+  const rest = days.filter(x => !main.includes(x));
+  const sessTxt = (d, lv) => { const ss = sessOf(d, lv); return ss && SESS_K[ss.kind] ? SESS_K[ss.kind][0] + (ss.title?" · "+ss.title:"") : (focusFor(d,lv)||""); };
+  const lvHead = (x, lv, cls) => `<div class="${cls}">${lvs.length>1?`<b>${lv==="HS"?"High School":"Junior High"}</b> · `:""}${esc(sessTxt(x.d, lv))}</div>`;
+  const dayName = (dt, long) => dt.toLocaleDateString("en-US", long ? {weekday:"long",month:"short",day:"numeric"} : {weekday:"short",month:"numeric",day:"numeric"});
+  const mainHTML = main.map(x => `<div class="mw-day"><div class="mw-dt">${esc(dayName(x.date,true))}</div>
+      ${lvs.filter(lv=>x.lv[lv].length).map(lv => `${lvHead(x, lv, "mw-lv")}<div class="mw-blks">${x.lv[lv].map(mwBlockHTML).join("")}</div>`).join("")}</div>`).join("");
+  const restHTML = rest.map(x => `<div class="mw-sday"><div class="mw-dt">${esc(dayName(x.date,false))}</div>
+      ${lvs.filter(lv=>x.lv[lv].length).map(lv => `${lvHead(x, lv, "mw-lv")}${x.lv[lv].map(mwBlockHTML).join("")}`).join("")}</div>`).join("");
+  const codes = [...new Set(days.flatMap(x => lvs.flatMap(lv => x.lv[lv].flatMap(b => b.items.map(liftCode)))).filter(Boolean))];
+  const liftRef = codes.length ? `<div class="mw-lifts"><b>Weight room this week</b>${codes.map(c => { const L = LIFTS[c]; return `<div><b>${esc(L.name)}:</b> ${L.ex.map(([n,sr,m])=>esc(n)+" "+esc(sr)+(m?" (main)":"")).join(" · ")}</div>`; }).join("")}<div class="sub">2–3 reps in reserve, no max lifts.</div></div>` : "";
+  const end = new Date(days[days.length-1].date);
+  return `<section class="sheet master mweek"><div class="mw-fit"><div class="sh-head"><div><div class="sh-brand">Benton Central Track &amp; Field · Master Sheet</div>
+      <div class="sh-title">${lv1==="HS"?"High School":"Junior High"} · Week of ${esc(days[0].date.toLocaleDateString("en-US",{month:"long",day:"numeric"}))}</div></div>
+      <div class="sh-meta"><div><b>All groups</b></div><div>${esc(focusFor(main[0].d, lv1)||"")}</div></div></div>
+    <div class="mw-main" style="grid-template-columns:repeat(${main.length},1fr)">${mainHTML}</div>
+    ${rest.length ? `<div class="mw-other" style="grid-template-columns:repeat(${Math.min(rest.length,5)},1fr)">${restHTML}</div>` : ""}
+    ${liftRef}</div></section>`;
+}
+function fitMasterWeek(){   // one landscape page each (10.3 × 7.8 in printable): widen the layout as it shrinks so the page fills edge to edge
+  document.querySelectorAll(".mweek .mw-fit").forEach(f => { const W = 10.3*96, H = 7.35*96; let z = 1;
+    for (let i = 0; i < 6; i++) { f.style.zoom = ""; f.style.width = (W / z) + "px"; const nz = Math.min(1, H / f.scrollHeight); if (Math.abs(nz - z) < 0.01) { z = Math.min(z, nz); break; } z = nz; }
+    f.style.width = (W / z) + "px"; if (H / f.scrollHeight < z) z = H / f.scrollHeight;
+    f.style.zoom = z < 1 ? z.toFixed(3) : ""; });
+}
 function buildMaster(){
   const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
   const w = printWeek(w0), lvs = sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv], groups = sh.mgroups || CATEGORIES;
@@ -5095,14 +5162,17 @@ const views = {
     if (sh.mode==="master") {
       const mg = sh.mgroups || CATEGORIES;
       const togM = g => `sh.mgroups = (sh.mgroups||CATEGORIES).includes('${g}') ? (sh.mgroups||CATEGORIES).filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||(sh.mgroups||CATEGORIES).includes(c)); render()`;
+      const wk = (sh.mlayout||"week")==="week";
+      setTimeout(fitMasterWeek, 0);
       return `<div class="panel ed no-print">${modeRow}
-        <p style="margin:0">One page per practice day with every group's workout on it, no athlete lists. Good for the coaches' clipboard or posting on the wall.</p>
+        <p style="margin:0">Every group's workout with no athlete lists. <b>Week on one page</b> puts the coach-led days big across the top and the other days smaller underneath (HS and JH each get their own page). Good for the coaches' clipboard or posting on the wall.</p>
+        <div class="ed-row"><span>Layout</span>${segBtns(sh.mlayout||"week",[["week","Week on one page"],["days","One page a day"]],"(v=>{sh.mlayout=v;render()})")}</div>
         <div class="ed-grid2">
           <label class="ed-row" for="ms-week"><span>Week</span><select id="ms-week" onchange="sh.week=this.value;sh.mday='All';render()">${weeks.map(x=>`<option value="${x.start}" ${x.start===sh.week?"selected":""}>${esc(weekLabel(x))}${parseD(x.start)>today?" (upcoming)":""}</option>`).join("")}</select></label>
-          ${w ? `<label class="ed-row" for="ms-day"><span>Day</span><select id="ms-day" onchange="sh.mday=this.value;render()"><option value="All" ${sh.mday==="All"?"selected":""}>Whole week (one page a day)</option>${w.days.map(d=>`<option ${sh.mday===d.day?"selected":""}>${d.day}</option>`).join("")}</select></label>` : ""}</div>
+          ${w && !wk ? `<label class="ed-row" for="ms-day"><span>Day</span><select id="ms-day" onchange="sh.mday=this.value;render()"><option value="All" ${sh.mday==="All"?"selected":""}>Whole week (one page a day)</option>${w.days.map(d=>`<option ${sh.mday===d.day?"selected":""}>${d.day}</option>`).join("")}</select></label>` : ""}</div>
         <div class="ed-row"><span>Level</span>${segBtns(sh.mlv,[["Both","HS and JH"],["HS","HS"],["JH","JH"]],"(v=>{sh.mlv=v;render()})")}</div>
         <div class="ed-row" style="align-items:start"><span>Groups</span><div class="combo-picks">${CATEGORIES.map(g=>`<button type="button" class="pick" aria-pressed="${mg.includes(g)}" onclick="${togM(g)}">${g}</button>`).join("")}</div></div>
-        ${printRow("Print master sheet")}</div>` + wrap(buildMaster());
+        ${printRow("Print master sheet")}</div>` + wrap(wk ? buildMasterWeek() : buildMaster());
     }
     if (sh.mode==="bus") {
       const ms = SCHEDULE.filter(m=>sh.blv==="Both"||m.level===sh.blv).sort((a,b)=>a.date.localeCompare(b.date));
