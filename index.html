@@ -518,6 +518,9 @@ a.btn{text-decoration:none;display:inline-block}
 .mw-other{display:grid;gap:6px;margin-top:8px;font-size:8.5px}.mw-sday{border:1px solid #777;border-radius:4px;padding:4px 6px}.mw-sday .mw-blk{border:0;padding:1px 0}.mw-sday .mw-blk h5{font-size:9px}.mw-sday .mw-lv{font-size:8.5px}
 .mw-lifts{margin-top:6px;font-size:8.5px;border-top:1px solid #999;padding-top:3px}.mw-lifts>b{display:block;font-size:9.5px}
 @media print{.sheet.mweek{overflow:hidden}}
+.h2chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:9px;border:1px solid var(--line);margin-left:4px;vertical-align:middle;white-space:nowrap}.h2chip.ty-r{background:#e6f0e8;color:#1f4d2b}.h2chip.ty-s{background:#e8eef7;color:#1d3a66}.h2chip.ty-c{background:#fbf3d9;color:#5c4a00}.h2chip.ty-b,.h2chip.ty-p{background:#f1f1f1;color:#333}
+.sp-bar{position:relative;height:8px;min-width:90px;border-radius:4px;background:linear-gradient(90deg,#b4472b,#d9c36a,var(--accent))}.sp-bar i{position:absolute;top:-3px;width:4px;height:14px;background:#111;border-radius:2px;margin-left:-2px}
+tr.ck-low td{background:#fff7e0}
 .season-txt{white-space:pre-wrap;font:11px/1.4 var(--mono,monospace);margin:0;color:#111}
 @media print{.sheet.season{break-after:auto}}
 .ms-sess{font-size:11px;color:#444;margin-top:4px}
@@ -939,7 +942,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-26d";
+const HUB_VERSION = "11-26e";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2075,6 +2078,23 @@ const EX = {
   "Low box jumps":{cue:"Low box, jump up, land soft, step down. Prepared athletes only."},
   "Clamshells":{cue:"On your side, knees bent, open the top knee without rolling back."},
   "Single-leg bridge":{cue:"One foot down, other knee up. Hips stay level."},
+  "Straight-knee calf raise":{cue:"Knees straight, rise high, lower slowly. Works the gastrocnemius.", eq:"Step or wall", alt:"Two legs on flat ground"},
+  "Isometric calf hold":{cue:"Rise halfway onto the balls of your feet and hold steady. Builds Achilles and calf tolerance.", eq:"Wall; dumbbell later", alt:"Two-leg hold"},
+  "Assisted Nordic curl":{cue:"Kneel, partner holds ankles, lower forward slowly with hips straight; catch yourself with your hands, push back up. Band assist if needed.", eq:"Partner or anchor, mat", alt:"Hamstring sliders"},
+  "Hamstring sliders":{cue:"On your back, heels on sliders or towels, hips up, slide heels out slowly and pull back in.", eq:"Sliders or towels", alt:"Single-leg bridge"},
+  "Short-lever Copenhagen plank":{cue:"Side plank with the top knee on a bench, bottom leg free. Hips high. Inner-thigh (adductor) strength.", eq:"Bench", alt:"Side plank"},
+  "Short-foot hold":{cue:"Foot flat, pull the ball of the foot toward the heel without curling toes, lifting the arch. Hold 5 sec.", eq:"None", alt:"Toe raises"},
+  "Toe raises":{cue:"Heels down, lift toes and forefoot, lower slowly.", eq:"None", alt:"Short-foot hold"},
+  "Single-leg Romanian deadlift":{cue:"Hinge on one leg, back leg reaches back, hips square, flat back.", eq:"Light dumbbell", alt:"Romanian deadlift"},
+  "Jump-and-stick":{cue:"Small jump, land soft and quiet on both feet, freeze for 2 sec. Knees over toes.", eq:"None", alt:"Squat to a box"},
+  "Bilateral pogos":{cue:"Two feet, small stiff-ankle bounces, quiet landings. Stop when they get sloppy.", eq:"None", alt:"Low pogo hops"},
+  "Skipping":{cue:"Tall, rhythmic skips, light contacts.", eq:"None", alt:"A-march"},
+  "Line hops":{cue:"Two feet, quick low hops over a line, forward-back or side-side.", eq:"Line on the floor", alt:"Bilateral pogos"},
+  "Single-leg pogos":{cue:"One foot, small stiff-ankle bounces, stay tall. Quality over count.", eq:"None", alt:"Bilateral pogos"},
+  "Low lateral hops":{cue:"Two feet, small hops side to side, land soft and balanced.", eq:"Line or mini hurdle", alt:"Line hops"},
+  "Single-leg landing":{cue:"Small hop forward onto one foot, land soft and stick it 2 sec.", eq:"None", alt:"Jump-and-stick"},
+  "Lateral bounds":{cue:"Push sideways off one leg, land on the other and stick it. Controlled, not maximal.", eq:"None", alt:"Low lateral hops"},
+  "Low hurdle hops":{cue:"Two feet over mini hurdles, quick and springy, short contacts.", eq:"Mini hurdles", alt:"Line hops"},
   "Squat":{cue:"Bodyweight first. Sit back and down, chest tall, knees over toes, stand tall.", eq:"None (light dumbbell later)", alt:"Squat to a box"},
 };
 const LIFTS = {
@@ -2087,11 +2107,11 @@ const LIFTS = {
   MSB:{name:"JH Sprint Strength B", when:"Spring · recovery day, if recovered", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight. Quality reps, never to failure.",
     ex:[["Step-up","2 × 5/leg (low step)",1],["Glute bridge","2 × 8"],["Bird dog","2 × 5/side"],["Side plank","2 × 15 sec/side"]]},
   A1:{name:"Strength A1 · Movement Foundation", when:"Weeks 1–2", rest:"45–75 sec, as needed", note:"Light weights. Technique first: learn the squat, hinge, lunge and calf raise. Stop each set with plenty left in the tank.", ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Reverse lunge","2 × 6 each leg"],["Standing calf raise","2 × 12"],["Dead bug","2 × 8 each side"],["Front plank","2 × 20–30 sec"]]},
-  A2:{name:"Strength A2 · Foundational Progression", when:"Weeks 3 and 6", ex:[["Goblet squat","3 × 6",1],["Dumbbell Romanian deadlift","3 × 8",1],["Step-up","2 × 8/leg"],["Standing calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
-  B1:{name:"Strength B1 · Strength and Stability", when:"Week 7", ex:[["Dumbbell squat","3 × 6",1],["Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Push-up","2 × 10"],["Side plank","2 × 25 sec/side"]]},
+  A2:{name:"Strength A2 · Foundational Progression", when:"Weeks 3 and 6", ex:[["Goblet squat","3 × 6",1],["Dumbbell Romanian deadlift","3 × 8",1],["Step-up","2 × 8/leg"],["Standing calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"],["Short-foot hold","2 × 5 × 5 sec/foot"]]},
+  B1:{name:"Strength B1 · Strength and Stability", when:"Week 7", ex:[["Dumbbell squat","3 × 6",1],["Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg"],["Bent-knee calf raise","2 × 12"],["Straight-knee calf raise","2 × 12"],["Short-lever Copenhagen plank","2 × 15 sec/side"],["Push-up","2 × 10"]]},
   Deload:{name:"Strength Deload", when:"Week 8", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Calf raise","2 × 10"],["Dumbbell row","2 × 8"],["Dead bug","2 × 8/side"]]},
-  B2:{name:"Strength B2 · Progressive Strength", when:"Weeks 9–10", ex:[["Goblet squat","3 × 6 (or front squat)",1],["Dumbbell Romanian deadlift","3 × 6",1],["Reverse lunge","2 × 8/leg (or step-up)"],["Bent-knee calf raise","2 × 12"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
-  M:{name:"Strength M · Maintenance", when:"Week 11 on", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 10"],["Row","2 × 8"],["Dead bug","2 × 8/side"]]},
+  B2:{name:"Strength B2 · Progressive Strength", when:"Weeks 9–10", ex:[["Goblet squat","3 × 6 (or front squat)",1],["Dumbbell Romanian deadlift","3 × 6",1],["Split squat","2 × 8/leg"],["Bent-knee calf raise","3 × 10 (hold a dumbbell when ready)"],["Isometric calf hold","3 × 20 sec"],["Assisted Nordic curl","2 × 4"],["Dumbbell row","2 × 10"],["Pallof press","2 × 10/side"]]},
+  M:{name:"Strength M · Maintenance", when:"Week 11 on", note:"In season (Feb–Apr): one main session a week, 2+ reps in reserve, no big soreness. May–June: 1 set each in heavy race weeks, no new exercises.", ex:[["Goblet squat","2 × 6",1],["Romanian deadlift","2 × 6",1],["Split squat","2 × 6/leg"],["Bent-knee calf raise","2 × 10"],["Hamstring sliders","2 × 6"],["Short-lever Copenhagen plank","2 × 15 sec/side"],["Row","2 × 8"]]},
   H1:{name:"Home strength H1", when:"Winter break, week 1", home:1, ex:[["Bodyweight squat","2 × 10"],["Hip bridge","2 × 12"],["Reverse lunge","2 × 6/leg"],["Calf raise","2 × 15"],["Push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
   JA:{name:"JH Strength A · Foundation", when:"JH weeks 1–2, 6", jh:1, ex:[["Squat","2 × 8",1],["Reverse lunge","2 × 6/leg"],["Hip bridge","2 × 10"],["Calf raise","2 × 12"],["Push-up","2 × 6–10"],["Dead bug","2 × 8/side"]]},
   JB:{name:"JH Strength B · Progression", when:"JH weeks 3, 7, 9–10", jh:1, ex:[["Goblet squat","2 × 8",1],["Dumbbell Romanian deadlift","2 × 8",1],["Step-up","2 × 6/leg"],["Bent-knee calf raise","2 × 12"],["Row","2 × 10"],["Side plank","2 × 20 sec/side"]]},
@@ -3031,7 +3051,7 @@ let DTAGS = {}, dtDraft = null, dtMsg = {kind:"",text:""};
 const LEVEL_NAMES = {A:"Advanced", B:"Intermediate", C:"Developing"};
 const READY = {reduced:"Reduced: shorter workouts", easy:"Easy running only", out:"Not running right now"};
 const CHAMP_NAMES = {conf:"WCJC (conference)", reg:"Regional qualifier", state:"State qualifier"};
-const PATH_NAMES = {Distance:"Distance (1600/3200)", Hybrid:"Hybrid (800/1600)", Mid:"Mid-distance (400/800) · own plan"};
+const PATH_NAMES = {Distance:"Profile C · Distance (1600/3200)", Hybrid:"Profile B · Hybrid (800/1600)", Mid:"Profile A · Mid (400/800) · own plan"};
 // Middle school has no 3200: Distance = 800/1600, Mid-distance = 400/800 (no separate hybrid pathway)
 const PATH_NAMES_JH = {Distance:"Distance (800/1600)", Mid:"Mid-distance (400/800)"};
 // Which HS plan a runner follows: Mid-Distance runners get the Mid Distance group, everyone else the Distance group.
@@ -3562,16 +3582,254 @@ function spaHTML(){
       <li><b>Speed exposure</b> = any day with starts, accelerations or flies. <b>Demanding</b> = sprint endurance, longer reps, split runs and meets.</li>
       <li>Meets come from the schedule (girls' postseason dates). Athletes are assumed entered and advancing; hurdle/jump substitutions and "not entered" alternatives are left out.</li></ul></details></div>`;
 }
-function mdPhilHTML(){ return `<div class="panel"><h2>Our philosophy</h2>
-          <p style="margin:0 0 10px">Two coaching ideas, one program. <b>Jack Daniels</b> builds the engine: aerobic running at each runner's own VDOT paces, controlled threshold work, and steady progress. <b>Tony Holler (Feed the Cats)</b> protects and builds speed: short, fast, fully recovered sprinting, good mechanics, and no junk fatigue.</p>
-          <div class="cols"><div><h3 style="margin:0 0 6px">Build the engine (Daniels)</h3><ul class="exp"><li>Paces from each runner's best race (see Paces)</li><li>Most running is Easy, conversational</li><li>Threshold (Tempo) work that's controlled, not raced</li><li>Add work gradually; recovery is part of the plan</li></ul></div>
-            <div><h3 style="margin:0 0 6px">Feed the speed (Holler)</h3><ul class="exp"><li>Short, fast reps with full recovery</li><li>Mechanics and coordination</li><li>Speed is kept all year, never trained into the ground</li><li>No extra fatigue just to feel tired</li></ul></div>
-            <div><h3 style="margin:0 0 6px">Protect the athlete</h3><ul class="exp"><li>Weight room every winter Tuesday, progressive and light to moderate</li><li>Volume matches each runner's real training history (A/B/C)</li><li>No max lifts, no going to failure</li><li>A fast 5K doesn't mean high mileage</li></ul></div></div></div>
-        <div class="panel"><h2>Three pathways</h2><dl class="inj-dl">
-          <dt>Distance</dt><dd>1600 and 3200. Aerobic consistency, running economy, strength, longer easy and long runs, threshold work once the season starts.</dd>
-          <dt>Hybrid 800/1600</dt><dd>Trains with the Distance group all winter. From Feb 15, branches toward 800 work, mostly on Thursdays, and stays eligible for the 1600.</dd>
-          <dt>Mid-Distance</dt><dd>400, 800, 4×800. Same weekly structure as Distance with shorter runs, more general athleticism and power, and 800-specific work once the season starts.</dd></dl>
-          <p class="note" style="margin:8px 0 0">Coaches set each runner's pathway and level on Coaches → Runner Tags. <b>Find my pace</b> then shows each kid their own version with paces.</p></div>`; }
+/* ===== Track Hub 2.0 · Distance & Mid-Distance (philosophy, library, research, tactics, health, pathway, speed profile, check-ins) ===== */
+const H2_TYPE = {phil:["Coaching philosophy","ty-c"], res:["Peer-reviewed research","ty-r"], cons:["Consensus statement","ty-s"], book:["Coaching book","ty-b"], prac:["Practitioner resource","ty-p"]};
+const h2chip = k => `<span class="h2chip ${H2_TYPE[k][1]}">${H2_TYPE[k][0]}</span>`;
+const H2_FOUND = [
+  {who:"Jack Daniels", role:"Aerobic development and individualized training intensities", k:"phil", primary:1,
+   txt:"The foundation of our distance program. Every runner trains at paces from current fitness (VDOT), not the same speed as everyone else and not a goal time.",
+   pts:["VDOT-based paces for every runner","Easy running builds the aerobic engine","Threshold (Tempo) raises the pace you can hold","Interval (I) work develops aerobic power","Repetition (R) work improves economy and relaxed speed","Volume grows gradually, with recovery between demanding days","Faster is not always better: every pace has a job"]},
+  {who:"Tony Holler · Feed the Cats", role:"Speed, maximum velocity and fatigue management", k:"phil",
+   txt:"Distance runners are still athletes. A higher top speed means race pace uses a smaller share of what you have.",
+   pts:["Short accelerations and flying sprints","Full recovery between speed reps","Time and record sprints","Low volume, high quality, relaxed mechanics","No junk fatigue: speed days are never conditioning"]},
+  {who:"Peter Coe & Frank Horwill", role:"Multi-pace middle-distance development", k:"phil",
+   txt:"Runners need qualities faster and slower than race pace. An 800 runner doesn't only run 800 pace; a 1600 runner still touches faster speeds and longer aerobic work.",
+   pts:["Several intensities in every training cycle","Aerobic support kept during race-specific phases","Speed all year","Event profiles built on each runner's strengths and gaps"]},
+  {who:"Renato Canova", role:"Progressive race-specific endurance", k:"phil",
+   txt:"Rather than repeating the same session, runners gradually extend how long they can hold race-specific speed: for example 300s, then 400s, then 600s and longer, by event and readiness.",
+   pts:["Extend rep length, total volume or recovery: one at a time","General preparation first, specific preparation later","Foundational fitness kept while specificity rises","No elite adult volumes or extreme sessions"]},
+  {who:"Stephen Seiler", role:"Training intensity distribution", k:"res",
+   txt:"Most endurance training is done easy, with hard sessions placed so they cause adaptation without piling up fatigue.",
+   pts:["Easy days stay genuinely easy","Limit drifting into moderate 'grey zone' running","Races count as hard sessions","Recovery between demanding days","No rigid 80/20 for every runner: middle-distance needs differ"]},
+  {who:"Gareth Sandford", role:"Physiological profiling (anaerobic speed reserve)", k:"res",
+   txt:"Two runners with the same 800 PR can have very different mixes of sprint speed and aerobic speed. The speed reserve helps describe the athlete, not pick their event.",
+   pts:["Anaerobic speed reserve = max sprint speed − maximal aerobic speed","Speed reserve ratio = max sprint speed ÷ maximal aerobic speed","Speed-dominant → balanced → aerobic-dominant continuum","Developmental indicator only: elite thresholds aren't validated for high schoolers"]},
+  {who:"Vern Gambetta", role:"Complete athletic development", k:"phil",
+   txt:"Develop the whole athlete, not just event fitness.",
+   pts:["Coordination, balance, strength, power","Elasticity and mobility","Multidirectional movement and proprioception","Landing and deceleration mechanics"]},
+  {who:"Rhodri Lloyd & Jon Oliver", role:"Long-term youth athlete development (6th–12th)", k:"res",
+   txt:"Kids develop at different rates. Age, maturity, training history and movement skill are considered separately. Younger athletes are not scaled-down varsity runners.",
+   pts:["Developmentally appropriate, progressive training","Resistance training and movement skill early","Individual progression; growth and maturation considered","No early specialization; enjoyment and retention matter"]},
+];
+const H2_EMPH = [["Maximum velocity","Very high","High","Moderate"],["Acceleration","Very high","High","Moderate"],["Speed endurance","Very high","High","Selective"],["Threshold","Selective","High","Very high"],["Aerobic power","Moderate","High","High"],["Aerobic volume","Lower","Moderate–high","Higher"],["Race-specific endurance","Very high","Very high","Very high"],["Strength and power","Very high","High","High"]];
+const H2_CHAMP = [["Indoor qualifying meets","Developmental competition and qualification"],["HSR Finals","Competitive performance checkpoint: no dedicated taper"],["Outdoor dual meets","Developmental competition"],["Outdoor invitationals","Selective performance opportunities"],["Conference","Team performance priority: no automatic full taper"],["Sectionals","Individualized qualification preparation"],["Regionals","Championship preparation"],["State","Primary seasonal peak (individualized taper)"]];
+function mdPhilHTML(){
+  return `<div class="panel"><h2>Our philosophy</h2>
+      <p style="margin:0 0 8px"><b>Build the engine. Develop the speed. Extend the ability to sustain it. Protect the athlete. Peak when it matters.</b></p>
+      <p style="margin:0 0 8px">Benton Central is a research-informed athlete development program for 6th through 12th grade. <b>Jack Daniels</b> is our primary foundation, supplemented by <b>Tony Holler's Feed the Cats</b>. Six other coaches and researchers each contribute one piece. They aren't separate systems; each one has a job in the same framework.</p>
+      <p class="note" style="margin:0">We're building runners who keep improving all four years of high school, not chasing early-season times. The science guides our decisions; the individual athlete decides how it's applied.</p></div>
+    <div class="libgrid">${H2_FOUND.map(f=>`<div class="panel libcard"><h3 style="margin:0 0 2px">${esc(f.who)}${f.primary?` <span class="tchip">Primary foundation</span>`:""}</h3>
+      <p class="muted" style="margin:0 0 6px">${esc(f.role)} ${h2chip(f.k)}</p><p style="margin:0 0 6px">${esc(f.txt)}</p><ul class="exp">${f.pts.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`).join("")}</div>
+    <div class="panel"><h2>The Benton Central integrated model</h2><div class="tbl"><table><thead><tr><th>Foundation</th><th>What it contributes</th><th>Type</th></tr></thead><tbody>
+      ${H2_FOUND.map(f=>`<tr><td><b>${esc(f.who)}</b></td><td>${esc(f.role)}</td><td>${h2chip(f.k)}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:8px 0 0">Coaching philosophies are proven practice from successful coaches; they aren't all tested in controlled experiments. Peer-reviewed research and consensus statements are marked separately. Our program combines both, adapted for teenagers. See the <b>Research</b> tab for every source.</p></div>
+    <div class="panel"><h2>Three event pathways</h2><p style="margin:0 0 8px">Pathways flex through the season and across years. Coaches set each runner's pathway on Coaches → Runner Tags.</p>
+      <dl class="inj-dl"><dt>Profile A · 400/800 (speed-oriented)</dt><dd>Max velocity, acceleration, speed endurance, power and event endurance, with appropriate aerobic support. Lower running volume. Trains in the Mid-Distance group.</dd>
+        <dt>Profile B · 800/1600 (hybrid)</dt><dd>A real aerobic base plus threshold, regular max-velocity work, 800 rhythm, aerobic power and race-specific endurance. Trains with Distance; Thursday is usually the 800 day.</dd>
+        <dt>Profile C · 1600/3200 (distance)</dt><dd>Aerobic volume, threshold, aerobic power, economy, race-specific endurance, strength and elasticity. Speed never disappears.</dd></dl>
+      <div class="tbl"><table><thead><tr><th>Component</th><th>400/800</th><th>800/1600</th><th>1600/3200</th></tr></thead><tbody>${H2_EMPH.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:8px 0 0">Relative emphasis, not literal workout volume.</p></div>
+    <div class="cols">
+      <div class="panel"><h2>Every runner, six separate ratings</h2><p style="margin:0 0 6px">One label doesn't decide everything. A runner can be Advanced in VDOT, Intermediate in volume, Developing in the weight room, and Advanced in sprint development, all at once.</p>
+        <div class="tbl"><table><tbody>${[["Pace","Current VDOT and race performances"],["Volume (A/B/C)","Recent training history and tolerance: this decides workout length"],["Event profile","Physiological profile and goals"],["Strength","Movement skill and lifting experience"],["Speed","Sprint experience and measured velocity"],["Readiness","Recovery and current status"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
+        <p class="note" style="margin:6px 0 0">An advanced performer doesn't automatically get advanced volume. Volume comes from the last 3–4 weeks of running, XC history, time off, other sports, injuries, growth and how well consecutive days are tolerated. New runners can start with 3–4 running days a week, including run/walk.</p></div>
+      <div class="panel"><h2>Hard days and easy days</h2><ul class="exp">
+        <li>Competition counts as a hard day, sized by events, effort and number of races.</li>
+        <li>Most weeks: two substantial quality or race days is enough.</li>
+        <li>No back-to-back demanding metabolic workouts.</li>
+        <li>Short max-velocity work is its own neuromuscular stimulus, not an "easy" day.</li>
+        <li>Two-meet weeks: the meets are the workouts. Easy running continues; no added interval session.</li>
+        <li>Never add a threshold or interval session just because a weekly target was missed.</li>
+        <li>Threshold every 7–10 days for established distance runners when the schedule allows.</li></ul></div></div>
+    <div class="panel"><h2>Championship hierarchy</h2><div class="tbl"><table><tbody>${H2_CHAMP.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:8px 0 0">HSR is a checkpoint inside ongoing development: normal training that week, sensible pre-race preparation, no week-long taper and no automatic team recovery week after. State is the peak.</p></div>`;
+}
+
+/* ---- Distance & threshold workout library (11-part descriptions) ---- */
+const DLIB_DEF = {wu:"10–15 min Easy, then dynamic mobility", dr:"A-skips, dribbles, 3–4 relaxed strides", cd:"10–15 min Easy", stop:"Pain that changes your stride, dizziness, or reps slowing well off pace: stop and tell a coach."};
+const DLIB = [
+  {n:"BC Cruise Intervals", cat:"Threshold", p:"Raise the pace you can hold (threshold) with short breaks so form stays good.", w:"A: 4 × 5 min · B: 3 × 5 min · C: 2 × 4–5 min", i:"Tempo (Paces page)", r:"60–90 sec easy jog", mod:"New or returning runners start with 2 × 4 min.", cue:"Comfortably hard. Finish able to do one more. Don't race teammates.", alt:"BC Continuous Tempo"},
+  {n:"BC Threshold 1000s", cat:"Threshold", p:"Threshold work in a measurable rep you can compare across the season.", w:"A: 4–6 × 1000m · B: 3–4 × 1000m · C: 2–3 × 1000m (or 4-min reps). Rep count follows total Tempo time (A 18–25, B 12–18, C 8–12 min).", i:"Tempo", r:"60–75 sec jog", mod:"Heat, wind or race fatigue: drop a rep.", cue:"Even splits. Compare with your last threshold session, not a 300s day.", alt:"Cruise Intervals by time"},
+  {n:"BC Continuous Tempo", cat:"Threshold", p:"Sustained threshold effort: rhythm and focus.", w:"A: 18–25 min · B: 12–18 min · C: 8–12 min", i:"Tempo", r:"None", mod:"Hills or wind: run by effort, not pace.", cue:"Settle in by minute 3. Same effort start to finish.", alt:"BC Broken Tempo"},
+  {n:"BC Broken Tempo", cat:"Threshold", p:"Threshold volume in shrinking blocks, so the end stays controlled.", w:"8 min · 2 min easy · 6 min · 2 min easy · 4 min (A). B: 6–5–3. C: 5–4.", i:"Tempo", r:"2 min Easy between blocks", mod:"Scale blocks by level.", cue:"The blocks get shorter, not faster.", alt:"Cruise Intervals"},
+  {n:"BC Threshold Maintenance", cat:"Threshold", p:"Keep threshold fitness in race weeks without adding a hard day.", w:"2–3 × 5 min", i:"Tempo, controlled", r:"60–90 sec jog", mod:"Replaces another session; never an extra one.", cue:"Smooth and easy to stop.", alt:"Easy run + strides"},
+  {n:"BC 300s / 400s at 3200 pace", cat:"Aerobic power", p:"Stage 1–2 of aerobic power: rhythm and introductory intervals.", w:"6–8 × 300m or 5–6 × 400m (fewer for C)", i:"Current 3200 pace", r:"60 sec (300s) to 75 sec (400s) jog", mod:"Developing runners: fewer reps, not shorter recovery.", cue:"Every rep the same.", alt:"3 × 3 min at 3200 effort"},
+  {n:"BC I-Pace 600s / 800s / 1000s", cat:"Aerobic power", p:"Stages 3–5: aerobic power (VO₂ max) with 2–5 min reps.", w:"600s: 3–5 · 800s: 3–4 · 1000s: 3–4 (by level)", i:"Interval (I) pace", r:"About equal to the rep, easy jog", mod:"Never lengthen reps and add volume at the same time. Nobody has to reach stage 5.", cue:"Hard but controlled. Don't turn it into a race.", alt:"Time-based: 3–4 × 3 min at I effort"},
+  {n:"BC 7-Minute Ladder", cat:"Aerobic power", p:"Continuous pace changes: rhythm, gears and staying relaxed.", w:"Surges 15–30–45–60–45–30–15 sec (4:00) with six 30-sec floats (3:00) = 7:00. A distance: 2 sets.", i:"Short surges at 1600 effort, long at 3200 effort", r:"Floats are jogs; 5 min easy between sets", mod:"400-focused: 15–30–45–30–15 with four floats = 4:15.", cue:"The last 15 should be your fastest.", alt:"Fartlek by feel"},
+  {n:"BC 3200 Ladder", cat:"Race-specific", p:"Race-specific endurance for the 3200: longer reps at goal-free current pace.", w:"A: 200–400–600–800–600–400–200 · B: drop the 800 · C: 200–400–600–400–200", i:"Current 3200 pace", r:"60 sec after 200/400, 90 sec after 600, 2 min after 800", mod:"Raced hard this week: cut the middle rep.", cue:"Even and relaxed. No racing.", alt:"300s at 3200 pace"},
+  {n:"BC Michigan", cat:"Race-specific", p:"Mixed paces, each rep a little faster: multi-pace work for hybrids.", w:"A: 1200 T · 800 I · 400 at 1600 · 200 at 800 · B: 1000 T · 600 I · 400 · 200 · C: 800 T · 400 I · 200", i:"Tempo → Interval → 1600 → 800 pace", r:"2–4 min jog/walk, longer as it gets faster", mod:"Record every split.", cue:"Nobody races the first rep.", alt:"Cruise Intervals"},
+  {n:"BC Event Reps", cat:"Race-specific", p:"Current race-pace rhythm for your event.", w:"300s at 1600 or 3200 pace (4–8 reps); 800: 3–4 × 300m", i:"Current race pace, never goal pace", r:"60 sec–3 min by pace", mod:"Fewer reps in race weeks.", cue:"Smooth at pace; finish wanting one more.", alt:"200s at 800 pace"},
+  {n:"BC Broken Race", cat:"Race-specific", p:"Specific preparation: race distance in segments with short rests.", w:"800: 200–400–200 or 400–300 or 500–300 · 400: 300 + 100", i:"Current race pace", r:"60 sec–3 min between segments", mod:"One set only. Use selectively in busy race stretches.", cue:"Practice the third 200.", alt:"Event Reps"},
+  {n:"BC Mystery Workout", cat:"Threshold", p:"Same threshold work, different format: you don't pick until the line.", w:"A: 3 × 6 / 6 × 3 / 9 × 2 min = 18 min · B: 15 min · C: 10 min", i:"Tempo", r:"45–120 sec jog by format", mod:"Each card in a level is the same total Tempo time.", cue:"Adapt and stay controlled.", alt:"Cruise Intervals"},
+  {n:"BC Flyers", cat:"Max velocity", p:"Top speed with full recovery.", w:"Development: 2–3 × 30m accel + 2–3 × flying 10–20m · Maintenance: 2 × 30m + 2 × flying 20m · Experienced speed: 3–4 × 30m + 3–4 × flying 20–30m", i:"Fast and relaxed, near max", r:"3–5 min (full)", mod:"Scaled by preparation, not event group.", cue:"Tall, quick, relaxed face. Stop when mechanics slip.", alt:"Strides", dr:"Full sprint warm-up and progressive drills"},
+  {n:"BC Track Accelerations", cat:"Acceleration", p:"Acceleration mechanics on the track, fresh.", w:"4–8 × 40m progressive (near max by 30m)", i:"Progressive to near max", r:"Walk back + 60–90 sec", mod:"Cold or wet: shorten or move inside.", cue:"Push, don't reach. Speed, not strain.", alt:"Hill-free flat accelerations, 8–10 sec"},
+];
+const DLIB_TY = {"Threshold":"aero","Aerobic power":"race","Race-specific":"race","Max velocity":"speed","Acceleration":"speed"};
+function dlibHTML(){
+  return `<div><h2 style="margin:6px 0 4px">Distance &amp; hybrid workout library</h2><p class="note" style="margin:0 0 10px">Every workout has one primary purpose. Paces come from each runner's current fitness (Paces page), never a goal time.</p>
+    <div class="libgrid">${DLIB.map(x=>`<div class="panel libcard"><h3><span class="wcode ty-${DLIB_TY[x.cat]}">${esc(x.cat)}</span>${esc(x.n)}</h3>
+      <dl><dt>Purpose</dt><dd><b>${esc(x.p)}</b></dd><dt>Warm-up</dt><dd>${esc(x.wu||DLIB_DEF.wu)}</dd><dt>Drills</dt><dd>${esc(x.dr||DLIB_DEF.dr)}</dd><dt>Workout</dt><dd>${esc(x.w)}</dd><dt>Intensity</dt><dd>${esc(x.i)}</dd>
+      <dt>Recovery</dt><dd>${esc(x.r)}</dd><dt>Modify</dt><dd>${esc(x.mod)}</dd><dt>Cool-down</dt><dd>${esc(x.cd||DLIB_DEF.cd)}</dd><dt>Cues</dt><dd>${esc(x.cue)}</dd><dt>Alternative</dt><dd>${esc(x.alt)}</dd><dt>Stop if</dt><dd>${esc(DLIB_DEF.stop)}</dd></dl></div>`).join("")}</div>
+    <div class="panel"><h3 style="margin:0 0 6px">Aerobic power progression (a menu, not a weekly ladder)</h3><div class="tbl"><table><thead><tr><th>Stage</th><th>Example</th><th>Emphasis</th></tr></thead><tbody>
+      ${[["1","6–8 × 300m at current 3200 pace","Rhythm, introductory intervals"],["2","5–6 × 400m at current 3200 pace","Aerobic rhythm and endurance"],["3","4–5 × 600m at I pace","Aerobic power"],["4","3–4 × 800m at I pace","Sustained aerobic power"],["5","3–4 × 1000m at I pace","Extended aerobic stimulus"]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:6px 0 0">3200-pace reps, I-pace intervals, threshold, R-pace reps and 1600/800 race work are different stimuli and aren't interchangeable. Daniels' guideline: I-pace volume stays a small share of weekly running.</p></div></div>`;
+}
+
+/* ---- Strength & plyometric progression panels ---- */
+function h2StrengthHTML(){
+  return `<div class="panel"><h3 style="margin:0 0 6px">Strength phases</h3><div class="tbl"><table><thead><tr><th>Phase</th><th>When</th><th>Focus</th></tr></thead><tbody>
+      ${[["1 · Movement foundations","December","Learn squat, hinge, lunge, calf raise. Light to moderate, usually 2 sets, never to failure. (A1 → A2)"],["2 · Strength development","January–February","Add load when technique allows, harder single-leg work, loaded calf work, posterior chain. 2–3 sets. (B1 → B2)"],["3 · In-season strength","February–April","Keep what you built: one main session a week plus optional short extras. No big soreness. (M)"],["4 · Maintenance","May–June","Less volume, same quality. No new hard exercises. Adjusted to each runner's races."]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:6px 0 0">About 2+ reps in reserve, no max attempts, and load doesn't go up just because the calendar does. Library targets: quads (goblet squat, split squat, step-up) · glutes (reverse lunge, single-leg bridge) · posterior chain (RDL, single-leg RDL) · hamstrings (assisted Nordic, sliders) · soleus (bent-knee calf raise) · gastrocnemius (straight-knee calf raise) · Achilles (isometric calf holds) · hips (band walks, single-leg work) · adductors (short-lever Copenhagen) · trunk (dead bug, side plank, Pallof press) · upper body (push-up, row) · feet (short-foot, toe raises, balance).</p></div>
+    <div class="panel"><h3 style="margin:0 0 6px">Plyometric &amp; elastic progression</h3><div class="tbl"><table><thead><tr><th>Phase</th><th>When</th><th>Exercises</th></tr></thead><tbody>
+      ${[["1 · Elastic foundations","December","Bilateral pogos, skipping, jump-and-stick, low line hops, single-leg balance, landing mechanics"],["2 · Single-leg elasticity","January","Single-leg pogos, low lateral hops, low box jumps, single-leg landings, controlled lateral bounds"],["3 · Reactive strength","February–March","Low hurdle hops, repeated jumps, introductory bounding, reactive ankle hops, medicine-ball power"],["4 · Maintenance & transfer","April–June","Low-volume pogos, short hop sequences, selected bounds, minimal fatigue"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div>
+      <ul class="exp"><li>Do jumps before you're tired; count approximate contacts.</li><li>Sprinting and running count as leg loading too.</li><li>Harder only after the easier version looks clean.</li><li>Cut jump volume during growth spurts, pain or heavy racing.</li><li>No high drop jumps for inexperienced athletes. Never as punishment or conditioning.</li></ul></div>`;
+}
+
+/* ---- Research & Training Foundations ---- */
+const H2_RES = [
+  ["Aerobic development", [["Jack Daniels","Daniels' Running Formula (and VDOT calculator)","","book","The source of our VDOT paces and training intensities.","https://vdoto2.com/calculator/"]]],
+  ["Speed development", [["Tony Holler","Feed the Cats","","prac","Speed training philosophy: fast, fully rested, timed.","https://feedthecats.com/"]]],
+  ["Middle-distance development", [["Haugen, Sandbakk, Enoksen, Seiler & Tønnessen","Crossing the Golden Training Divide: The Science and Practice of Training World-Class 800- and 1500-m Runners. Sports Medicine 51:1835–1854","2021","res","Review of how elite 800/1500 runners train; describes runner types on a 400–5000m continuum.","https://doi.org/10.1007/s40279-021-01481-2"],
+    ["David Martin & Peter Coe","Better Training for Distance Runners","","book","Multi-pace training for middle distance.",""],["British Milers' Club","Coaching resources","","prac","Middle-distance coaching education.","https://www.britishmilersclub.com/"]]],
+  ["Training intensity distribution", [["Stephen Seiler","What is Best Practice for Training Intensity and Duration Distribution in Endurance Athletes? IJSPP 5(3):276–291","2010","res","Why most training is easy and hard days are placed carefully.","https://doi.org/10.1123/ijspp.5.3.276"]]],
+  ["Anaerobic speed reserve", [["Sandford, Allen, Kilding, Ross & Laursen","Anaerobic Speed Reserve: A Key Component of Elite Male 800-m Running. IJSPP 14(4):501–508","2019","res","Defines ASR and the speed reserve ratio and describes 800 runner sub-groups (elite adults).","https://pubmed.ncbi.nlm.nih.gov/30300023/"]]],
+  ["Long-term youth development", [["Lloyd & Oliver","The Youth Physical Development Model: A New Approach to Long-Term Athletic Development. Strength & Conditioning Journal 34(3):61–72","2012","res","Framework for training kids through growth and maturation.","https://doi.org/10.1519/SSC.0b013e31825760ea"],
+    ["Bergeron et al. (IOC)","International Olympic Committee consensus statement on youth athletic development. BJSM 49:843–851","2015","cons","Health, enjoyment and long-term participation; avoiding early specialization.","https://bjsm.bmj.com/content/49/13/843"]]],
+  ["Youth running", [["Krabak et al.","Youth running consensus statement: minimising risk of injury and illness in youth runners. BJSM 55:305–318","2021","cons","Injury and illness risk factors, training and nutrition recommendations for youth runners.","https://pubmed.ncbi.nlm.nih.gov/33122252/"]]],
+  ["Strength training for runners", [["Llanos-Lagos, Ramirez-Campillo, Moran & Sáez de Villarreal","The Effect of Strength Training Methods on Middle-Distance and Long-Distance Runners' Athletic Performance: A Systematic Review with Meta-analysis. Sports Medicine 54:1801–1833","2024","res","Strength training improves distance performance; combined methods may help most. Adult and late-teen runners (17–40), so we adapt it.","https://doi.org/10.1007/s40279-024-02018-z"],
+    ["Lloyd et al.","Position statement on youth resistance training: the 2014 International Consensus. BJSM 48:498–505","2014","cons","Supervised, progressive resistance training is safe and useful for youth.","https://doi.org/10.1136/bjsports-2013-092952"]]],
+  ["Athlete health & energy availability", [["Mountjoy et al. (IOC)","2023 IOC consensus statement on Relative Energy Deficiency in Sport (REDs). BJSM 57:1073–1097","2023","cons","Underfueling, bone health and menstrual health in athletes.","https://doi.org/10.1136/bjsports-2023-106994"]]],
+  ["Athletic development & other coaching literature", [["Vern Gambetta","Athletic Development: The Art & Science of Functional Sports Conditioning","2007","book","Complete athletic development: coordination, elasticity, movement skill.",""],
+    ["Renato Canova","Published coaching materials","","prac","Progressive race-specific endurance. Original materials to be added once verified.",""]]],
+];
+function h2ResearchHTML(){
+  return `<div class="panel"><h2>Research &amp; Training Foundations</h2><p style="margin:0">Organized by topic. Each source is labeled as peer-reviewed research, a consensus statement, a coaching book or a practitioner resource. Our program combines scientific evidence, established coaching practice and developmentally appropriate adaptation. Not every coaching idea has been tested in controlled experiments, and adult research is adapted for teenagers.</p></div>
+    ${H2_RES.map(([topic, list])=>`<div class="panel"><h3 style="margin:0 0 8px">${esc(topic)}</h3>${list.map(([who,title,yr,k,why,url])=>`<div style="margin:0 0 10px"><b>${esc(who)}</b>${yr?` (${yr})`:""} ${h2chip(k)}<div>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(title)} ↗</a>`:`<i>${esc(title)}</i>`}</div><div class="muted">${esc(why)}</div></div>`).join("")}</div>`).join("")}
+    <p class="note">Links checked Nov 2026. We link to sources; we don't reproduce books or articles here.</p>`;
+}
+
+/* ---- Race tactics ---- */
+const H2_TAC = [["800m",["Know your starting position and the break line","Get to a good position without wasting energy","Pace the first lap; no panic surges","Stay committed through the third 200","Finish: drive arms, stay tall"]],
+  ["1600m",["Sensible opening pace","Run efficiently in the pack","Keep contact; don't let gaps open","Respond to moves calmly","Be in position before the last lap","Use your kick"]],
+  ["3200m",["Pace discipline from the gun","Concentrate in the middle laps","Handle rhythm changes","Run efficiently in traffic","Hold contact through the middle","Know when to start your progressive finish"]],
+  ["4×800 & 4×400",["Baton exchange mechanics","Incoming and outgoing runners talk","Know the exchange zone","Run in traffic with control","Run your race plan, not someone else's","Stay composed"]]];
+function h2TacticsHTML(){
+  return `<div class="panel"><h2>Race tactics &amp; competitive development</h2><p style="margin:0">Fitness lets you race; tactics let you race well. Tactical work is built into existing workouts (positioning, pace changes, exchanges) so it doesn't add fatigue. Relay practice runs through the whole calendar, not just the week before championships.</p></div>
+    <div class="libgrid">${H2_TAC.map(([ev,pts])=>`<div class="panel libcard"><h3 style="margin:0 0 6px">${ev}</h3><ul class="exp">${pts.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`).join("")}</div>
+    <div class="panel"><h3 style="margin:0 0 6px">Film review</h3><p style="margin:0">A few short race-analysis sessions a season. Look for good positioning, pacing mistakes, how runners respond to moves, relaxed mechanics and strong finishes.</p></div>`;
+}
+
+/* ---- Athlete health (education only: no health data is collected here) ---- */
+function h2HealthHTML(){
+  return `<div class="panel"><h2>Athlete health &amp; sustainable training</h2><p style="margin:0">Healthy runners keep improving. This page is education only; nothing here collects health information. Questions or concerns go to Coach, our athletic trainer, or your doctor.</p></div>
+    <div class="cols"><div class="panel"><h3 style="margin:0 0 6px">Fuel the work</h3><ul class="exp"><li><b>Eat enough.</b> Training needs energy. Underfueling slows progress and raises injury risk.</li><li><b>Carbohydrates</b> power hard running. Eat before and after practice.</li><li><b>Protein</b> helps recovery: some at every meal.</li><li><b>Hydration</b> all day, not just at practice.</li><li><b>Iron</b> carries oxygen. Runners, especially girls, can run low; a doctor can check.</li><li><b>Calcium and vitamin D</b> build bone during the teen years.</li></ul></div>
+      <div class="panel"><h3 style="margin:0 0 6px">Recover and grow</h3><ul class="exp"><li><b>Sleep</b> 8–10 hours. Teen bodies do their growing and recovering at night.</li><li>Growth spurts can make you clumsy for a while and tissues less tolerant. That's normal; we adjust.</li><li><b>Menstrual health:</b> missing periods is not normal for athletes and is worth a doctor's visit. You can talk to any coach or the athletic trainer.</li><li>After illness or injury, return gradually with the athletic trainer's OK.</li></ul></div></div>
+    <div class="cols"><div class="panel"><h3 style="margin:0 0 6px">REDs: Relative Energy Deficiency in Sport</h3><p style="margin:0">When you don't eat enough for the training you do, the body cuts back: slower recovery, more injuries and bone stress, missed periods, low energy, getting sick more. It can happen to anyone, boys included, often without trying to lose weight. It's fixable with more fuel and support.</p></div>
+      <div class="panel"><h3 style="margin:0 0 6px">Stop and get it checked</h3><ul class="exp"><li>Pain in one spot on a bone</li><li>Pain with impact (hopping, landing)</li><li>Pain that changes how you run</li><li>Pain that gets worse as you keep going</li></ul><p class="note" style="margin:6px 0 0">Stop that activity and see the athletic trainer. Reporting pain early is smart, not soft.</p></div></div>
+    <div class="panel"><h3 style="margin:0 0 6px">How our coaches handle this</h3><ul class="exp"><li>We never promote weight loss as a way to run faster.</li><li>No team weigh-ins, no body-composition tracking, no leaderboards about bodies.</li><li>We encourage fueling around training and never restrictive eating.</li><li>Medical concerns go to the athletic trainer or a healthcare professional.</li><li>Health information isn't posted on the Hub or collected here.</li></ul></div>`;
+}
+
+/* ---- 6th–12th developmental pathway ---- */
+function h2PathwayHTML(){
+  return `<div class="panel"><h2>6th–12th grade pathway</h2><p style="margin:0 0 8px">One philosophy, shared words and the same exercise progressions from junior high through high school. Junior high runners are not scaled-down varsity runners.</p>
+      <div class="tbl"><table><thead><tr><th>Stage</th><th>Primary emphasis</th></tr></thead><tbody>${[["Grades 6–7","Enjoyment, coordination, movement skill, speed exposure"],["Grades 8–9","General conditioning, foundational strength, introductory race development"],["Grades 10–11","Progressive event-specific development, individualized training"],["Grade 12","Advanced preparation based on training history and goals"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note" style="margin:6px 0 0">General guidelines: readiness and experience come first.</p></div>
+    <div class="panel"><h3 style="margin:0 0 6px">Key principles</h3><ul class="exp"><li>No early specialization; try multiple events and sports</li><li>Strength training starts early, technique first</li><li>Speed and coordination stay in every year</li><li>Running volume grows gradually</li><li>Athletes learn why they train the way they do</li><li>Enjoyment keeps kids in the sport</li><li>Prepared younger athletes can move up when it's justified</li></ul></div>`;
+}
+
+/* ---- Speed profile (coach only; hub key "speedprof", private) ---- */
+let SPEED = {}, spDraft = null, spMsg = {kind:"",text:""};
+const vvo2 = V => { const a = 0.000104, b = 0.182258, c = -4.60 - V; return (-b + Math.sqrt(b*b - 4*a*c)) / (2*a) / 60; };   // m/s at VO2max from VDOT (Daniels' oxygen-cost equation)
+function spRow(a){
+  const e = (spDraft||SPEED)[a.id] || {}, b = athleteVdot(a);
+  const fl = [[10,+e.f10],[20,+e.f20],[30,+e.f30]].filter(([,t]) => isFinite(t) && t > 0.8 && t < 6).map(([d,t]) => d/t);
+  const mss = fl.length ? Math.max(...fl) : null, mas = isFinite(+e.mas) && +e.mas > 2 ? +e.mas : (b ? vvo2(b.V) : null);
+  const vel = ev => { const s = a.prs[ev] ? tSec(String(a.prs[ev]).replace(/[hc]$/,"")) : NaN; return isFinite(s) ? RACE_M[ev]/s : null; };
+  return {a, e, mss, mas, masSrc: isFinite(+e.mas) && +e.mas > 2 ? "coach entry" : "est. from VDOT", asr: mss&&mas ? mss-mas : null, srr: mss&&mas ? mss/mas : null, v400: vel("400"), v800: vel("800"), v1600: vel("1600")};
+}
+function spSet(id, k, v){ if (!spDraft) spDraft = JSON.parse(JSON.stringify(SPEED)); spDraft[id] = Object.assign({}, spDraft[id], {[k]: v}); }
+async function spSave(){ if (!spDraft) return; saving = true; render();
+  try { await saveKey("speedprof", spDraft); SPEED = spDraft; spDraft = null; spMsg = {kind:"ok", text:"Saved. Only coaches can see speed profiles."}; }
+  catch(e) { spMsg = {kind:"err", text: e && e.code==="conflict" ? "Another coach saved first. Reloaded: re-enter your change." : "Couldn't save. Run hub2_monitoring.sql in Supabase first, then try again."}; }
+  saving = false; render(); }
+function h2SpeedHTML(){
+  if (!canPost) return `<div class="panel"><p style="margin:0">Coaches only.</p></div>`;
+  const rows = ATHLETES.filter(a => a.level==="HS" && (a.cats.includes("Distance")||a.cats.includes("Mid Distance"))).map(spRow).sort((x,y)=>x.a.name.localeCompare(y.a.name));
+  const srrs = rows.map(r=>r.srr).filter(Boolean).sort((x,y)=>x-y);
+  const pos = s => srrs.length > 2 ? Math.round(100 * srrs.filter(x=>x<s).length / (srrs.length-1)) : null;
+  const f2 = x => x==null ? "—" : x.toFixed(2), pct = (v,m) => v&&m ? Math.round(100*v/m)+"%" : "—";
+  const inp = (id,k,ph,w=56) => `<input type="text" inputmode="decimal" aria-label="${esc(ph)}" placeholder="${esc(ph)}" style="width:${w}px" value="${esc(((spDraft||SPEED)[id]||{})[k]||"")}" onchange="spSet('${id}','${k}',this.value.trim())">`;
+  return `<div class="panel"><h2>Athlete speed profile</h2><p style="margin:0 0 6px">How sprint speed and aerobic speed combine for each runner. A coaching tool, not an event assignment.</p>
+      <ul class="exp"><li><b>Max sprint speed (estimate)</b> = flying distance ÷ flying time (best of your entries).</li><li><b>Maximal aerobic speed</b>: coach-entered if measured; otherwise estimated as velocity at VO₂ max from current VDOT (Daniels' equation). That estimate is not a measured MAS and can be off, especially for 800-only runners.</li><li><b>Anaerobic speed reserve</b> = MSS − MAS · <b>Speed reserve ratio</b> = MSS ÷ MAS.</li><li>The continuum is relative to this team only. Elite adult cutoffs aren't validated for high schoolers, so none are applied.</li><li>Testing replaces other hard training that day. Record the date, timing method and conditions.</li></ul></div>
+    <div class="panel ed"><div class="tbl"><table><thead><tr><th>Runner</th><th>Fly 10m (s)</th><th>Fly 20m (s)</th><th>Fly 30m (s)</th><th>Date</th><th>Timing</th><th>Conditions</th><th>MAS m/s (if measured)</th><th>MSS m/s</th><th>MAS m/s</th><th>ASR</th><th>SRR</th><th>400 / 800 / 1600 avg m/s (% of MSS)</th><th>Speed ← → Aerobic</th></tr></thead><tbody>
+      ${rows.map(r=>{ const p = r.srr ? pos(r.srr) : null; return `<tr><td><b>${esc(r.a.name)}</b><div class="muted">${r.a.g==="B"?"Boys":"Girls"} · ${r.a.grade??"—"}</div></td>
+        <td>${inp(r.a.id,"f10","1.35")}</td><td>${inp(r.a.id,"f20","2.60")}</td><td>${inp(r.a.id,"f30","3.80")}</td><td>${inp(r.a.id,"d","Mar 1",64)}</td><td>${inp(r.a.id,"m","hand / laser / gates",90)}</td><td>${inp(r.a.id,"c","indoor, calm",90)}</td><td>${inp(r.a.id,"mas","",50)}</td>
+        <td class="mono">${f2(r.mss)}</td><td class="mono" title="${esc(r.masSrc)}">${f2(r.mas)}${r.mas&&r.masSrc!=="coach entry"?"*":""}</td><td class="mono">${f2(r.asr)}</td><td class="mono">${f2(r.srr)}</td>
+        <td class="mono">${[r.v400,r.v800,r.v1600].map(v=>v?`${v.toFixed(2)} (${pct(v,r.mss)})`:"—").join(" · ")}</td>
+        <td>${p==null?`<span class="muted">needs data</span>`:`<div class="sp-bar" aria-label="${p}% toward aerobic"><i style="left:${p}%"></i></div><div class="muted">${p<34?"Speed-leaning":p<67?"Balanced":"Aerobic-leaning"} (team-relative)</div>`}</td></tr>`; }).join("")}</tbody></table></div>
+      <div class="ed-save sticky"><button type="button" class="btn primary" onclick="spSave()" ${saving||!spDraft?"disabled":""}>${saving?"Saving…":"Save speed profiles"}</button><span class="ed-msg ${spMsg.kind}" role="status">${esc(spMsg.text)}</span></div>
+      <p class="note" style="margin:6px 0 0">* MAS estimated from VDOT. Speed-leaning means a high speed reserve ratio compared with teammates; aerobic-leaning means a low one. Neither is better.</p></div>`;
+}
+
+/* ---- Readiness + session RPE (athletes send; coaches read; table hub_checkins) ---- */
+const CK_Q = [["sleep","How well did you sleep?"],["energy","How is your energy today?"],["muscle","How recovered do your muscles feel?"],["mind","How mentally ready do you feel?"],["prep","How prepared do you feel to train?"]];
+let ck = {id:"", r:{}, s:{min:"", rpe:"", done:"yes", mod:"", note:""}, msg:{kind:"",text:""}}, CKDATA = null, ckLoad = false, ckErr = "";
+async function ckSend(kind, id){
+  const data = kind==="ready" ? Object.fromEntries(CK_Q.map(([k])=>[k, +ck.r[k]||0])) : {min:+ck.s.min||0, rpe:+ck.s.rpe, done:ck.s.done, mod:String(ck.s.mod).slice(0,140), note:String(ck.s.note).slice(0,200)};
+  if (kind==="ready" && CK_Q.some(([k])=>!data[k])) { ck.msg = {kind:"err", text:"Answer all five (1–5) first."}; render(); return; }
+  if (kind==="rpe" && (!(data.min>0 && data.min<400) || !(data.rpe>=0 && data.rpe<=10) || ck.s.rpe==="")) { ck.msg = {kind:"err", text:"Add your minutes and a 0–10 effort."}; render(); return; }
+  try { const {error} = await SB.from("hub_checkins").insert({ath:id, d:iso(today), kind, data}); if (error) throw error;
+    ck.msg = {kind:"ok", text: kind==="ready" ? "Sent. Thanks! Have a good practice." : "Logged. Thanks!"}; if (kind==="ready") ck.r = {}; else ck.s = {min:"", rpe:"", done:"yes", mod:"", note:""}; }
+  catch(e) { ck.msg = {kind:"err", text:"Couldn't send right now. Tell your coach in person instead."}; }
+  render();
+}
+function checkinHTML(a){
+  if (!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
+  if (ck.id !== a.id) ck = {id:a.id, r:{}, s:{min:"", rpe:"", done:"yes", mod:"", note:""}, msg:{kind:"",text:""}};
+  const btn = (k,v) => `<button type="button" aria-pressed="${String(ck.r[k])===String(v)}" onclick="ck.r['${k}']=${v};render()">${v}</button>`;
+  return `<div class="panel"><h2>Daily check-in</h2><p class="note" style="margin:0 0 8px">Optional, about 20 seconds. Only coaches can see it. It helps us adjust training; it's not a medical test. Don't put medical details here: tell your coach or the athletic trainer in person.</p>
+    <div class="cols"><div><h3 style="margin:0 0 6px">Before practice · 1 = low, 5 = great</h3>${CK_Q.map(([k,q])=>`<div class="ed-row"><span>${esc(q)}</span><div class="seg" role="group" aria-label="${esc(q)}">${[1,2,3,4,5].map(v=>btn(k,v)).join("")}</div></div>`).join("")}
+        <div class="ed-save"><button type="button" class="btn primary" onclick="ckSend('ready','${a.id}')">Send check-in</button></div></div>
+      <div><h3 style="margin:0 0 6px">After practice</h3>
+        <label class="ed-row" for="ck-min"><span>Minutes trained</span><input id="ck-min" type="number" min="1" max="300" value="${esc(ck.s.min)}" oninput="ck.s.min=this.value"></label>
+        <label class="ed-row" for="ck-rpe"><span>Effort, 0 (rest) to 10 (max)</span><input id="ck-rpe" type="number" min="0" max="10" value="${esc(ck.s.rpe)}" oninput="ck.s.rpe=this.value"></label>
+        <div class="ed-row"><span>Did the workout as written?</span>${segBtns(ck.s.done,[["yes","Yes"],["part","Partly"],["no","No"]],"(v=>{ck.s.done=v;render()})")}</div>
+        <label class="ed-row" for="ck-mod"><span>What did you change? (optional)</span><input id="ck-mod" type="text" maxlength="140" value="${esc(ck.s.mod)}" oninput="ck.s.mod=this.value"></label>
+        <label class="ed-row" for="ck-note"><span>Comment (optional)</span><input id="ck-note" type="text" maxlength="200" value="${esc(ck.s.note)}" oninput="ck.s.note=this.value"></label>
+        <div class="ed-save"><button type="button" class="btn primary" onclick="ckSend('rpe','${a.id}')">Log session</button></div></div></div>
+    <p class="ed-msg ${ck.msg.kind}" role="status" style="margin:0">${esc(ck.msg.text)}</p></div>`;
+}
+async function ckFetch(){ ckLoad = true; render();
+  try { const since = iso(new Date(today.getTime() - 35*864e5)); const {data, error} = await SB.from("hub_checkins").select("ath,d,kind,data,created_at").gte("d", since).order("d"); if (error) throw error; CKDATA = data||[]; ckErr = ""; }
+  catch(e) { CKDATA = []; ckErr = "Check-ins aren't set up yet (run hub2_monitoring.sql in Supabase), or you're signed out."; }
+  ckLoad = false; render(); }
+function h2LoadHTML(){
+  if (!canPost) return `<div class="panel"><p style="margin:0">Coaches only.</p></div>`;
+  if (CKDATA === null && !ckLoad) setTimeout(ckFetch, 0);
+  const wkStart = n => iso(new Date(today.getTime() - (7*n + ((today.getDay()+6)%7))*864e5));
+  const thisW = wkStart(0), rows = [];
+  ATHLETES.filter(a => a.cats.includes("Distance")||a.cats.includes("Mid Distance")).forEach(a => {
+    const L = (CKDATA||[]).filter(x=>x.ath===a.id), R = L.filter(x=>x.kind==="ready"), S = L.filter(x=>x.kind==="rpe");
+    const load = (from, to) => S.filter(x=>x.d>=from && (!to || x.d<to)).reduce((s,x)=>s+(+x.data.min||0)*(+x.data.rpe||0),0);
+    const mins = S.filter(x=>x.d>=thisW).reduce((s,x)=>s+(+x.data.min||0),0), sess = S.filter(x=>x.d>=thisW).length;
+    const rScore = x => CK_Q.reduce((s,[k])=>s+(+x.data[k]||0),0);
+    const rAll = R.map(rScore), rLast = R.length ? rScore(R[R.length-1]) : null, rAvg = rAll.length ? rAll.reduce((s,v)=>s+v,0)/rAll.length : null;
+    const prev = [1,2,3].map(n=>load(wkStart(n), wkStart(n-1))), prevAvg = prev.reduce((s,v)=>s+v,0)/3;
+    if (!L.length) return;
+    const t = DTAGS[a.id]||{};
+    rows.push({a, t, mins, sess, lw: load(thisW), prevAvg, rLast, rAvg, low: rLast!=null && rAvg!=null && rLast <= rAvg-4, notDone: S.slice(-3).filter(x=>x.data.done!=="yes").length, last: L[L.length-1].d, recent: S.slice(-3)});
+  });
+  rows.sort((x,y)=> (y.low-x.low) || x.a.name.localeCompare(y.a.name));
+  return `<div class="panel"><h2>Readiness &amp; training load</h2><p style="margin:0 0 6px">From athletes' optional daily check-ins (Athlete page → Daily check-in). Session load = minutes × effort (0–10).</p>
+      <ul class="exp"><li>Readiness isn't a medical screen. A low score means <b>have a conversation</b>, not "injured."</li><li>Each runner's own trend matters more than any team-wide cutoff. Flagged = today's readiness is 4+ points below their own average.</li><li>No injury predictions from load ratios. Use the numbers to notice big jumps and multisport weeks.</li><li>Other sports come from Runner Tags. Multisport athletes don't get the full track load on top.</li></ul>
+      <div class="bar"><button type="button" class="btn sm" onclick="ckFetch()" ${ckLoad?"disabled":""}>${ckLoad?"Loading…":"Refresh"}</button><span class="note">${ckErr?esc(ckErr):`Last 5 weeks · ${(CKDATA||[]).length} check-ins`}</span></div></div>
+    ${rows.length ? `<div class="tbl"><table><thead><tr><th>Runner</th><th>Volume · profile</th><th>Other sport</th><th>Readiness (last / own avg, of 25)</th><th>This week: sessions · min</th><th>Load this week vs prior 3-wk avg</th><th>Not as written (last 3)</th><th>Recent</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr${r.low?` class="ck-low"`:""}><td><b>${esc(r.a.name)}</b><div class="muted">${r.a.level} · last ${esc(r.last.slice(5))}</div></td><td>${esc([r.t.lv, r.t.path].filter(Boolean).join(" · ")||"—")}</td><td>${esc(r.t.sport||"—")}</td>
+        <td class="mono">${r.rLast==null?"—":`${r.rLast} / ${r.rAvg.toFixed(1)}`}${r.low?` <span class="tchip">Check in with them</span>`:""}</td><td class="mono">${r.sess} · ${r.mins}</td><td class="mono">${Math.round(r.lw)} vs ${Math.round(r.prevAvg)}</td><td class="mono">${r.notDone}</td>
+        <td>${r.recent.map(x=>`<div class="muted">${esc(x.d.slice(5))}: ${x.data.min} min @ ${x.data.rpe}${x.data.done!=="yes"?` · ${x.data.done==="part"?"partly":"not done"}`:""}${x.data.mod?` · ${esc(x.data.mod)}`:""}${x.data.note?` · “${esc(x.data.note)}”`:""}</div>`).join("")}</td></tr>`).join("")}</tbody></table></div>`
+      : `<div class="panel"><p style="margin:0">${ckLoad?"Loading…":"No check-ins yet."}</p></div>`}`;
+}
+
 // Our program: a short blurb + philosophy pop-up on Workouts. Kids see only their own program.
 const PROG = {md:["Distance & Mid-Distance","Build the engine with easy running and controlled tempo (Jack Daniels). Keep speed with short, fast, fully rested reps (Tony Holler).","middistance"],
   sp:["Sprints, Hurdles & Jumps","Feed the Cats: sprint fast while fresh, full recovery, time it, no junk conditioning. Hurdle and jump work replaces sprint volume.","sprints"]};
@@ -5344,14 +5602,14 @@ const views = {
     const txt = (id,k,ph,w) => `<input type="text" aria-label="${esc(ph)}" style="width:${w}px" value="${esc((dtDraft[id]||{})[k]||"")}" placeholder="${esc(ph)}" onchange="dtSet('${id}','${k}',this.value.trim())">`;
     const chk = (id,k,lab) => `<label class="ed-check"><input type="checkbox" ${((dtDraft[id]||{})[k])?"checked":""} onchange="dtSet('${id}','${k}',this.checked?'1':'')"> ${esc(lab)}</label>`;
     const pr = a => ["800","1600"].map(e=>a.prs[e]?`${e} ${esc(a.prs[e])}`:"").filter(Boolean).join(" · ") || "—";
-    const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>Level</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":""}<th>This week</th><th>Coach note (shows on their page)</th></tr></thead><tbody>
+    const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>${lv==="JH"?"Level":"Volume"}</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":"<th>Pace</th><th>Strength</th><th>Speed</th><th>Other sport</th>"}<th>This week</th><th>Coach note (shows on their page)</th></tr></thead><tbody>
         ${tagAthletes(lv).map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td class="mono" style="white-space:nowrap">${pr(a)}</td>
           <td>${sel(a.id,"lv",lv==="JH"?LEVEL_NAMES_JH:LEVEL_NAMES,"Level")}</td><td>${sel(a.id,"path",lv==="JH"?PATH_NAMES_JH:PATH_NAMES,"Pathway")}</td>
-          ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:""}
+          ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:`<td>${sel(a.id,"pc",LEVEL_NAMES,"Pace")}</td><td>${sel(a.id,"str",LEVEL_NAMES,"Strength")}</td><td>${sel(a.id,"spd",LEVEL_NAMES,"Speed")}</td><td>${txt(a.id,"sport","e.g. basketball",110)}</td>`}
           <td>${sel(a.id,"ready",READY,"This week")}</td><td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
       </tbody></table></div>`;
     return `${grpHTML()}<h2 style="margin:18px 0 0">Distance &amp; mid-distance details</h2><p class="lede" style="margin:0">Give each distance and mid-distance runner a level and a pathway. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
-      <div class="panel ed"><h2>High school</h2>${tbl("HS")}</div>
+      <div class="panel ed"><h2>High school</h2><p class="note" style="margin:0 0 8px">Six separate ratings. <b>Volume</b> (A/B/C) decides which workout lines a runner sees, so set it from recent training history and tolerance, not race times. <b>Pace</b> comes from VDOT (shown for reference). <b>Strength</b> and <b>Speed</b> track the weight room and sprint development. <b>This week</b> is readiness. <b>Other sport</b> flags multisport load.</p>${tbl("HS")}</div>
       <div class="panel ed"><h2>Junior high</h2><p class="note" style="margin:0 0 8px"><b>Advanced</b> = established runner with a proven training history (not just a fast PR). <b>Development</b> = consistent JH runner (the as-written plan). <b>Foundation</b> = newer or lower-volume runner. <b>HS group invite</b> lets an advanced runner see the invite to join HS warm-ups, drills, and strength on Tuesdays. Nothing here adds mileage automatically.</p>${tbl("JH")}</div>
       <div class="ed-save sticky"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button>
         <span class="note">Coach notes and "This week" show on the runner's public page. Keep medical details out.</span></div>
@@ -5713,7 +5971,7 @@ const views = {
       <p class="note">More drills for each event are in <a href="#warmups">Warm-ups &amp; Care</a> and in each week's workouts.</p></div>`;
   },
   middistance(){
-    const tabs = [["library","Philosophy & Workout Library"],["crossover","Distance Crossover"],["strength","Strength & Drills"],["calendar","Calendar"]];
+    const tabs = [["library","Philosophy & Workout Library"],["crossover","Distance Crossover"],["strength","Strength & Drills"],["calendar","Calendar"],["tactics","Race Tactics"],["health","Athlete Health"],["pathway","6–12 Pathway"],["research","Research"]].concat(canPost ? [["speed","Speed Profile"],["load","Readiness & Load"]] : []);
     if (!tabs.some(([k])=>k===mdtab)) mdtab = "library";
     const tyLegend = `<div class="legend"><span><i class="ty-speed"></i>Speed</span><span><i class="ty-aero"></i>Aerobic</span><span><i class="ty-race"></i>Race-specific</span><span><i class="ty-str"></i>Strength</span><span><i class="ty-rec"></i>Recovery</span><span><i class="ty-meet"></i>Meet</span><span><span class="tchip xo" style="margin:0">Optional crossover</span></span></div>`;
     const head = `${back}<div class="stack"><div><div class="eyebrow">2026–27 · High school and junior high · 400m to 3200m</div><h1>Distance &amp; Mid-Distance</h1>
@@ -5747,7 +6005,7 @@ const views = {
     }
     else if (mdtab==="strength") {
       body = `<p class="lede" style="margin:0">Every winter Tuesday has 25–30 minutes in the weight room. Light to moderate loads, 2–3 reps left in the tank, no max lifts. The sessions build week to week.</p>
-        <h2 style="margin:6px 0 0">High school</h2>
+        ${h2StrengthHTML()}<h2 style="margin:6px 0 0">High school</h2>
         ${LIFT_ORDER.concat(["H1","H2"]).map(k=>`<div class="panel"><h3 style="margin:0 0 4px">${esc(LIFTS[k].name)} <span class="muted" style="font-weight:400">· ${esc(LIFTS[k].when)}</span></h3>${liftHTML(k).replace('<details class="lift">','<details class="lift" open>')}</div>`).join("")}
         <h2 style="margin:6px 0 0">Junior high</h2><p class="note" style="margin:0">Same exercise library, fewer sets, lighter loads. 15–20 minutes, technique first.</p>
         ${LIFT_ORDER_JH.map(k=>`<div class="panel"><h3 style="margin:0 0 4px">${esc(LIFTS[k].name)} <span class="muted" style="font-weight:400">· ${esc(LIFTS[k].when)}</span></h3>${liftHTML(k).replace('<details class="lift">','<details class="lift" open>')}</div>`).join("")}
@@ -5809,8 +6067,14 @@ const views = {
           <dl><dt>Adaptation</dt><dd><b>${esc(CODE_ADAPT[g])}</b></dd><dt>Workout</dt><dd>${esc(x.reps)}</dd><dt>Intensity</dt><dd>${esc(x.int)}</dd><dt>Recovery</dt><dd>${esc(x.rec)}</dd><dt>Why</dt><dd>${esc(x.why)}</dd></dl>
           ${x.prog?`<p style="margin:10px 0 4px"><b>Progression</b></p><ul class="exp">${x.prog.map(s=>`<li>${esc(s)}</li>`).join("")}</ul><p style="margin:8px 0 4px"><b>Technique</b></p><ul class="exp">${x.tech.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:""}
         </div>`).join("")}</div></div>`).join("")}
-        <p class="note">Paces for Steady, 400 pace, and 800 pace come from each runner's best race. Tap <b>Find my pace</b> on the Workouts page to see them.</p>`;
+        <p class="note">Paces for Steady, 400 pace, and 800 pace come from each runner's best race. Tap <b>Find my pace</b> on the Workouts page to see them.</p>${dlibHTML()}`;
     }
+    else if (mdtab==="tactics") body = h2TacticsHTML();
+    else if (mdtab==="health") body = h2HealthHTML();
+    else if (mdtab==="pathway") body = h2PathwayHTML();
+    else if (mdtab==="research") body = h2ResearchHTML();
+    else if (mdtab==="speed") body = h2SpeedHTML();
+    else if (mdtab==="load") body = h2LoadHTML();
     else if (mdtab==="crossover") {
       body = `<div class="panel"><h2>Why distance runners sprint</h2><p style="margin:0">Daniels builds the engine; Holler keeps the speed. Crossover days are the Holler part of the distance plan: short, fast, fully recovered, never extra fatigue.</p></div>
         <p class="lede" style="margin:0">Optional speed sessions for distance runners. Each one <b>replaces</b> part of a day or rides on an easy run. None is an extra hard session. The distance plan stays about 80% Daniels: aerobic base, tempo, intervals, reps, and long runs are untouched.</p>
@@ -5825,7 +6089,7 @@ const views = {
             <li><b>Thu Feb 18</b> · 4 × 30m progressive accelerations, full recovery (first official week)</li>
             <li><b>Mon Mar 15</b> · 2 × 30m + 2 × flying 20m after the run, if recovered from Saturday</li>
             <li><b>Mon Apr 12</b> · 2 × flying 20m after the strides</li></ul>
-            <p class="note" style="margin:8px 0 0">Plus optional touches Feb 18, Mar 1, and April (table above). No speed add-ons during winter conditioning unless limited contact is approved.</p></div></div>`;
+            <p class="note" style="margin:8px 0 0">Plus optional touches Feb 18, Mar 1, and April (table above). Winter speed is a gradual stride and acceleration progression on coach-led Thursdays, only if the session is approved as limited contact (Dec: 4 × 60m strides → Jan: 4–6 × 60–80m → Jan 25: short flat accelerations → Feb: 3 × 30m + intro flying 10–20m). In season, distance runners get strides or a little max-velocity work most weeks, not just optional crossover days.</p></div></div>`;
     }
     else if (mdtab==="pace") {
       const runners = ATHLETES.filter(a => a.prs["800"]).sort((x,y)=>tSec(x.prs["800"])-tSec(y.prs["800"]));
@@ -5869,21 +6133,25 @@ const views = {
         <div class="bar">${segBtns(level,[["HS","HS"],["JH","JH"]],"(v=>{level=v;render()})")}${segBtns(ag,[["All","All"],["B","Boys"],["G","Girls"]],"(v=>setA('g',v))")}</div></div>
       <p class="lede" style="margin:0">Paces come from each runner's best race (mile, 3200, or this fall's XC). Find your name, then use these for <b>Easy</b>, <b>Steady</b>, <b>Tempo</b>, <b>Interval</b>, <b>Rep</b>, and <b>800/1600 pace</b> days. These are the same words used on the Workouts page.</p>
       <input id="psearch" class="search" type="search" placeholder="Search name" value="${esc(pq)}" oninput="pq=this.value;render();const e=document.getElementById('psearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
-      <div class="tbl"><table class="ptable"><thead><tr><th>Athlete</th><th>Based on</th><th>VDOT</th><th>Easy /mi</th><th>Steady /mi</th><th>Tempo /mi</th><th>Tempo /400</th><th>Interval /400</th><th>Interval /800</th><th>Rep /200</th><th>Rep /400</th><th>800 pace /200</th><th>1600 pace /400</th></tr></thead><tbody>
+      <div class="tbl"><table class="ptable"><thead><tr><th>Athlete</th><th>Based on</th><th>VDOT</th><th>Easy /mi</th><th>Steady /mi</th><th>Tempo /mi</th><th>Tempo /400</th><th>Interval /400</th><th>Interval /800</th><th>Rep /200</th><th>Rep /400</th><th>3200 /400</th><th>800 pace /200</th><th>1600 pace /400</th></tr></thead><tbody>
         ${rows.map(({a,b})=>{ const p = paceSet(b.V); return `<tr><td><a href="#a-${a.id}"><b>${esc(a.name)}</b></a><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td>
           <td>${esc(evn(b.k))} ${esc(b.mk)}</td><td class="mono"><b>${b.V.toFixed(1)}</b></td>
           <td class="mono">${p.easy[0]}–${p.easy[1]}</td><td class="mono">${p.steady}</td><td class="mono">${p.tempo}</td><td class="mono">${p.tempo400}</td>
-          <td class="mono">${p.int400}</td><td class="mono">${p.int800}</td><td class="mono">${p.rep200}</td><td class="mono">${p.rep400}</td>
-          ${["800","1600"].map(ev=>{ const r = raceSec(a, b, ev); return `<td class="mono">${r?mmss(r.s*(ev==="800"?200:400)/RACE_M[ev]):"—"}${r&&r.src==="est."?"*":""}</td>`; }).join("")}</tr>`; }).join("") || `<tr><td colspan="13" class="muted">No runners match.</td></tr>`}
+          <td class="mono">${p.int400}</td><td class="mono">${p.int800}</td><td class="mono">${p.rep200}</td><td class="mono">${p.rep400}</td>${(r=>`<td class="mono">${r?mmss(r.s*400/3200):"—"}${r&&r.src==="est."?"*":""}</td>`)(raceSec(a,b,"3200"))}
+          ${["800","1600"].map(ev=>{ const r = raceSec(a, b, ev); return `<td class="mono">${r?mmss(r.s*(ev==="800"?200:400)/RACE_M[ev]):"—"}${r&&r.src==="est."?"*":""}</td>`; }).join("")}</tr>`; }).join("") || `<tr><td colspan="14" class="muted">No runners match.</td></tr>`}
       </tbody></table></div>
       <div class="cols">
         <div class="panel"><h3>What each pace is for</h3><dl class="inj-dl">
-          <dt>Easy</dt><dd>Recovery runs and long runs. Conversational. Slower is fine.</dd>
+          <dt>Recovery</dt><dd>The slow end of Easy. Helps you recover between hard days.</dd>
+          <dt>Easy</dt><dd>Aerobic development: most running, long runs. Conversational. Slower is fine.</dd>
           <dt>Steady</dt><dd>Strong but relaxed, a notch slower than Tempo. Used for the middle of some aerobic runs.</dd>
           <dt>Tempo</dt><dd>Comfortably hard, about 20 minutes of steady effort. Tempo runs and cruise intervals.</dd>
           <dt>Interval</dt><dd>Hard. 400s to 1000s with jog recovery about as long as the rep.</dd>
           <dt>Rep</dt><dd>Fast and smooth. 200s and 400s with full recovery. Speed and form.</dd>
-          <dt>800 / 1600 pace</dt><dd>Your current race pace for that event, from your PR. * = estimated from your VDOT because there's no PR yet.</dd></dl></div>
+          <dt>3200 / 1600 / 800 pace</dt><dd>Event-specific rhythm at your <b>current</b> race pace from your PR. * = estimated from your VDOT because there's no PR yet.</dd>
+          <dt>400 pace</dt><dd>Speed endurance for 400/800 runners, from your current 400 PR.</dd>
+          <dt>Max velocity</dt><dd>Flyers and accelerations: fast and relaxed with full recovery. No pace target; coaches time it.</dd></dl>
+          <p class="note" style="margin:6px 0 0"><b>Current, not goal.</b> Training paces come from verified recent races, never a goal or aspirational PR. Coaches can override any runner's VDOT. Younger and developing runners should never feel pushed to hit aggressive numbers; effort comes first.</p></div>
         <div class="panel"><h3>About these numbers</h3><ul class="exp">
           <li>Calculated with Jack Daniels' VDOT formulas from the race shown.</li>
           <li>XC courses vary, so XC-based paces can run a little slow. A new track race updates them.</li>
@@ -6054,6 +6322,7 @@ const views = {
       ${mAthleteHTML(a)}
       ${ltAthleteHTML(a)}
       ${myWeekHTML(a)}
+      ${checkinHTML(a)}
       ${sptPanel(a)}
       ${checkHTML(a)}
       <div><h2 style="margin-bottom:10px">Workout log</h2>
@@ -6117,6 +6386,7 @@ async function loadAll(){
   if (byKey.links && typeof byKey.links === "object") LINKS = byKey.links;
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
+  if (byKey.speedprof && typeof byKey.speedprof === "object") { SPEED = byKey.speedprof; spDraft = null; }
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
   if (byKey.meetentries && typeof byKey.meetentries === "object") MENT = byKey.meetentries;
