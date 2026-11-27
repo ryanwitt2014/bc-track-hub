@@ -942,7 +942,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-26e";
+const HUB_VERSION = "11-27a";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3771,65 +3771,6 @@ function h2SpeedHTML(){
       <p class="note" style="margin:6px 0 0">* MAS estimated from VDOT. Speed-leaning means a high speed reserve ratio compared with teammates; aerobic-leaning means a low one. Neither is better.</p></div>`;
 }
 
-/* ---- Readiness + session RPE (athletes send; coaches read; table hub_checkins) ---- */
-const CK_Q = [["sleep","How well did you sleep?"],["energy","How is your energy today?"],["muscle","How recovered do your muscles feel?"],["mind","How mentally ready do you feel?"],["prep","How prepared do you feel to train?"]];
-let ck = {id:"", r:{}, s:{min:"", rpe:"", done:"yes", mod:"", note:""}, msg:{kind:"",text:""}}, CKDATA = null, ckLoad = false, ckErr = "";
-async function ckSend(kind, id){
-  const data = kind==="ready" ? Object.fromEntries(CK_Q.map(([k])=>[k, +ck.r[k]||0])) : {min:+ck.s.min||0, rpe:+ck.s.rpe, done:ck.s.done, mod:String(ck.s.mod).slice(0,140), note:String(ck.s.note).slice(0,200)};
-  if (kind==="ready" && CK_Q.some(([k])=>!data[k])) { ck.msg = {kind:"err", text:"Answer all five (1–5) first."}; render(); return; }
-  if (kind==="rpe" && (!(data.min>0 && data.min<400) || !(data.rpe>=0 && data.rpe<=10) || ck.s.rpe==="")) { ck.msg = {kind:"err", text:"Add your minutes and a 0–10 effort."}; render(); return; }
-  try { const {error} = await SB.from("hub_checkins").insert({ath:id, d:iso(today), kind, data}); if (error) throw error;
-    ck.msg = {kind:"ok", text: kind==="ready" ? "Sent. Thanks! Have a good practice." : "Logged. Thanks!"}; if (kind==="ready") ck.r = {}; else ck.s = {min:"", rpe:"", done:"yes", mod:"", note:""}; }
-  catch(e) { ck.msg = {kind:"err", text:"Couldn't send right now. Tell your coach in person instead."}; }
-  render();
-}
-function checkinHTML(a){
-  if (!(a.cats.includes("Distance")||a.cats.includes("Mid Distance"))) return "";
-  if (ck.id !== a.id) ck = {id:a.id, r:{}, s:{min:"", rpe:"", done:"yes", mod:"", note:""}, msg:{kind:"",text:""}};
-  const btn = (k,v) => `<button type="button" aria-pressed="${String(ck.r[k])===String(v)}" onclick="ck.r['${k}']=${v};render()">${v}</button>`;
-  return `<div class="panel"><h2>Daily check-in</h2><p class="note" style="margin:0 0 8px">Optional, about 20 seconds. Only coaches can see it. It helps us adjust training; it's not a medical test. Don't put medical details here: tell your coach or the athletic trainer in person.</p>
-    <div class="cols"><div><h3 style="margin:0 0 6px">Before practice · 1 = low, 5 = great</h3>${CK_Q.map(([k,q])=>`<div class="ed-row"><span>${esc(q)}</span><div class="seg" role="group" aria-label="${esc(q)}">${[1,2,3,4,5].map(v=>btn(k,v)).join("")}</div></div>`).join("")}
-        <div class="ed-save"><button type="button" class="btn primary" onclick="ckSend('ready','${a.id}')">Send check-in</button></div></div>
-      <div><h3 style="margin:0 0 6px">After practice</h3>
-        <label class="ed-row" for="ck-min"><span>Minutes trained</span><input id="ck-min" type="number" min="1" max="300" value="${esc(ck.s.min)}" oninput="ck.s.min=this.value"></label>
-        <label class="ed-row" for="ck-rpe"><span>Effort, 0 (rest) to 10 (max)</span><input id="ck-rpe" type="number" min="0" max="10" value="${esc(ck.s.rpe)}" oninput="ck.s.rpe=this.value"></label>
-        <div class="ed-row"><span>Did the workout as written?</span>${segBtns(ck.s.done,[["yes","Yes"],["part","Partly"],["no","No"]],"(v=>{ck.s.done=v;render()})")}</div>
-        <label class="ed-row" for="ck-mod"><span>What did you change? (optional)</span><input id="ck-mod" type="text" maxlength="140" value="${esc(ck.s.mod)}" oninput="ck.s.mod=this.value"></label>
-        <label class="ed-row" for="ck-note"><span>Comment (optional)</span><input id="ck-note" type="text" maxlength="200" value="${esc(ck.s.note)}" oninput="ck.s.note=this.value"></label>
-        <div class="ed-save"><button type="button" class="btn primary" onclick="ckSend('rpe','${a.id}')">Log session</button></div></div></div>
-    <p class="ed-msg ${ck.msg.kind}" role="status" style="margin:0">${esc(ck.msg.text)}</p></div>`;
-}
-async function ckFetch(){ ckLoad = true; render();
-  try { const since = iso(new Date(today.getTime() - 35*864e5)); const {data, error} = await SB.from("hub_checkins").select("ath,d,kind,data,created_at").gte("d", since).order("d"); if (error) throw error; CKDATA = data||[]; ckErr = ""; }
-  catch(e) { CKDATA = []; ckErr = "Check-ins aren't set up yet (run hub2_monitoring.sql in Supabase), or you're signed out."; }
-  ckLoad = false; render(); }
-function h2LoadHTML(){
-  if (!canPost) return `<div class="panel"><p style="margin:0">Coaches only.</p></div>`;
-  if (CKDATA === null && !ckLoad) setTimeout(ckFetch, 0);
-  const wkStart = n => iso(new Date(today.getTime() - (7*n + ((today.getDay()+6)%7))*864e5));
-  const thisW = wkStart(0), rows = [];
-  ATHLETES.filter(a => a.cats.includes("Distance")||a.cats.includes("Mid Distance")).forEach(a => {
-    const L = (CKDATA||[]).filter(x=>x.ath===a.id), R = L.filter(x=>x.kind==="ready"), S = L.filter(x=>x.kind==="rpe");
-    const load = (from, to) => S.filter(x=>x.d>=from && (!to || x.d<to)).reduce((s,x)=>s+(+x.data.min||0)*(+x.data.rpe||0),0);
-    const mins = S.filter(x=>x.d>=thisW).reduce((s,x)=>s+(+x.data.min||0),0), sess = S.filter(x=>x.d>=thisW).length;
-    const rScore = x => CK_Q.reduce((s,[k])=>s+(+x.data[k]||0),0);
-    const rAll = R.map(rScore), rLast = R.length ? rScore(R[R.length-1]) : null, rAvg = rAll.length ? rAll.reduce((s,v)=>s+v,0)/rAll.length : null;
-    const prev = [1,2,3].map(n=>load(wkStart(n), wkStart(n-1))), prevAvg = prev.reduce((s,v)=>s+v,0)/3;
-    if (!L.length) return;
-    const t = DTAGS[a.id]||{};
-    rows.push({a, t, mins, sess, lw: load(thisW), prevAvg, rLast, rAvg, low: rLast!=null && rAvg!=null && rLast <= rAvg-4, notDone: S.slice(-3).filter(x=>x.data.done!=="yes").length, last: L[L.length-1].d, recent: S.slice(-3)});
-  });
-  rows.sort((x,y)=> (y.low-x.low) || x.a.name.localeCompare(y.a.name));
-  return `<div class="panel"><h2>Readiness &amp; training load</h2><p style="margin:0 0 6px">From athletes' optional daily check-ins (Athlete page → Daily check-in). Session load = minutes × effort (0–10).</p>
-      <ul class="exp"><li>Readiness isn't a medical screen. A low score means <b>have a conversation</b>, not "injured."</li><li>Each runner's own trend matters more than any team-wide cutoff. Flagged = today's readiness is 4+ points below their own average.</li><li>No injury predictions from load ratios. Use the numbers to notice big jumps and multisport weeks.</li><li>Other sports come from Runner Tags. Multisport athletes don't get the full track load on top.</li></ul>
-      <div class="bar"><button type="button" class="btn sm" onclick="ckFetch()" ${ckLoad?"disabled":""}>${ckLoad?"Loading…":"Refresh"}</button><span class="note">${ckErr?esc(ckErr):`Last 5 weeks · ${(CKDATA||[]).length} check-ins`}</span></div></div>
-    ${rows.length ? `<div class="tbl"><table><thead><tr><th>Runner</th><th>Volume · profile</th><th>Other sport</th><th>Readiness (last / own avg, of 25)</th><th>This week: sessions · min</th><th>Load this week vs prior 3-wk avg</th><th>Not as written (last 3)</th><th>Recent</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr${r.low?` class="ck-low"`:""}><td><b>${esc(r.a.name)}</b><div class="muted">${r.a.level} · last ${esc(r.last.slice(5))}</div></td><td>${esc([r.t.lv, r.t.path].filter(Boolean).join(" · ")||"—")}</td><td>${esc(r.t.sport||"—")}</td>
-        <td class="mono">${r.rLast==null?"—":`${r.rLast} / ${r.rAvg.toFixed(1)}`}${r.low?` <span class="tchip">Check in with them</span>`:""}</td><td class="mono">${r.sess} · ${r.mins}</td><td class="mono">${Math.round(r.lw)} vs ${Math.round(r.prevAvg)}</td><td class="mono">${r.notDone}</td>
-        <td>${r.recent.map(x=>`<div class="muted">${esc(x.d.slice(5))}: ${x.data.min} min @ ${x.data.rpe}${x.data.done!=="yes"?` · ${x.data.done==="part"?"partly":"not done"}`:""}${x.data.mod?` · ${esc(x.data.mod)}`:""}${x.data.note?` · “${esc(x.data.note)}”`:""}</div>`).join("")}</td></tr>`).join("")}</tbody></table></div>`
-      : `<div class="panel"><p style="margin:0">${ckLoad?"Loading…":"No check-ins yet."}</p></div>`}`;
-}
-
 // Our program: a short blurb + philosophy pop-up on Workouts. Kids see only their own program.
 const PROG = {md:["Distance & Mid-Distance","Build the engine with easy running and controlled tempo (Jack Daniels). Keep speed with short, fast, fully rested reps (Tony Holler).","middistance"],
   sp:["Sprints, Hurdles & Jumps","Feed the Cats: sprint fast while fresh, full recovery, time it, no junk conditioning. Hurdle and jump work replaces sprint volume.","sprints"]};
@@ -5971,7 +5912,7 @@ const views = {
       <p class="note">More drills for each event are in <a href="#warmups">Warm-ups &amp; Care</a> and in each week's workouts.</p></div>`;
   },
   middistance(){
-    const tabs = [["library","Philosophy & Workout Library"],["crossover","Distance Crossover"],["strength","Strength & Drills"],["calendar","Calendar"],["tactics","Race Tactics"],["health","Athlete Health"],["pathway","6–12 Pathway"],["research","Research"]].concat(canPost ? [["speed","Speed Profile"],["load","Readiness & Load"]] : []);
+    const tabs = [["library","Philosophy & Workout Library"],["crossover","Distance Crossover"],["strength","Strength & Drills"],["calendar","Calendar"],["tactics","Race Tactics"],["health","Athlete Health"],["pathway","6–12 Pathway"],["research","Research"]].concat(canPost ? [["speed","Speed Profile"]] : []);
     if (!tabs.some(([k])=>k===mdtab)) mdtab = "library";
     const tyLegend = `<div class="legend"><span><i class="ty-speed"></i>Speed</span><span><i class="ty-aero"></i>Aerobic</span><span><i class="ty-race"></i>Race-specific</span><span><i class="ty-str"></i>Strength</span><span><i class="ty-rec"></i>Recovery</span><span><i class="ty-meet"></i>Meet</span><span><span class="tchip xo" style="margin:0">Optional crossover</span></span></div>`;
     const head = `${back}<div class="stack"><div><div class="eyebrow">2026–27 · High school and junior high · 400m to 3200m</div><h1>Distance &amp; Mid-Distance</h1>
@@ -6074,7 +6015,6 @@ const views = {
     else if (mdtab==="pathway") body = h2PathwayHTML();
     else if (mdtab==="research") body = h2ResearchHTML();
     else if (mdtab==="speed") body = h2SpeedHTML();
-    else if (mdtab==="load") body = h2LoadHTML();
     else if (mdtab==="crossover") {
       body = `<div class="panel"><h2>Why distance runners sprint</h2><p style="margin:0">Daniels builds the engine; Holler keeps the speed. Crossover days are the Holler part of the distance plan: short, fast, fully recovered, never extra fatigue.</p></div>
         <p class="lede" style="margin:0">Optional speed sessions for distance runners. Each one <b>replaces</b> part of a day or rides on an easy run. None is an extra hard session. The distance plan stays about 80% Daniels: aerobic base, tempo, intervals, reps, and long runs are untouched.</p>
@@ -6322,7 +6262,6 @@ const views = {
       ${mAthleteHTML(a)}
       ${ltAthleteHTML(a)}
       ${myWeekHTML(a)}
-      ${checkinHTML(a)}
       ${sptPanel(a)}
       ${checkHTML(a)}
       <div><h2 style="margin-bottom:10px">Workout log</h2>
