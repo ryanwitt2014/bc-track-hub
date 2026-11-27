@@ -518,6 +518,8 @@ a.btn{text-decoration:none;display:inline-block}
 .mw-other{display:grid;gap:6px;margin-top:8px;font-size:8.5px}.mw-sday{border:1px solid #777;border-radius:4px;padding:4px 6px}.mw-sday .mw-blk{border:0;padding:1px 0}.mw-sday .mw-blk h5{font-size:9px}.mw-sday .mw-lv{font-size:8.5px}
 .mw-lifts{margin-top:6px;font-size:8.5px;border-top:1px solid #999;padding-top:3px}.mw-lifts>b{display:block;font-size:9.5px}
 @media print{.sheet.mweek{overflow:hidden}}
+.season-txt{white-space:pre-wrap;font:11px/1.4 var(--mono,monospace);margin:0;color:#111}
+@media print{.sheet.season{break-after:auto}}
 .ms-sess{font-size:11px;color:#444;margin-top:4px}
 .ms-blk .sh-lift{width:100%;table-layout:fixed;font-size:9.5px;margin-top:4px}.ms-blk .sh-lift td,.ms-blk .sh-lift th{overflow-wrap:anywhere;padding:1px 3px}.ms-blk .sh-lift th{font-size:9px;letter-spacing:.03em;white-space:normal}.ms-blk .sh-lift td:first-child{width:34%}.ms-blk .sh-lift td:nth-child(2){width:18%}
 .cv-blk{margin:0 0 5px}.cv-blk ul{margin:1px 0 0;padding-left:14px}.cv-blk li{margin:0}.cv-f{color:#666;font-style:italic}
@@ -937,7 +939,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-26c";
+const HUB_VERSION = "11-26d";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -4362,6 +4364,32 @@ const mwLine = t => {   // clipboard version of a line: the workout, not the exp
   return x.length > 95 ? x.slice(0,92).replace(/\s+\S*$/,"") + "…" : x;
 };
 function mwBlockHTML(b){ const ls = b.items.map(mwLine).filter(Boolean); return `<div class="mw-blk"><h5>${esc(b.cats.join(" · "))}${b.f?` <span class="cv-f">· ${esc(b.f)}</span>`:""}</h5><ul>${ls.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`; }
+/* Season list: every workout for chosen groups, start to finish, as plain text (copy or print) */
+function seasonListText(lv, groups){
+  const L = [], dn = dt => dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  L.push(`BENTON CENTRAL TRACK & FIELD · ${lv==="HS"?"HIGH SCHOOL":"JUNIOR HIGH"} · ${groups.join(" + ").toUpperCase()}`, `Every workout, start to finish (from the Hub, ${new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})})`, "");
+  printWeeks().forEach(w0 => { const w = printWeek(w0), wl = [];
+    w.days.forEach(d => {
+      const its = arr => forLv(arr, lv).map(it => sheetLine(it.t));
+      const blocks = [];
+      const shared = its(d.all); if (shared.length) blocks.push(["Everyone", shared]);
+      (d.combos||[]).filter(cb => cb.groups.some(g => groups.includes(g))).forEach(cb => { const x = its(cb.items); if (x.length) blocks.push([comboName(cb), x]); });
+      groups.forEach(g => { const x = its((d.groups||{})[g]); if (!x.length) return; const f = gFocus(d,g,lv);
+        const same = blocks.find(b => b[2] && b[1].join("\n")===x.join("\n"));
+        if (same) same[0] += " + " + g + (f?` (${f})`:""); else blocks.push([g + (f?` (${f})`:""), x, true]); });
+      if (!blocks.some(b => b[2] || b[0]!=="Everyone")) return;
+      const ss = sessOf(d, lv), lab = [ss && SESS_K[ss.kind] ? SESS_K[ss.kind][0] : "", ss && ss.cls && ss.kind==="meet" ? ss.cls : "", focusFor(d,lv)||""].filter(Boolean).join(" · ");
+      wl.push(`${dn(dayDate(w, d.day))}${lab?" · "+lab:""}`);
+      blocks.forEach(([name, x]) => { wl.push(`  ${name}:`); x.forEach(t => wl.push(`    - ${t}`)); });
+      wl.push("");
+    });
+    if (!wl.length) return;
+    const ss = w.days.map(d=>sessOf(d,lv)).find(x=>x&&x.wk);
+    L.push("=".repeat(60), `${weekLabel(w).toUpperCase()}${ss?" · "+ss.wk:""}`, "=".repeat(60), ...wl);
+  });
+  return L.join("\n");
+}
+async function seasonCopy(){ try { await navigator.clipboard.writeText(seasonListText(sh.slv||"HS", sh.sgroups||["Distance","Mid Distance"])); sh.scopied="Copied: paste it anywhere."; } catch(e) { sh.scopied="Couldn't copy: select the text below and copy it."; } render(); }
 function buildMasterWeek(){ return (sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv]).map(lv => mwPage(lv)).join("") || `<p class="note">Nothing posted for this week.</p>`; }
 function mwPage(lv1){
   const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
@@ -5149,7 +5177,7 @@ const views = {
     const w = printWeek(weeks.find(x=>x.start===sh.week));
     const toggleG = g => `sh.groups = sh.groups.includes('${g}') ? sh.groups.filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||sh.groups.includes(c)); render()`;
     const packet = sh.mode==="packet";
-    const modeRow = `<div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["master","Master sheet"],["packet","Week packet"],["attend","Attendance"],["bus","Bus sheet"]],"(v=>{sh.mode=v;render()})")}</div>`;
+    const modeRow = `<div class="ed-row"><span>Print</span>${segBtns(sh.mode,[["day","Day sheets"],["master","Master sheet"],["season","Season list"],["packet","Week packet"],["attend","Attendance"],["bus","Bus sheet"]],"(v=>{sh.mode=v;render()})")}</div>`;
     const printRow = lbl => `<div class="ed-save"><button type="button" class="btn primary" onclick="window.print()">${lbl}</button><span class="note" style="margin:0">To save a PDF, choose <b>Save as PDF</b> as the printer.</span></div>`;
     const wrap = s => `<div class="sheets-wrap"><div class="no-print mlabel" style="margin:0">Preview · ${(s.match(/<section class="sheet/g)||[]).length} page${(s.match(/<section class="sheet/g)||[]).length===1?"":"s"} (long lists run onto extra pages)</div>${s}</div>`;
     if (sh.mode==="attend") {
@@ -5161,6 +5189,16 @@ const views = {
           <div class="ed-row"><span>Level</span>${segBtns(sh.alv,[["HS","HS"],["JH","JH"],["Both","HS and JH"]],"(v=>{sh.alv=v;render()})")}</div></div>
         <div class="ed-row"><span>Weeks</span>${segBtns(sh.aall,[["","Just this week"],["winter","Every conditioning week"],["season","Every practice week"]],"(v=>{sh.aall=v;render()})")}</div>
         ${printRow("Print attendance")}</div>` + wrap(buildAttendance());
+    }
+    if (sh.mode==="season") {
+      const lv = sh.slv||"HS", sg = sh.sgroups||["Distance","Mid Distance"];
+      const togS = g => `sh.sgroups = (sh.sgroups||['Distance','Mid Distance']).includes('${g}') ? (sh.sgroups||['Distance','Mid Distance']).filter(x=>x!=='${g}') : CATEGORIES.filter(c=>c==='${g}'||(sh.sgroups||['Distance','Mid Distance']).includes(c)); sh.scopied=''; render()`;
+      return `<div class="panel ed no-print">${modeRow}
+        <p style="margin:0">Every workout for the groups you pick, from the first week to the last, as plain text. Copy it into a doc or email, or print it.</p>
+        <div class="ed-row"><span>Level</span>${segBtns(lv,[["HS","HS"],["JH","JH"]],"(v=>{sh.slv=v;sh.scopied='';render()})")}</div>
+        <div class="ed-row" style="align-items:start"><span>Groups</span><div class="combo-picks">${lvGroups(lv).map(g=>`<button type="button" class="pick" aria-pressed="${sg.includes(g)}" onclick="${togS(g)}">${g}</button>`).join("")}</div></div>
+        <div class="ed-save"><button type="button" class="btn primary" onclick="seasonCopy()">Copy all the text</button><button type="button" class="btn sm" onclick="window.print()">Print</button><span class="ed-msg" role="status">${esc(sh.scopied||"")}</span></div></div>
+        <div class="sheets-wrap"><section class="sheet season"><pre class="season-txt">${esc(sg.length ? seasonListText(lv, lvGroups(lv, sg)) : "Pick at least one group.")}</pre></section></div>`;
     }
     if (sh.mode==="master") {
       const mg = sh.mgroups || CATEGORIES;
