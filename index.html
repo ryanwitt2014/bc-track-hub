@@ -937,7 +937,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-26b";
+const HUB_VERSION = "11-26c";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2008,6 +2008,8 @@ const cleanLines = arr => { const st = staleSet(arr); return (arr||[]).filter(it
 const shownGroups = d => CATEGORIES.filter(c => d.groups[c] && d.groups[c].length && (wcat==="All" || wcat===c));
 // Combined blocks: one workout shared by several groups, e.g. {groups:["Distance","Mid Distance"], items:[...]}
 const shownCombos = d => (d.combos||[]).filter(cb => cb.items && cb.items.length && (wcat==="All" || cb.groups.includes(wcat)));
+const LV_NO = {JH:["Pole Vault"]};   // groups a level doesn't have (JH vault = a few 8th-grade interest days, no program)
+const lvGroups = (lv, gs) => (gs||CATEGORIES).filter(g => !(LV_NO[lv]||[]).includes(g));
 const comboName = cb => cb.name || (cb.groups.length===CATEGORIES.length ? "All event groups" : cb.groups.join(" + "));
 const dayHas = (d,l) => focusFor(d,l) || forLv(d.all,l).length || CATEGORIES.some(c=>forLv((d.groups||{})[c],l).length) || (d.combos||[]).some(cb=>forLv(cb.items,l).length);
 let wcat = "All";
@@ -4341,6 +4343,7 @@ function coverHTML(w, lvs){
 /* Week on one page: the coach-led days get the most room up top, the other days run small along the bottom */
 const MW_MAIN = ["coach","coachq","official"];
 function mwBlocks(d, lv, groups){
+  groups = lvGroups(lv, groups);
   const its = arr => forLv(arr, lv).map(it => it.t);
   const raw = [{cat:"Everyone", items: its(d.all)},
     ...(d.combos||[]).filter(cb => cb.groups.some(g => groups.includes(g))).map(cb => ({cat: comboName(cb), items: its(cb.items), combo:true})),
@@ -4398,12 +4401,12 @@ function fitMasterWeek(){   // one landscape page each (10.3 × 7.8 in printable
 }
 function buildMaster(){
   const w0 = printWeeks().find(x=>x.start===sh.week); if (!w0) return `<p class="note">Pick a posted week.</p>`;
-  const w = printWeek(w0), lvs = sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv], groups = sh.mgroups || CATEGORIES;
+  const w = printWeek(w0), lvs = sh.mlv==="Both" ? ["HS","JH"] : [sh.mlv], groups0 = sh.mgroups || CATEGORIES;
   const its = (arr, lv) => forLv(arr, lv).map(it => it.t);
   const out = [];
   (sh.mday==="All" ? w.days : w.days.filter(d=>d.day===sh.mday)).forEach(d => {
     const date = dayDate(w, d.day);
-    const parts = lvs.map(lv => {
+    const parts = lvs.map(lv => { const groups = lvGroups(lv, groups0);
       const blocks = [{cat:"Everyone", items: its(d.all, lv)},
         ...(d.combos||[]).filter(cb => cb.groups.some(g => groups.includes(g))).map(cb => ({cat: comboName(cb), items: its(cb.items, lv), combo:true})),
         ...groups.map(cat => ({cat, items: its((d.groups||{})[cat], lv)}))].filter(b => b.items.length && !restOnly(b.items));
@@ -4426,7 +4429,7 @@ function buildPacket(){
   const w = printWeek(w0);
   const lvs = sh.plv==="Both" ? ["HS","JH"] : [sh.plv];
   const out = [coverHTML(w, lvs)];
-  lvs.forEach(lv => sh.groups.forEach(cat => w.days.forEach(d => {
+  lvs.forEach(lv => lvGroups(lv, sh.groups).forEach(cat => w.days.forEach(d => {
     const items = sheetItems(d, cat, lv); if (restOnly(items)) return;
     const ss = sessOf(d, lv); if (ss && ["indep","break","spring","rest","meet"].includes(ss.kind)) return;   // not a practice: on the cover page only
     const od = (w0.days||[]).find(x=>x.day===d.day);
