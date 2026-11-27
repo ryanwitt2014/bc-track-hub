@@ -521,6 +521,7 @@ a.btn{text-decoration:none;display:inline-block}
 .h2chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:9px;border:1px solid var(--line);margin-left:4px;vertical-align:middle;white-space:nowrap}.h2chip.ty-r{background:#e6f0e8;color:#1f4d2b}.h2chip.ty-s{background:#e8eef7;color:#1d3a66}.h2chip.ty-c{background:#fbf3d9;color:#5c4a00}.h2chip.ty-b,.h2chip.ty-p{background:#f1f1f1;color:#333}
 .sp-bar{position:relative;height:8px;min-width:90px;border-radius:4px;background:linear-gradient(90deg,#b4472b,#d9c36a,var(--accent))}.sp-bar i{position:absolute;top:-3px;width:4px;height:14px;background:#111;border-radius:2px;margin-left:-2px}
 tr.ck-low td{background:#fff7e0}
+.sp2calc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}.sp2calc input{width:80px}
 .season-txt{white-space:pre-wrap;font:11px/1.4 var(--mono,monospace);margin:0;color:#111}
 @media print{.sheet.season{break-after:auto}}
 .ms-sess{font-size:11px;color:#444;margin-top:4px}
@@ -942,7 +943,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-27c";
+const HUB_VERSION = "11-27d";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2095,13 +2096,15 @@ const EX = {
   "Single-leg landing":{cue:"Small hop forward onto one foot, land soft and stick it 2 sec.", eq:"None", alt:"Jump-and-stick"},
   "Lateral bounds":{cue:"Push sideways off one leg, land on the other and stick it. Controlled, not maximal.", eq:"None", alt:"Low lateral hops"},
   "Low hurdle hops":{cue:"Two feet over mini hurdles, quick and springy, short contacts.", eq:"Mini hurdles", alt:"Line hops"},
+  "Explosive step-up":{cue:"Box at knee height. Drive up fast through the whole foot, stand tall, step down slowly. Fast up, controlled down.", eq:"Box or bench", alt:"Step-up"},
+  "Split-squat isometric":{cue:"Hold the bottom of a split squat, back knee just off the floor, torso tall. Push hard into the front foot.", eq:"None", alt:"Split squat"},
   "Squat":{cue:"Bodyweight first. Sit back and down, chest tall, knees over toes, stand tall.", eq:"None (light dumbbell later)", alt:"Squat to a box"},
 };
 const LIFTS = {
   SA:{name:"Sprint Strength A", when:"Spring · after Session A", spr:1, gen:1, rest:"60–90 sec", note:"Familiar lifts only, about 3 reps in reserve, never to failure. Congested meet week: 1 set each, or skip. No hard lower-body lifting within 48 hours of an important meet.",
-    ex:[["Goblet squat","2 × 5",1],["Dumbbell Romanian deadlift","2 × 6",1],["Dumbbell row","2 × 8"],["Push-up","2 × 6–10"],["Calf raise","2 × 10"],["Dead bug","2 × 6/side"]]},
-  SB:{name:"Sprint Strength B", when:"Spring · recovery day, if recovered", spr:1, gen:1, rest:"60–90 sec", note:"Familiar lifts only, about 3 reps in reserve, never to failure. Skip it in congested meet weeks.",
-    ex:[["Step-up","2 × 5/leg",1],["Glute bridge","2 × 8"],["Light resistance-band row","2 × 10"],["Incline push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
+    ex:[["Goblet squat","2 × 5",1],["Dumbbell Romanian deadlift","2 × 6",1],["Explosive step-up","2 × 4–6/leg"],["Assisted Nordic curl","1–2 × 3–5 (skip in congested meet weeks)"],["Bent-knee calf raise","2 × 10–15"],["Straight-knee calf raise","2 × 10–15"],["Dumbbell row","2 × 8"],["Dead bug","2 × 6/side"]]},
+  SB:{name:"Sprint Strength B", when:"Spring · LOW day, if recovered", spr:1, gen:1, rest:"60–90 sec", note:"LOW-day strength: isometrics, upper body and trunk only, so the heavy leg work stays on HIGH days. Never to failure. Skip it in congested meet weeks.",
+    ex:[["Split-squat isometric","2 × 20–30 sec/leg"],["Isometric calf hold","2 × 20–30 sec"],["Short-lever Copenhagen plank","2 × 15–20 sec/side"],["Light resistance-band row","2 × 10"],["Incline push-up","2 × 8"],["Side plank","2 × 20 sec/side"]]},
   MSA:{name:"JH Sprint Strength A", when:"Spring · after Session A", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight or very light. Leave about 3 reps in reserve. Never to failure.",
     ex:[["Bodyweight squat","2 × 6",1],["Hip hinge with dowel","2 × 6",1],["Incline push-up","2 × 6"],["Light resistance-band row","2 × 8"],["Calf raise","2 × 8"],["Dead bug","2 × 5/side"]]},
   MSB:{name:"JH Sprint Strength B", when:"Spring · recovery day, if recovered", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight. Quality reps, never to failure.",
@@ -2232,10 +2235,11 @@ function sessBadge(d, lv){
   const S = sessOf(d, lv); if (!S || !SESS_K[S.kind]) return "";
   return `<span class="sess ${SESS_K[S.kind][1]}">${esc(SESS_K[S.kind][0])}</span>${S.flag && canPost ? `<span class="sess-flag" title="${esc(S.flag)}">⚑ check</span>` : ""}`;
 }
-function sessInfo(d, lv){
+const DIST_G = ["Distance","Mid Distance"];
+function sessInfo(d, lv, g){
   const S = sessOf(d, lv); if (!S) return "";
-  const bits = [];
-  if (S.title && S.kind!=="rest") bits.push(`<span><b>${esc(S.title)}</b>${S.cls ? " · " + esc(S.cls) : ""}</span>`);
+  const bits = [], ttl = g && g!=="All" && !DIST_G.includes(g) ? (gFocus(d, g, lv) || "") : S.title;   // session titles are written for distance; other groups show their own focus
+  if (ttl && S.kind!=="rest") bits.push(`<span><b>${esc(ttl)}</b>${S.cls ? " · " + esc(S.cls) : ""}</span>`);
   if (S.equip && canPost) bits.push(`<span>Equipment: ${esc(S.equip)}</span>`);
   if (S.note && canPost) bits.push(`<span>Coach note: ${esc(S.note)}</span>`);
   if (S.flag && canPost) bits.push(`<span class="flag">⚑ Review: ${esc(S.flag)}</span>`);
@@ -2354,7 +2358,7 @@ function dayHTML(d){
   const empty = !groups && wcat!=="All" ? `<p class="muted" style="margin:0">No separate ${esc(wcat)} work today.${hasAll?" Follow the Everyone plan.":" Check with your event coach."}</p>` : "";
   const sl = wlv==="JH" ? null : "HS";
   return `<div class="day${sl && isCoachLed(d, sl) ? " d-coach" : ""}"><div class="when">${d.day}<small>${focus}</small>${sl ? sessBadge(d, sl) : ""}</div>
-    <div class="evlist">${sl ? sessInfo(d, sl) : ""}${everyone}${groups}${empty}</div></div>`;
+    <div class="evlist">${sl ? sessInfo(d, sl, wcat) : ""}${everyone}${groups}${empty}</div></div>`;
 }
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 let login = {open:false, email:"", sent:false, msg:"", mode:"pw", create:false};
@@ -4576,7 +4580,7 @@ function seasonListText(lv, groups){
         const same = blocks.find(b => b[2] && b[1].join("\n")===x.join("\n"));
         if (same) same[0] += " + " + g + (f?` (${f})`:""); else blocks.push([g + (f?` (${f})`:""), x, true]); });
       if (!blocks.some(b => b[2] || b[0]!=="Everyone")) return;
-      const ss = sessOf(d, lv), lab = [ss && SESS_K[ss.kind] ? SESS_K[ss.kind][0] : "", ss && ss.cls && ss.kind==="meet" ? ss.cls : "", focusFor(d,lv)||""].filter(Boolean).join(" · ");
+      const ss = sessOf(d, lv), lab = [ss && SESS_K[ss.kind] ? SESS_K[ss.kind][0] : "", ss && ss.cls && ss.kind==="meet" ? ss.cls : "", groups.every(g=>!DIST_G.includes(g)) ? (gFocus(d, groups[0], lv)||"") : (focusFor(d,lv)||"")].filter(Boolean).join(" · ");
       wl.push(`${dn(dayDate(w, d.day))}${lab?" · "+lab:""}`);
       blocks.forEach(([name, x]) => { wl.push(`  ${name}:`); x.forEach(t => wl.push(`    - ${t}`)); });
       wl.push("");
@@ -6431,6 +6435,7 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-10i"></script>
-<script src="sprints.js?v=11-10b"></script>
+<script src="sprints.js?v=11-27d"></script>
+<script src="sprint2.js?v=11-27d"></script>
 </body>
 </html>

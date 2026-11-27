@@ -9,7 +9,7 @@
 
 /* ---------- styles ---------- */
 const css = `
-.sp-grp{display:inline-block;font:700 11px var(--body);letter-spacing:.03em;border-radius:3px;padding:1px 6px;margin-right:4px;white-space:nowrap;background:var(--chip);color:var(--fg)}
+.sp-hl{display:inline-block;font:700 11px var(--body);letter-spacing:.05em;border-radius:3px;padding:2px 6px;vertical-align:middle;background:var(--chip)}.hl-high{background:#b4472b;color:#fff}.hl-low{background:#e6f0e8;color:#1f4d2b}.hl-competition{background:#fcb827;color:#161105}.hl-off{border:1px solid var(--line)}\n.sp-grp{display:inline-block;font:700 11px var(--body);letter-spacing:.03em;border-radius:3px;padding:1px 6px;margin-right:4px;white-space:nowrap;background:var(--chip);color:var(--fg)}
 .sp-grp.S1{background:#004631;color:#fff}.sp-grp.S2{background:#fcb827;color:#161105}.sp-grp.S3{background:#6b4fa3;color:#fff}.sp-grp.H{background:#b4472b;color:#fff}.sp-grp.J{background:#2f4f8f;color:#fff}.sp-grp.MD{background:transparent;border:1px solid var(--line);color:var(--muted)}
 .sp-rows{width:100%;border-collapse:collapse;font-size:14px}
 .sp-rows td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
@@ -268,12 +268,12 @@ const SPRINT_TECH_HS = {
 const STR = {
   dec:{n:"December · Movement quality", ex:[["Trap-bar deadlift (or goblet squat)","2×6–8"],["Dumbbell bench press","2×8"],["Split squat","2×6 each leg"],["Dumbbell row","2×8"],["Romanian deadlift (dumbbells)","2×8"],["Core: dead bug + side plank","2×8 each / 2×20 s"],["Med-ball chest pass","2×5"]],
     note:"Light. Learn positions. Stop 3+ reps before failure."},
-  jan:{n:"January · Progressive loading", ex:[["Trap-bar deadlift","3×4–6"],["Dumbbell bench press","3×5–6"],["Rear-foot split squat","3×5 each"],["Romanian deadlift","3×6"],["Pull-ups or inverted rows","3×5–8"],["Core: Pallof press + side plank","2×8 / 2×25 s"],["Med-ball scoop toss","3×3"]],
+  jan:{n:"January · Progressive loading", ex:[["Trap-bar deadlift","3×4–6"],["Dumbbell bench press","3×5–6"],["Rear-foot split squat","3×5 each"],["Romanian deadlift","3×6"],["Pull-ups or inverted rows","3×5–8"],["Core: Pallof press + side plank","2×8 / 2×25 s"],["Assisted Nordic hamstring curl","1–2×3–5"],["Bent-knee + straight-knee calf raises","2×10–15 each"],["Med-ball scoop toss","3×3"]],
     note:"Add load only when every rep looks the same. Leave 2–3 reps in reserve."},
-  feb:{n:"February · Maintain + move fast", ex:[["Trap-bar deadlift (fast up)","2–3×3–4"],["Dumbbell bench (fast up)","2×5"],["Split squat","2×5 each"],["Rows","2×8"],["Med-ball scoop toss / overhead throw","3×3"]],
+  feb:{n:"February · Maintain + move fast", ex:[["Trap-bar deadlift (fast up)","2–3×3–4"],["Dumbbell bench (fast up)","2×5"],["Split squat","2×5 each"],["Rows","2×8"],["Explosive step-up","2×4–6 each"],["Calf isometric hold","2×20–30 s"],["Short-lever Copenhagen plank","2×15–20 s each"],["Med-ball scoop toss / overhead throw","3×3"]],
     note:"Same weights as late January. Explosive intent, no soreness. Cut a set if legs are flat."},
-  spring:{n:"March–May · Maintenance", ex:[["Trap-bar deadlift","2×3"],["Split squat","2×4 each"],["Upper push + pull","2×5"],["Med-ball throws","2×3"]],
-    note:"1–2 short sessions a week. Nothing heavy within 48 hours of a priority meet. Coordinate with the meet schedule."},
+  spring:{n:"March–May · Maintenance", ex:[["Trap-bar deadlift","2×3"],["Split squat","2×4 each"],["Single-leg RDL","2×6 each"],["Split-squat isometric","2×20–30 s each"],["Upper push + pull","2×5"],["Med-ball throws","2×3"]],
+    note:"1–2 short sessions a week, heavy lower-body work on HIGH days only, 2–3 min between heavier sets, never to failure. Nothing heavy within 48 hours of a priority meet; no Nordics or new exercises in congested meet weeks or near championships. Hurdlers and jumpers with big event loads do less."},
 };
 const STR_MOD = {red:"Reduced volume: one fewer set on each lift.", light:"Light: 2 sets, no new loads.", mod:"Moderate: normal sets, no new maxes, stop fresh.", intro:"Introductory: technique first, light loads."};
 
@@ -370,17 +370,17 @@ const SP_WEEKS_HS = [
  {n:6, start:"2027-01-04", focus:"Baseline speed testing", st:"vol", mo:"jan", test:true,
   tue:{out:[WU,row("Accelerations","3×20m",{d:"accel",r:R.acc,i:"max"}),row("Flying 10m, timed","3 reps",{d:"fly10",r:R.fly,i:"max",n:"Baseline test. Record method, surface and conditions."})],
        in:[WU,row("Accelerations","4×10m",{d:"accel",r:R.acc,i:"max"}),row("Timed 10m starts","2 if safe",{d:"stand",r:R.acc,i:"max",n:"Indoor time: keep separate from outdoor times."})]},
-  thu:{out:[WU,row("Short starts","3×10m",{d:"three",r:R.acc,i:"max"}),row("Pogo hops + broad jumps","2×10 contacts / 2×3",{d:"pogo",r:R.bj,i:"max",n:"Low-volume plyometrics."}),row("Block setup instruction","10 min",{d:"block",i:"tech"}),TECH,{str:"jan"}], in:null}},
+  thu:{out:[WU,row("Short starts","3×10m",{d:"three",r:R.acc,i:"max"}),row("Single-leg pogos + lateral bounds","2×8 each leg / 2×4 each side",{d:"pogo",r:R.bj,i:"max",n:"January = single-leg elasticity. Stick each landing."}),row("Block setup instruction","10 min",{d:"block",i:"tech"}),TECH,{str:"jan"}], in:null}},
  {n:7, start:"2027-01-11", focus:"Block clearance", st:"vol", mo:"jan",
   tue:{out:[WU,row("Starts","3×30m",{d:"block",r:"3 min",i:"max"}),row("Flying 10m","3 reps",{d:"fly10",r:R.fly,i:"max",cut:true})],
        in:[WU,row("Starts","4×10m",{d:"block",r:R.acc,i:"max"}),row("Starts","2×15m if safe",{d:"block",r:R.acc,i:"max",cut:true}),row("Wicket / dribble passes","3",{d:"wicket",r:R.drill,i:"tech"})]},
-  thu:{out:[WU,row("Short accelerations","3×10–15m",{d:"accel",r:R.acc,i:"max"}),row("Low-volume jumps","2×3 broad jumps",{d:"broad",r:R.bj,i:"max"}),HJT,{str:"jan"}], in:null}},
+  thu:{out:[WU,row("Short accelerations","3×10–15m",{d:"accel",r:R.acc,i:"max"}),row("Single-leg landings + alternating hops","2×4 each leg / 2×6",{d:"broad",r:R.bj,i:"max",n:"Controlled horizontal force; quiet landings."}),HJT,{str:"jan"}], in:null}},
  {n:8, start:"2027-01-18", focus:"Drive-phase development", st:"vol", mo:"jan",
   tue:{out:[WU,row("Accelerations","3×20m",{d:"accel",r:R.acc,i:"max"}),row("Flying 20m","3 reps",{d:"fly20",r:R.fly,i:"max",cut:true})],
        in:[WU,row("Starts","4×10–15m",{d:"block",r:R.acc,i:"max"}),row("Wicket / dribble drills","3 passes",{d:"wicket",r:R.drill,i:"tech"})]},
-  thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Controlled explosive jumps","2×3 broad jumps + 2×10 pogos",{d:"broad",r:R.bj,i:"max"}),TECH,{str:"jan"}], in:null}},
+  thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Controlled explosive jumps","2×3 broad jumps + 2×10 pogos",{d:"broad",r:R.bj,i:"max"}),TECH,{str:"jan",mod:"red",n:"Deload week: one fewer set on every lift, same weights."}], in:null}},
  {n:9, start:"2027-01-25", focus:"Acceleration reassessment", st:"vol", mo:"jan", test:true,
-  tue:{out:[WU,row("Timed 10m starts","2–3 attempts",{d:"block",r:R.acc,i:"max",n:"Reassessment. Same protocol as Week 6."}),row("Timed 20m starts","2–3 attempts",{d:"block",r:"3 min",i:"max"}),row("Flying 20m","2 if still fresh",{d:"fly20",r:R.fly,i:"max",cut:true})],
+  tue:{out:[WU,row("Flying 10m, timed","3 reps",{d:"fly10",r:R.fly,i:"max",n:"Reassessment: same protocol as the Jan 5 baseline (same build-up, timing method, surface and footwear). Compare only like with like."}),row("Timed 10m starts","2–3 attempts",{d:"block",r:R.acc,i:"max",n:"New baseline for block starts (not tested Jan 5)."})],
        in:[WU,row("Timed 10m starts","2–3 attempts",{d:"block",r:R.acc,i:"max",n:"Indoor time: keep separate from outdoor times."}),row("Technical accelerations","2×10–15m",{d:"accel",r:R.acc,i:"near"})]},
   thu:{out:[WU,row("Short starts (reduced volume)","2×10m",{d:"block",r:R.acc,i:"max"}),row("Video analysis","10 min",{i:"tech",n:"Review Tuesday's starts with the scorecard."}),TECH,{str:"jan"}], in:null}},
  {n:10, start:"2027-02-01", focus:"Maximum velocity", st:"vol", mo:"feb",
@@ -394,16 +394,16 @@ const SP_WEEKS_HS = [
   thu:{out:[WU,row("Speed endurance","2×80m",{d:"sefast",g:["S1"],r:R.se80,i:"9095"}),row("Speed endurance","2×120m",{d:"sefast",g:["S2"],r:R.se120,i:"cf"}),TECH,{str:"feb",mod:"red"}],
        in:[WU,row("Starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Low-volume jumps","2×3 broad jumps",{d:"broad",r:R.bj,i:"max"}),row("No 80–120m reps in a hallway","",{i:"tech"}),TECH,{str:"feb"}]}},
  {n:12, start:"2027-02-15", focus:"Speed consolidation", st:"off", mo:"feb",
-  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),TECH], in:null}},
-    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),TECH], in:null}},
-    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WU,row("Starts","3×20m",{d:"block",r:R.acc,i:"max"}),row("4×100 exchanges","3 each, walking → jogging",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","2 walk-throughs",{g:["S2"],i:"tech"})], in:null}}},
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Low-intensity event technique","10–15 min",{i:"tech",n:"Hurdle walkovers + lead/trail drills, approach run-throughs (no takeoffs), pole carries, block set-up walk-throughs. Nothing at full speed."})], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),row("Low-intensity event technique","10–15 min",{i:"tech",n:"Hurdle walkovers + lead/trail drills, approach run-throughs (no takeoffs), pole carries, block set-up walk-throughs. Nothing at full speed."})], in:null}},
+    Fri:{k:"power", dfocus:"Blocks + relays (low)", sess:{out:[WU,row("Block set-up + first 3 steps","4 reps at a jog, no max starts",{d:"block",i:"tech",n:"LOW day: Thursday was the hard day."}),row("4×100 exchanges","3 each, walking → jogging",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","2 walk-throughs",{g:["S2"],i:"tech"})], in:null}}},
   tue:{out:[WU,row("Accelerations","2×20m",{d:"accel",r:R.acc,i:"max"}),row("Flying 20m","2 reps",{d:"fly20",r:R.fly,i:"max",cut:true})],
        in:[WU,row("Accelerations","3×10m",{d:"accel",r:R.acc,i:"max"}),row("Low-volume technical work","10 min",{d:"dribble",i:"tech"}),row("Video review","10 min",{i:"tech"})]},
   thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),TECH,{str:"feb",mod:"light"}], in:null}},
  {n:13, start:"2027-02-22", focus:"Preseason transition", st:"off", mo:"feb",
-  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),TECH], in:null}},
-    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),TECH], in:null}},
-    Fri:{k:"power", dfocus:"Starts + relays", sess:{out:[WU,row("Starts","3×20m",{d:"block",r:R.acc,i:"max"}),row("4×100 exchanges","3 each, jogging → controlled",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","3 at a jog: incoming calls, outgoing looks",{g:["S2"],i:"tech"})], in:null}}},
+  days:{Mon:{k:"power", dfocus:"Recovery + technique", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Low-intensity event technique","10–15 min",{i:"tech",n:"Hurdle walkovers + lead/trail drills, approach run-throughs (no takeoffs), pole carries, block set-up walk-throughs. Nothing at full speed."})], in:null}},
+    Wed:{k:"power", dfocus:"Recovery + blocks", sess:{out:[row("Easy movement","8–10 min walk or bike",{i:"tech"}),row("Recovery core","ankle rocks, hip switches, dead bug, side plank · 2 sets",{i:"tech"}),row("Block setup + first steps","3–4 walk-through reps",{d:"block",i:"tech"}),row("Low-intensity event technique","10–15 min",{i:"tech",n:"Hurdle walkovers + lead/trail drills, approach run-throughs (no takeoffs), pole carries, block set-up walk-throughs. Nothing at full speed."})], in:null}},
+    Fri:{k:"power", dfocus:"Blocks + relays (low)", sess:{out:[WU,row("Block set-up + first 3 steps","4 reps at a jog, no max starts",{d:"block",i:"tech",n:"LOW day: Thursday was the hard day."}),row("4×100 exchanges","3 each, jogging → controlled",{i:"tech",n:"Learn the zone and the call."}),row("4×400 exchanges","3 at a jog: incoming calls, outgoing looks",{g:["S2"],i:"tech"})], in:null}}},
   tue:{out:[WU,row("Accelerations","3×30m",{d:"accel",r:"3 min",i:"max"}),row("Fast runs","2×60m",{d:"sefast",g:["S1"],r:R.full,i:"cf"}),row("Fast runs","2×80m",{d:"sefast",g:["S2"],r:R.full,i:"cf"})],
        in:[WU,row("Accelerations","4×10–15m",{d:"accel",r:R.acc,i:"max"}),row("Controlled power","2×3 med-ball throws",{d:"medball",r:R.bj,i:"max"}),row("Technical drills","3 passes",{d:"dribble",r:R.drill,i:"tech"})]},
   thu:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),TECH,{str:"feb",mod:"mod",n:"Avoid excessive fatigue."}], in:null}},
@@ -416,7 +416,7 @@ const DAYN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
    (hub_data "sprint_rev" = true, set by supabase/spring_sprints.sql) or in the coach preview. ---- */
 const SP_REV = {HS:{
   "2027-01-21": {sess:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),row("Controlled explosive jumps","2×3 broad jumps + 2×10 pogos",{d:"broad",r:R.bj,i:"max"}),
-    row("Rhythm runs","2×60m",{d:"sefast",g:["S2"],r:"walk back",i:"near",n:"Relaxed, about 75–80%. Learning longer sprint rhythm."}),TECH,{str:"jan"}]}},
+    row("Rhythm runs","2×60m",{d:"sefast",g:["S2"],r:"walk back",i:"near",n:"Relaxed, about 75–80% effort. Learning longer sprint rhythm."}),TECH,{str:"jan",mod:"red",n:"Deload week: one fewer set on every lift, same weights."}]}},
   "2027-02-16": {focus:"February preparation: speed", sess:{out:[WU,row("Accelerations","4×20m",{d:"accel",r:"2–4 min",i:"max"}),row("Accelerations","2×30m",{d:"accel",r:"3–4 min",i:"max"}),
     row("Flying 20m","3 reps",{d:"fly20",r:"4–6 min",i:"max",cut:true,n:"Individual build-up, safe run-out."}),row("Joined Feb 15 (intro week)","3×20m standing starts + 2×20m build-ups only",{r:"2–3 min",i:"near"})]}},
   "2027-02-18": {focus:"February preparation: sprint endurance", sess:{out:[WU,row("Short starts","3×10m",{d:"block",r:R.acc,i:"max"}),
@@ -751,6 +751,12 @@ function dayFacts(i){
   return {dur:"—", rpe:"Rest", equip:"None", obj:"Recover. Optional comfortable walk or normal daily activity."};
 }
 const lab = i => LABELS[i.k] || LABELS.rec;
+function hlOf(i){   // Charlie Francis high/low label for a day
+  if (!i) return "OFF"; if (i.k==="meet") return "COMPETITION"; if (i.k==="rest" || i.k==="none") return "OFF"; if (!isCoach(i)) return "LOW";
+  const S = i.sess || {}, rows = (i.forceIn ? (S.in||S.out) : S.out) || [];
+  return rows.some(r => r && (["max","9095","cf"].includes(r.i) || (r.str && r.mod!=="light"))) ? "HIGH" : "LOW";
+}
+window.SP_HL = hlOf;
 const store = {get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { if (v==null) localStorage.removeItem(k); else localStorage.setItem(k,v); } catch(e){} }};
 
 function midItems(ds){
@@ -820,7 +826,7 @@ function dayCard(i){
   else body = `<p style="margin:0">No assigned workout. Optional comfortable walk or normal daily activity.${i.note?` <b>${esc(i.note)}</b>`:""}</p>`;
   return `<div class="panel sp-daycard"><div class="sp-dhead"><div><div class="sp-ddate">${i.date.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</div>
       <span class="sp-lb ${L[1]}">${esc(L[0])}</span>${i.movedFrom ? ` <span class="sp-lb lb-opt">Moved from ${fmt(parseD(i.movedFrom))}</span>` : ""}</div></div>
-    <h2 class="sp-dtitle">${esc(dayTitle(i))}</h2>
+    <h2 class="sp-dtitle">${CUR_LV==="HS"?`<span class="sp-hl hl-${hlOf(i).toLowerCase()}">${hlOf(i)}</span> `:""}${esc(dayTitle(i))}</h2>
     ${i.cnote ? `<div class="sp-banner"><b>Coach note:</b> ${esc(i.cnote)}</div>` : ""}
     <div class="sp-facts"><div><span>How long</span><b>${esc(F.dur)}</b></div><div><span>How hard</span><b>${esc(F.rpe)}</b></div><div><span>Equipment</span><b>${esc(F.equip)}</b></div><div><span>Goal</span><b>${esc(F.obj)}</b></div></div>
     ${s3 ? s3HTML(i) : ""}
@@ -994,9 +1000,9 @@ function groupsView(){
       <ul class="exp" style="margin:0">${by[k].sort((x,y)=>(x[2]===y[2]?0:x[2]==="p"?-1:1) || x[0].name.localeCompare(y[0].name)).map(([a,g,t])=>`<li>${a.level==="JH"?`<span class="sp-grp">L${g.jl||suggestJl(a)}</span> `:""}${t==="p"?`<b>${esc(a.name)}</b>`:`${esc(a.name)} <span class="muted" style="font-size:12px">(secondary)</span>`}${canPost&&g.sug?` <span class="sp-sug">suggested</span>`:""}</li>`).join("")}</ul></div>`).join("")}</div>`;
 }
 
-const TABS = [["cal","Today & Week"],["phil","Philosophy"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
+const TABS = [["cal","Today & Week"],["phil","Philosophy"],["lib2","Speed & 400 Library"],["hr","Hurdle & Relay Paths"],["model","400 Race Model"],["test","Testing"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
 views.sprints = function(){
-  const body = SP.tab==="phil" ? philView() + (typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
+  const body = SP.tab==="phil" ? philView() + (CUR_LV==="HS" && window.sp2PhilHTML ? sp2PhilHTML() : "") + (typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="lib2" ? sp2LibHTML() : SP.tab==="hr" ? sp2HurdleRelayHTML() : SP.tab==="model" ? sp2ModelHTML() : SP.tab==="test" ? sp2TestHTML() : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
   return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · ${CUR_LV==="JH" ? "Junior high (grades 6–8)" : "High school"} · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
       <p class="lede" style="margin:6px 0 0">${CUR_LV==="JH" ? "Learn to run fast and have fun doing it. Same fundamentals as high school, sized for junior high." : "Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher."}</p></div>
       <div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div></div>
@@ -1022,10 +1028,11 @@ SP.editor = function(){
     <p class="lede" style="margin:0">Give each ${CUR_LV==="JH" ? "junior high" : "high school"} sprinter, hurdler and jumper one <b>primary group</b>${CUR_LV==="JH" ? ", a <b>level</b> (1 Foundation, 2 Development, 3 Advanced: by readiness and technique, not grade or times)," : ""} and any <b>secondary events</b>. Suggestions come from last season's events: check them, change what's off, and save. Groups show publicly on the Sprints page (no notes here).</p>
     <div class="bar" style="justify-content:flex-start">${segBtns(SP.gshow,[["all","Sprint/hurdle/jump kids"],["unset","Not saved yet"],["every",CUR_LV==="JH"?"Every JH athlete":"Every HS athlete"]],"(v=>{SP.gshow=v;render()})")}
       <input id="sp-gsearch" class="search" type="search" placeholder="Search name" value="${esc(SP.gq)}" oninput="SP.gq=this.value;render();const e=document.getElementById('sp-gsearch');e.focus();e.setSelectionRange(e.value.length,e.value.length)"></div>
-    <div class="tbl sp-ged"><table><thead><tr><th>Athlete</th><th>Primary</th>${CUR_LV==="JH"?"<th>Level</th>":""}<th>Secondary</th><th>S3 follows</th><th></th></tr></thead><tbody>
+    <div class="tbl sp-ged"><table><thead><tr><th>Athlete</th><th>Primary</th>${CUR_LV==="JH"?"<th>Level</th>":"<th>Development</th>"}<th>Secondary</th><th>S3 follows</th><th></th></tr></thead><tbody>
     ${list.map(a=>{ const c = cur(a), saved = !!D[a.id];
       return `<tr><td class="nm"><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${a.g==="B"?"Boys":"Girls"} · ${a.grade} · ${esc((a.cats||[]).join(", ")||"no events yet")}</div></td>
         <td><select aria-label="Primary group for ${esc(a.name)}" onchange="SP.setG('${a.id}','p',this.value)"><option value="">None</option>${[...GKEYS,"MD"].map(k=>`<option value="${k}" ${c.p===k?"selected":""}>${k==="MD"?"Dist/Mid program":k+" · "+GROUPS[k].n}</option>`).join("")}</select></td>
+        ${CUR_LV!=="JH" ? `<td><select aria-label="Development level for ${esc(a.name)}" onchange="SP.setG('${a.id}','dl',this.value)">${[["","Not set"],["D","Developing"],["I","Intermediate"],["A","Advanced"]].map(([v,l])=>`<option value="${v}" ${(c.dl||"")===v?"selected":""}>${l}</option>`).join("")}</select></td>` : ""}
         ${CUR_LV==="JH" ? `<td><select aria-label="Level for ${esc(a.name)}" onchange="SP.setG('${a.id}','jl',this.value)">${[1,2,3].map(n=>`<option value="${n}" ${(c.jl||suggestJl(a))===n?"selected":""}>L${n} · ${["Foundation","Development","Advanced"][n-1]}</option>`).join("")}</select></td>` : ""}
         <td>${GKEYS.filter(k=>k!==c.p).map(k=>`<label class="ed-check" style="margin-right:6px"><input type="checkbox" ${(c.s||[]).includes(k)?"checked":""} onchange="SP.setG('${a.id}','s:${k}',this.checked)"> ${k}</label>`).join("")}</td>
         <td>${c.p==="S3"?`<select aria-label="S3 plan for ${esc(a.name)}" onchange="SP.setG('${a.id}','s3',this.value)"><option value="mid" ${(c.s3||"mid")==="mid"?"selected":""}>Mid-Distance plan</option><option value="sprint" ${c.s3==="sprint"?"selected":""}>Sprint plan</option></select>`:`<span class="muted">—</span>`}</td>
@@ -1041,8 +1048,9 @@ SP.setG = function(id, k, v){
   if (k==="p") { t.p = v; t.s = t.s.filter(x=>x!==v); if (v!=="S3") delete t.s3; }
   else if (k==="s3") t.s3 = v;
   else if (k==="jl") t.jl = +v;
+  else if (k==="dl") { if (v) t.dl = v; else delete t.dl; }
   else if (k.startsWith("s:")) { const g = k.slice(2); t.s = v ? [...new Set([...t.s, g])] : t.s.filter(x=>x!==g); }
-  if (!t.p && !t.s.length && !t.jl) delete D[id]; else D[id] = t;
+  if (!t.p && !t.s.length && !t.jl && !t.dl) delete D[id]; else D[id] = t;
   SP.msg = {kind:"",text:""}; render();
 };
 SP.saveGroups = async function(acceptAll){
@@ -1194,7 +1202,7 @@ SP.inject = function(w, opt){
     let d = copy.days.find(x=>x.day===dn);
     if (!d) { d = {day:dn, focus:"", all:[], groups:{}, combos:[], gfocus:{}}; copy.days.push(d); }
     const L = lab(i), F = dayFacts(i);
-    const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:LV} : i.k==="rest" ? {t:"Rest · Full rest", lv:LV} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:LV};
+    const head = P ? {t: i.k==="rest" ? "Rest" : isCoachLed(i) ? `${CUR_LV==="HS"?hlOf(i)+" · ":""}${L[0]} · ${dayTitle(i)} · ${F.dur}` : `${L[0]} (optional, at home) · ${dayTitle(i)} · ${F.dur} · RPE ${F.rpe}. Full steps on the hub.`, lv:LV} : i.k==="rest" ? {t:"Rest · Full rest", lv:LV} : {t:`${L[0]} · ${dayTitle(i)} · ${F.dur}${isCoachLed(i) ? "" : " · RPE " + F.rpe} → full details, checklist and your group on the Sprints, Hurdles & Jumps page`, link:"#sprints", lv:LV};
     let items = [head];
     if (!P) {
       items = simpleItems(i, LV, d);
@@ -1251,7 +1259,7 @@ SP.inject = function(w, opt){
     const ex = d.combos.find(c => c.sp);
     if (ex) { ex.items = ex.items.concat(items); ex.groups = [...new Set(ex.groups.concat(SG))]; }
     else d.combos.push({groups:[...SG], name:"Sprints · Hurdles · Jumps", items, sp:true});
-    SG.forEach(g => { const gk = (JHL ? "JH " : "") + g; if (!d.gfocus[gk]) d.gfocus[gk] = P ? `${L[0]}: ${dayTitle(i)}` : L[0]; });
+    SG.forEach(g => { const gk = (JHL ? "JH " : "") + g; if (!d.gfocus[gk]) d.gfocus[gk] = (CUR_LV==="HS" ? hlOf(i)+" · " : "") + (P ? `${L[0]}: ${dayTitle(i)}` : L[0]); });
     if (d.focus && typeof d.focus==="object") { if (!d.focus[LV]) d.focus = Object.assign({}, d.focus, {[LV]: dayTitle(i)}); }
     else if (!d.focus) d.focus = {HS: "", JH: "", [LV]: dayTitle(i)};
   });
