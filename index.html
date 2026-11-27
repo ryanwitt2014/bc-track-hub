@@ -942,7 +942,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-27a";
+const HUB_VERSION = "11-27b";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -3630,8 +3630,8 @@ function mdPhilHTML(){
       <div class="tbl"><table><thead><tr><th>Component</th><th>400/800</th><th>800/1600</th><th>1600/3200</th></tr></thead><tbody>${H2_EMPH.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div>
       <p class="note" style="margin:8px 0 0">Relative emphasis, not literal workout volume.</p></div>
     <div class="cols">
-      <div class="panel"><h2>Every runner, six separate ratings</h2><p style="margin:0 0 6px">One label doesn't decide everything. A runner can be Advanced in VDOT, Intermediate in volume, Developing in the weight room, and Advanced in sprint development, all at once.</p>
-        <div class="tbl"><table><tbody>${[["Pace","Current VDOT and race performances"],["Volume (A/B/C)","Recent training history and tolerance: this decides workout length"],["Event profile","Physiological profile and goals"],["Strength","Movement skill and lifting experience"],["Speed","Sprint experience and measured velocity"],["Readiness","Recovery and current status"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
+      <div class="panel"><h2>Every runner, five separate ratings</h2><p style="margin:0 0 6px">One label doesn't decide everything. A runner can be Advanced in VDOT, Intermediate in volume, Developing in the weight room, and Advanced in sprint development, all at once.</p>
+        <div class="tbl"><table><tbody>${[["Pace","Current VDOT and race performances"],["Volume (A/B/C)","Recent training history and tolerance: this decides workout length"],["Event profile","Physiological profile and goals"],["Strength","Movement skill and lifting experience"],["Speed","Sprint experience and measured velocity"]].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
         <p class="note" style="margin:6px 0 0">An advanced performer doesn't automatically get advanced volume. Volume comes from the last 3–4 weeks of running, XC history, time off, other sports, injuries, growth and how well consecutive days are tolerated. New runners can start with 3–4 running days a week, including run/walk.</p></div>
       <div class="panel"><h2>Hard days and easy days</h2><ul class="exp">
         <li>Competition counts as a hard day, sized by events, effort and number of races.</li>
@@ -4079,7 +4079,7 @@ function myWeekHTML(a){
       <div class="weekpick"><button type="button" aria-label="Previous week" ${i===0?"disabled":""} onclick="awIdx=${i-1};render()">‹</button><b>Week ${weekNum(w)}</b>
       <button type="button" aria-label="Next week" ${i===vw.length-1?"disabled":""} onclick="awIdx=${i+1};render()">›</button></div></div>
     ${weekObj(w, a.level)}
-    ${t.ready && t.ready!=="full" ? `<p class="wkobj"><b>This week:</b> ${esc(READY[t.ready]||t.ready)}</p>` : ""}${t.note ? `<p class="wkobj"><b>Coach note:</b> ${esc(t.note)}</p>` : ""}
+    ${t.note ? `<p class="wkobj"><b>Coach note:</b> ${esc(t.note)}</p>` : ""}
     ${days.length ? `<div class="days">${days.map(({d,items})=>{ curDay = d.day; return `<div class="day${isCoachLed(d, a.level) ? " d-coach" : ""}"><div class="when">${d.day}<small>${esc(gFocus(d, planGroup(a), a.level) || focusFor(d,a.level))}</small>${sessBadge(d, a.level)}</div><div class="evlist"><ul class="mylist">${items.map(line).join("")}</ul></div></div>`; }).join("")}</div>`
       : `<p class="note" style="margin:0">No workouts posted for this week yet.</p>`}
     <p class="note" style="margin:8px 0 0">Paces come from your best race, same as the <a href="#paces">Paces</a> page. Effort matters more than hitting the exact number.</p></div>`;
@@ -5543,14 +5543,14 @@ const views = {
     const txt = (id,k,ph,w) => `<input type="text" aria-label="${esc(ph)}" style="width:${w}px" value="${esc((dtDraft[id]||{})[k]||"")}" placeholder="${esc(ph)}" onchange="dtSet('${id}','${k}',this.value.trim())">`;
     const chk = (id,k,lab) => `<label class="ed-check"><input type="checkbox" ${((dtDraft[id]||{})[k])?"checked":""} onchange="dtSet('${id}','${k}',this.checked?'1':'')"> ${esc(lab)}</label>`;
     const pr = a => ["800","1600"].map(e=>a.prs[e]?`${e} ${esc(a.prs[e])}`:"").filter(Boolean).join(" · ") || "—";
-    const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>${lv==="JH"?"Level":"Volume"}</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":"<th>Pace</th><th>Strength</th><th>Speed</th><th>Other sport</th>"}<th>This week</th><th>Coach note (shows on their page)</th></tr></thead><tbody>
+    const tbl = (lv) => `<div class="tbl"><table><thead><tr><th>Runner</th><th>PRs</th><th>${lv==="JH"?"Level":"Volume"}</th><th>Pathway</th>${lv==="JH"?"<th>HS group invite</th><th>Championship</th><th>Min / week</th>":"<th>Pace</th><th>Strength</th><th>Speed</th><th>Other sport</th>"}<th>Coach note (shows on their page)</th></tr></thead><tbody>
         ${tagAthletes(lv).map(a=>`<tr><td><b>${esc(a.name)}</b><div class="muted">${a.g==="B"?"Boys":"Girls"} · ${a.grade??"—"}</div></td><td class="mono" style="white-space:nowrap">${pr(a)}</td>
           <td>${sel(a.id,"lv",lv==="JH"?LEVEL_NAMES_JH:LEVEL_NAMES,"Level")}</td><td>${sel(a.id,"path",lv==="JH"?PATH_NAMES_JH:PATH_NAMES,"Pathway")}</td>
           ${lv==="JH"?`<td>${chk(a.id,"hs","Invited")}</td><td>${sel(a.id,"champ",CHAMP_NAMES,"Championship")}</td><td>${txt(a.id,"vol","e.g. 90",60)}</td>`:`<td>${sel(a.id,"pc",LEVEL_NAMES,"Pace")}</td><td>${sel(a.id,"str",LEVEL_NAMES,"Strength")}</td><td>${sel(a.id,"spd",LEVEL_NAMES,"Speed")}</td><td>${txt(a.id,"sport","e.g. basketball",110)}</td>`}
-          <td>${sel(a.id,"ready",READY,"This week")}</td><td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
+          <td>${txt(a.id,"note","e.g. shorter workout after Saturday",190)}</td></tr>`).join("")}
       </tbody></table></div>`;
     return `${grpHTML()}<h2 style="margin:18px 0 0">Distance &amp; mid-distance details</h2><p class="lede" style="margin:0">Give each distance and mid-distance runner a level and a pathway. When they pick their name on the Workouts page, they only see their version of each workout, with their paces.</p>
-      <div class="panel ed"><h2>High school</h2><p class="note" style="margin:0 0 8px">Six separate ratings. <b>Volume</b> (A/B/C) decides which workout lines a runner sees, so set it from recent training history and tolerance, not race times. <b>Pace</b> comes from VDOT (shown for reference). <b>Strength</b> and <b>Speed</b> track the weight room and sprint development. <b>This week</b> is readiness. <b>Other sport</b> flags multisport load.</p>${tbl("HS")}</div>
+      <div class="panel ed"><h2>High school</h2><p class="note" style="margin:0 0 8px">Five separate ratings. <b>Volume</b> (A/B/C) decides which workout lines a runner sees, so set it from recent training history and tolerance, not race times. <b>Pace</b> comes from VDOT (shown for reference). <b>Strength</b> and <b>Speed</b> track the weight room and sprint development. <b>Other sport</b> flags multisport load.</p>${tbl("HS")}</div>
       <div class="panel ed"><h2>Junior high</h2><p class="note" style="margin:0 0 8px"><b>Advanced</b> = established runner with a proven training history (not just a fast PR). <b>Development</b> = consistent JH runner (the as-written plan). <b>Foundation</b> = newer or lower-volume runner. <b>HS group invite</b> lets an advanced runner see the invite to join HS warm-ups, drills, and strength on Tuesdays. Nothing here adds mileage automatically.</p>${tbl("JH")}</div>
       <div class="ed-save sticky"><button type="button" class="btn primary" onclick="dtSave()" ${saving?"disabled":""}>${saving?"Saving…":"Save tags"}</button>
         <span class="note">Coach notes and "This week" show on the runner's public page. Keep medical details out.</span></div>
