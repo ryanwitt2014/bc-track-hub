@@ -649,6 +649,34 @@ DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", d
   ins(10,"tue",[T("Wall leg switches + explosive high skips","2×6 / 2×15 yd")]);
   ins(11,"tue",[T("Standing banded single-leg drive-downs","2×6 each leg")]);
   end(11,"thu",[T("Single-leg glute bridge pogos","2×5 sec each leg")]);
+
+  // ---- Round 2 (Nov 27): the other 28 library exercises, placed by purpose ----
+  // Low-level activation + mobility: 1–2 in warm-ups, rotating weekly (prepares, doesn't fatigue)
+  const WUROT = {2:["Seated banded clamshell","Down-dog walks"],3:["Prone banded leg lift","All-four hip openers"],6:["Banded straight-leg kickback","Down-dog walks"],7:["Banded seated leg raise","All-four hip openers"],8:["Open banded clamshell","Hip circles"],9:["Seated banded clamshell","All-four hip openers"],10:["Prone banded leg lift","Down-dog walks"],11:["Banded straight-leg kickback","All-four hip openers"]};
+  Object.entries(WUROT).forEach(([n, [a, b]]) => ins(+n, "thu", [T(`Activation + mobility: ${a} + ${b}`, "1×8–10 each")]));
+  // Start variety early (more variety builds adaptable acceleration skill), more blocks later: these REPLACE reps
+  ren(2,"tue","Falling starts",{d:null, x:"Falling starts + push-up starts (rotate)", n:"Variety early in winter. Push-up starts aren't timed."});
+  ren(3,"tue","Falling starts",{d:null, x:"Falling + seated starts (rotate)", n:"Seated starts aren't timed."});
+  ins(6,"tue",[T("Reaction starts: lateral + turn-and-go","2 each × 10m","Replaces part of the warm-up build-ups; not timed.")], 2);
+  ren(7,"thu","Short accelerations",{d:null, x:"Short accelerations from lateral or turn-and-go starts", n:"Then back to normal starts in February."});
+  // Wicket progression: acceleration wickets (Jan) → wickets into free sprint (Feb), wicket pogos as the Jan plyo
+  ins(7,"tue",[row("Progressive-spacing acceleration wickets","2 passes",{i:"near",n:"Replaces one start. Spacing via the wicket calculator (e.g. 0.90 → 1.65m)."})], 2);
+  ren(9,"thu","Short starts (reduced volume)",{x:"Wickets into free sprint", p:"2 passes (20m build-up + 8 wickets + 10m)", d:null, n:"Testing week: replaces the short starts."});
+  ins(10,"tue",[row("Wickets into free sprint","1–2 passes",{i:"near",n:"Replaces one start."})], 2);
+  ins(6,"thu",[row("Bilateral wicket pogos","2×6–8 contacts",{i:"max",n:"Counts as plyo contacts."})], 2);
+  // Explosive / reactive ankle work: winter Thursdays, fresh, before the sprint work (1 per session)
+  ins(9,"thu",[row("Resisted bilateral pogos","2×8–10 contacts",{i:"max",n:"Secure anchors only. JH: unresisted."})], 2);
+  ins(10,"thu",[row("Elevated supported single-leg ankle rebounds","2×8 each leg",{i:"max"})], 2);
+  ins(11,"thu",[row("Banded upright toe hops","2×10 contacts",{i:"max"})], 2);
+  end(10,"thu",[T("Banded explosive plantarflexion pulses","2×5 sec")]);
+  end(9,"thu",[T("Bilateral glute bridge pogos","2×6 sec")]);
+  end(8,"thu",[T("Hanging banded flutter kicks (optional)","2×6 sec","Grip-limited: skip if form slips.")]);
+  ins(11,"tue",[row("Kneeling-to-standing jumps (advanced, optional)","2×3",{i:"max",n:"Padded surface, competent athletes only."})], 2);
+  // Full cool-down flow at the end of coach-led Thursdays
+  [2,3,6,7,9,10,11].forEach(n => end(n,"thu",[T("Cool-down mobility","5–8 min","Ankle sit, world's greatest stretch, crab extensions, squat to hamstring stretch, Cossack stretch, pigeon pose (pick 4–6).")]));
+  // JH: simple versions of the same ideas
+  SP_WEEKS_JH.forEach((w, i) => { if (w.tue && w.tue.out) w.tue.out.splice(2, 0, row(i%2 ? "Fun starts: seated or lateral (rotate)" : "Fun starts: push-up or turn-and-go (rotate)","2×10m",{i:"tech",n:"Replaces 2 of your starts. Not timed."}));
+    if (w.thu && w.thu.out) w.thu.out.splice(2, 0, row(i%2 ? "Activation: seated banded clamshell + bridge" : "Activation: prone leg lift + all-four hip openers","1×8 each",{i:"tech",n:"Light band or none."})); });
   // Junior high: same vocabulary, simpler versions
   SP_WEEKS_JH.forEach(w => { if (w.tue && w.tue.out) w.tue.out.splice(1, 0, row("Wall leg switches","2×5 each leg",{i:"tech"}));
     if (w.thu && w.thu.out) { w.thu.out.splice(1, 0, row("Wicket marches","2×10m",{i:"tech"})); w.thu.out.push(row("Wall-supported tibialis raises + calf raises","2×15 / 2×12",{i:"tech",n:"Bodyweight."})); } });
