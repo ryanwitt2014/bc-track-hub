@@ -944,7 +944,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-27h";
+const HUB_VERSION = "11-27i";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2652,6 +2652,44 @@ function grpHTML(){
 /* ---- Runner tags editor ---- */
 function dtSet(id, k, v){ const t = Object.assign({}, dtDraft[id]); if(v) t[k] = v; else delete t[k];
   if (Object.keys(t).length) dtDraft[id] = t; else delete dtDraft[id]; dtMsg = {kind:"",text:""}; }
+
+/* ===== Coaches → Training Groups: rough-sort every kid into Sprints or Distance before levels are known ===== */
+let TGROUPS = {}, tgDraft = null, tgUI = {lv:"HS", q:"", show:"all"}, tgMsg = {kind:"", text:""};
+const TG_SUB = [["","Not decided"],["Mid","Mid (400/800)"],["Hybrid","Distance (800/1600)"],["Distance","Long distance (1600/3200)"]];
+const tgD = () => (tgDraft = tgDraft || JSON.parse(JSON.stringify(TGROUPS)));
+const tgOf = id => (tgDraft || TGROUPS)[id] || {};
+function tgSet(id, k, v){ const D = tgD(), t = Object.assign({}, D[id]); if (v) t[k] = v; else delete t[k]; if (k==="g" && v!=="D") delete t.sub; if (!t.g && !t.sub) delete D[id]; else D[id] = t; tgMsg = {kind:"", text:"Unsaved changes. Hit Save groups."}; render(); }
+function tgGuess(){ const D = tgD(); let n = 0;
+  ATHLETES.filter(a => a.level===tgUI.lv && !D[a.id]).forEach(a => { const c = a.cats || [], sp = ["Sprints","Hurdles","Long Jump","High Jump","Pole Vault"].some(x=>c.includes(x)), di = c.includes("Distance")||c.includes("Mid Distance");
+    if (sp === di) return; D[a.id] = sp ? {g:"S"} : {g:"D", ...(c.includes("Mid Distance") && !c.includes("Distance") ? {sub:"Mid"} : {})}; n++; });
+  tgMsg = {kind:"", text: n ? `Filled ${n} from their listed events. Check them, then Save.` : "Nobody left to guess: everyone unsorted is listed in both or neither."}; render(); }
+async function tgSave(){ if (!tgDraft) return; saving = true; render();
+  try { await saveKey("tgroups", tgDraft); TGROUPS = tgDraft; tgDraft = null;
+    // distance types also set the runner's pathway (Runner Tags) so their workouts filter correctly
+    const dt = JSON.parse(JSON.stringify(DTAGS)); let ch = 0; Object.entries(TGROUPS).forEach(([id, t]) => { if (t.g==="D" && t.sub && (dt[id]||{}).path !== t.sub) { dt[id] = Object.assign({}, dt[id], {path: t.sub}); ch++; } });
+    if (ch) { const err = await publishFiles({"dtags.json": JSON.stringify(dt)}); if (!err) DTAGS = dt; }
+    tgMsg = {kind:"ok", text:"Groups saved." + (ch ? ` ${ch} distance pathway${ch>1?"s":""} updated in Runner Tags.` : "")}; }
+  catch(e) { tgMsg = {kind:"err", text: e && e.code==="conflict" ? "Another coach saved first. Refresh and redo your change." : "Couldn't save. Try again."}; }
+  saving = false; render(); }
+function tgView(){
+  const all = ATHLETES.filter(a => a.level===tgUI.lv).sort((x,y)=>x.name.localeCompare(y.name)), q = tgUI.q.toLowerCase();
+  const cnt = {S:0, D:0, none:0, sub:{Mid:0, Hybrid:0, Distance:0, "":0}}; all.forEach(a => { const t = tgOf(a.id); if (t.g==="S") cnt.S++; else if (t.g==="D") { cnt.D++; cnt.sub[t.sub||""]++; } else cnt.none++; });
+  const list = all.filter(a => (!q || a.name.toLowerCase().includes(q)) && (tgUI.show==="all" || (tgUI.show==="none" ? !tgOf(a.id).g : tgOf(a.id).g===tgUI.show)));
+  const btn = (a, g, l) => `<button type="button" aria-pressed="${tgOf(a.id).g===g}" onclick="tgSet('${a.id}','g','${tgOf(a.id).g===g?"":g}')">${l}</button>`;
+  const names = (f) => all.filter(f).map(a=>esc(a.name)).join(", ") || "—";
+  return `<div class="panel ed"><h2>Training groups</h2><p style="margin:0 0 8px">Rough-sort kids into <b>Sprints</b> or <b>Distance</b> now; pick the distance type and levels later. Tap a group again to clear it.</p>
+      <div class="ed-row"><span>Level</span>${segBtns(tgUI.lv,[["HS","High school"],["JH","Junior high"]],"(v=>{tgUI.lv=v;render()})")}</div>
+      <div class="ed-row"><span>Show</span>${segBtns(tgUI.show,[["all",`All (${all.length})`],["S",`Sprints (${cnt.S})`],["D",`Distance (${cnt.D})`],["none",`Not sorted (${cnt.none})`]],"(v=>{tgUI.show=v;render()})")}</div>
+      <div class="ed-row"><input type="search" placeholder="Search a name" value="${esc(tgUI.q)}" oninput="tgUI.q=this.value" onchange="render()"><button type="button" class="btn sm" onclick="tgGuess()">Fill unsorted from their events</button></div>
+      <div class="tbl"><table><thead><tr><th>Athlete</th><th>Grade</th><th>Events listed</th><th>Group</th><th>Distance type</th></tr></thead><tbody>
+      ${list.map(a => { const t = tgOf(a.id); return `<tr><td><b>${esc(a.name)}</b></td><td>${a.grade??"—"}</td><td class="muted">${esc((a.cats||[]).join(", ")||"—")}</td>
+        <td><div class="seg" role="group" aria-label="Group for ${esc(a.name)}">${btn(a,"S","Sprints")}${btn(a,"D","Distance")}</div></td>
+        <td>${t.g==="D" ? `<select aria-label="Distance type for ${esc(a.name)}" onchange="tgSet('${a.id}','sub',this.value)">${TG_SUB.map(([v,l])=>`<option value="${v}" ${(t.sub||"")===v?"selected":""}>${l}</option>`).join("")}</select>` : `<span class="muted">—</span>`}</td></tr>`; }).join("")}</tbody></table></div>
+      <div class="ed-save sticky"><button type="button" class="btn primary" onclick="tgSave()" ${saving||!tgDraft?"disabled":""}>${saving?"Saving…":"Save groups"}</button><span class="ed-msg ${tgMsg.kind}" role="status">${esc(tgMsg.text)}</span></div></div>
+    <div class="cols"><div class="panel"><h3 style="margin:0 0 6px">Sprints (${cnt.S})</h3><p style="margin:0">${names(a=>tgOf(a.id).g==="S")}</p></div>
+      <div class="panel"><h3 style="margin:0 0 6px">Distance (${cnt.D})</h3>${TG_SUB.map(([v,l])=>`<p style="margin:0 0 4px"><b>${l} (${cnt.sub[v]})</b>: ${names(a=>tgOf(a.id).g==="D" && (tgOf(a.id).sub||"")===v)}</p>`).join("")}</div></div>
+    <p class="note">Coaches only. Picking a distance type also sets that runner's pathway on Groups &amp; Tags.</p>`;
+}
 async function dtSave(){
   const err = await publishFiles({"dtags.json": JSON.stringify(dtDraft)});
   if (err) dtMsg = {kind:"err", text:err};
@@ -5317,10 +5355,10 @@ const views = {
           <p class="ed-msg err" role="status" style="margin:0">${esc(login.msg)}</p>
           <p class="note" style="margin:0">Stays signed in on this device until you sign out. · v${HUB_VERSION}</p>`}
       </div></div>`;
-    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tags","Groups & Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
+    const tabs = [["workouts","Post Workouts"],["warmups","Edit Warm-ups"],["data","Data Logging"],["sheets","Practice Sheets"],["assign","Event Assignments"],["tgroups","Training Groups"],["tags","Groups & Tags"],["liftvid","Lift Videos"],["sptest","Speed Tests"],["sgroups","Sprints"],["recruit","Recruiting"],["intel","Scouting"]];
     const head = `${back}<div class="stack"><div><div class="eyebrow">Coaches only · <a href="#coaches" onclick="signOut();return false">Sign out</a></div><h1>Coaches</h1></div>
       <div class="seg" role="group" aria-label="Coach tools">${tabs.map(([k,l])=>`<button type="button" aria-pressed="${ctab===k}" onclick="ctab='${k}';render()">${l}</button>`).join("")}</div>`;
-    const body = ctab==="sptest" ? views._sptEdit() : ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
+    const body = ctab==="sptest" ? views._sptEdit() : ctab==="liftvid" ? views._liftVid() : ctab==="warmups" ? views._warmEdit() : ctab==="data" ? views._import() + views._dataEdit() : ctab==="sheets" ? views._sheets() : ctab==="recruit" ? views._recEdit() : ctab==="assign" ? views._asgEdit() : ctab==="tgroups" ? tgView() : ctab==="tags" ? views._tagEdit() : ctab==="sgroups" ? (window.SP ? SP.coachTab() : `<p class="note">Loading…</p>`) : ctab==="intel" ? (window.IX ? IX.view() : `<p class="note">Loading scouting…</p>`) : views._post();
     return head + body + `</div>`;
   },
   _sptEdit(){
@@ -6334,6 +6372,7 @@ async function loadAll(){
   if (byKey.dtags && typeof byKey.dtags === "object") { DTAGS = byKey.dtags; dtDraft = null; }
   if (byKey.vdot && typeof byKey.vdot === "object") VOVR = byKey.vdot;
   if (byKey.speedprof && typeof byKey.speedprof === "object") { SPEED = byKey.speedprof; spDraft = null; }
+  if (byKey.tgroups && typeof byKey.tgroups === "object") { TGROUPS = byKey.tgroups; tgDraft = null; }
   if (byKey.winter && Array.isArray(byKey.winter.ids)) { WINTER = {ids: byKey.winter.ids, maybe: byKey.winter.maybe||{}, follow: byKey.winter.follow||{}, done: byKey.winter.done||[]}; wDirty = false; applyWinterDecisions(); }
   wLoaded = true; persistWinterDecisions();
   if (byKey.meetentries && typeof byKey.meetentries === "object") MENT = byKey.meetentries;
