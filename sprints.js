@@ -266,7 +266,11 @@ const SPRINT_TECH_HS = {
 
 /* ---------- strength ---------- */
 const STR = {
-  dec:{n:"December · Movement quality", ex:[["Trap-bar deadlift (or goblet squat)","2×6–8"],["Dumbbell bench press","2×8"],["Split squat","2×6 each leg"],["Dumbbell row","2×8"],["Romanian deadlift (dumbbells)","2×8"],["Core: dead bug + side plank","2×8 each / 2×20 s"],["Med-ball chest pass","2×5"]],
+  sA:{n:"Sprint Strength A · Unilateral strength", ex:[["Weighted reverse lunge","3×6 each leg"],["B-stance RDL","2–3×6 each leg"],["Nordic hamstring curl (assisted)","1–2×2–3, building to 3–5"],["Weighted plate tibialis raise","2×15"],["Bent-knee calf raise","2×12"],["Core: dead bug + side plank","2 sets"]],
+    note:"Alternates with Strength B each winter week. 25–30 min: do the first 3–4, rotate the rest. Never to failure; 2–3 min between the heavier sets."},
+  sB:{n:"Sprint Strength B · Explosive strength", ex:[["Heavy deadlift to box jump","2–3 pairs: 2–3 lifts + 3 jumps (experienced HS; others light + low box)"],["Weighted step-up","2–3×5 each leg"],["Weighted reverse lunge","2×6 each leg"],["Explosive single-leg RDL to knee drive","2×5 each leg"],["Weighted plate tibialis raise","2×15"],["Standing single-leg calf raise","2×10 each leg"]],
+    note:"Rest 2–4 min between the deadlift and the jumps; if jump quality drops, rest longer or stop."},
+  dec:{n:"December · Movement quality", ex:[["Trap-bar deadlift (or goblet squat)","2×6–8"],["Dumbbell bench press","2×8"],["Weighted reverse lunge (light)","2×6 each leg"],["Dumbbell row","2×8"],["Wall-supported tibialis raise","2×15"],["B-stance RDL (light)","2×6 each leg"],["Romanian deadlift (dumbbells)","2×8"],["Core: dead bug + side plank","2×8 each / 2×20 s"],["Med-ball chest pass","2×5"]],
     note:"Light. Learn positions. Stop 3+ reps before failure."},
   jan:{n:"January · Progressive loading", ex:[["Trap-bar deadlift","3×4–6"],["Dumbbell bench press","3×5–6"],["Rear-foot split squat","3×5 each"],["Romanian deadlift","3×6"],["Pull-ups or inverted rows","3×5–8"],["Core: Pallof press + side plank","2×8 / 2×25 s"],["Assisted Nordic hamstring curl","1–2×3–5"],["Bent-knee + straight-knee calf raises","2×10–15 each"],["Med-ball scoop toss","3×3"]],
     note:"Add load only when every rep looks the same. Leave 2–3 reps in reserve."},
@@ -605,6 +609,50 @@ const JH_NO = new Set(["fly20","pvcarry","pvplant","tjbound","tjhsj"]);   // not
 DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", desc:"Short, fun reaction and coordination games: reaction starts to a clap or ball drop, partner mirror, small-box tag, ladder or line hops.",
   why:"Coordination, reaction and enjoyment. Great for junior high and as a warm-up finisher.", setup:"Cones, a ball, a small marked box. Indoors: short lanes only.", dose:"5–8 min",
   cues:["React fast, stay in control","Tall posture","Have fun"], errs:["Turning it into conditioning","Long sprints indoors"], prog:["Reaction starts into a 10m acceleration (outdoors)"], reg:["Walk-through versions"]};
+
+
+/* ---------- Exercise education integration (Nov 27): supplemental drills rotate in, replacing reps rather than adding volume ---------- */
+(function integrateExercises(){
+  const W = n => SP_WEEKS_HS.find(w => w.n===n);
+  const ins = (n, day, rows, at) => { const w = W(n); const o = w && w[day] && w[day].out; if (!o) return; o.splice(at==null ? 1 : at, 0, ...rows); };
+  const ren = (n, day, from, to) => { const w = W(n); const o = w && w[day] && w[day].out; if (!o) return; const r = o.find(x => x && x.x===from); if (r) Object.assign(r, to); };
+  const end = (n, day, rows) => { const w = W(n); const o = w && w[day] && w[day].out; if (!o) return; const i = o.findIndex(x => x && (x.str || x.tech)); o.splice(i<0 ? o.length : i, 0, ...rows); };
+  const T = (x, p, n) => row(x, p, {i:"tech", n});
+  // Winter strength: Thursday lifting alternates A (unilateral) and B (explosive)
+  [[6,"sA"],[7,"sB"],[8,"sA"],[9,"sB"],[10,"sA"],[11,"sB"]].forEach(([n,k]) => { const w = W(n); const r = w && w.thu && w.thu.out.find(x => x && x.str); if (r) r.str = k; });
+  if (typeof SP_REV!=="undefined") Object.values(SP_REV.HS||{}).forEach(v => (((v.sess||{}).out)||[]).forEach(r => { if (r && r.str==="jan") r.str = "sA"; }));
+  // Week 2 · Dec 8/10
+  ins(2,"tue",[T("Active hip mobility: hip circles + hip flexor raises","1×8 each")]);
+  ren(2,"tue","Standing accelerations",{x:"Accelerations from two-point and prone starts (rotate)", n:"Prone starts aren't a timed test."});
+  ins(2,"thu",[T("Wicket marches + wicket dribbles","2×10m each")]);
+  ren(2,"thu","Intro plyometrics: pogo hops",{x:"Bilateral pogos", d:null});
+  // Week 3 · Dec 15/17
+  ins(2+1,"tue",[T("Hip mobility: adductor openers + 90/90 feet raises","1×6–8 each"), row("Supported band-resisted block drives","2×4 sec each leg",{i:"near",n:"Stable supports only. Head-coach priority."})]);
+  ren(3,"tue","Three-point starts",{x:"Half-kneeling + three-point starts (rotate)"});
+  ren(3,"thu","Broad jumps",{d:null, x:"Three broad jumps into acceleration", p:"2×(3 jumps + 10m)", n:"Counts as acceleration work."});
+  end(3,"thu",[T("Prone elevated banded flutter kicks","2×6 sec")]);
+  // Week 6 · Jan 5/7 (testing week: no extra sprinting)
+  ins(6,"tue",[T("Hip mobility: hip circles + 90/90 leg raises","1×8 each")]);
+  ren(6,"thu","Single-leg pogos + lateral bounds",{n:"January = single-leg elasticity. Qualified athletes: reactive drop jumps 2×3 off a 6–12 in box instead."});
+  end(6,"thu",[T("Supine banded hamstring switches","2×6 sec")]);
+  // Week 7 · Jan 12/14
+  ins(7,"tue",[T("Hip flexor raises + banded bridge switches","1×8 each"), row("Band-resisted acceleration march","2×15m",{i:"near"}), row("Backward-to-forward broad jump","2×3",{i:"max",n:"Unresisted first; banded only for qualified athletes."})]);
+  ren(7,"tue","Starts",{p:"2×30m", n:"One rep fewer: the march and broad jumps replace it."});
+  ren(7,"thu","Single-leg landings + alternating hops",{d:null, x:"Tennis ball single-leg pogos", p:"2×8 each leg"});
+  end(7,"thu",[T("Standing resisted knee-drive runs","2×5 sec")]);
+  // Week 8 · Jan 19/21 (deload)
+  ins(8,"tue",[T("Auditory reaction knee drives","2×4 each leg"), row("Supported band-resisted block drives","2×4 sec each leg",{i:"near"})]);
+  ren(8,"tue","Accelerations",{x:"Block starts", n:"Late winter: more block-specific work."});
+  ren(8,"thu","Controlled explosive jumps",{d:null, x:"Single-leg wicket hops (intro)", p:"1 pass × 5–10m each leg", n:"Deload week: low volume."});
+  // Weeks 9–11 · keep rotating
+  ins(9,"tue",[T("Adductor openers + hip flexor raises","1×8 each")]);
+  ins(10,"tue",[T("Wall leg switches + explosive high skips","2×6 / 2×15 yd")]);
+  ins(11,"tue",[T("Standing banded single-leg drive-downs","2×6 each leg")]);
+  end(11,"thu",[T("Single-leg glute bridge pogos","2×5 sec each leg")]);
+  // Junior high: same vocabulary, simpler versions
+  SP_WEEKS_JH.forEach(w => { if (w.tue && w.tue.out) w.tue.out.splice(1, 0, row("Wall leg switches","2×5 each leg",{i:"tech"}));
+    if (w.thu && w.thu.out) { w.thu.out.splice(1, 0, row("Wicket marches","2×10m",{i:"tech"})); w.thu.out.push(row("Wall-supported tibialis raises + calf raises","2×15 / 2×12",{i:"tech",n:"Bodyweight."})); } });
+})();
 
 /* ---------- level switching: every view reads these, so HS/JH is one toggle ---------- */
 const PLAN = {
@@ -1000,9 +1048,9 @@ function groupsView(){
       <ul class="exp" style="margin:0">${by[k].sort((x,y)=>(x[2]===y[2]?0:x[2]==="p"?-1:1) || x[0].name.localeCompare(y[0].name)).map(([a,g,t])=>`<li>${a.level==="JH"?`<span class="sp-grp">L${g.jl||suggestJl(a)}</span> `:""}${t==="p"?`<b>${esc(a.name)}</b>`:`${esc(a.name)} <span class="muted" style="font-size:12px">(secondary)</span>`}${canPost&&g.sug?` <span class="sp-sug">suggested</span>`:""}</li>`).join("")}</ul></div>`).join("")}</div>`;
 }
 
-const TABS = [["cal","Today & Week"],["phil","Philosophy"],["lib2","Speed & 400 Library"],["hr","Hurdle & Relay Paths"],["model","400 Race Model"],["test","Testing"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
+const TABS = [["cal","Today & Week"],["phil","Philosophy"],["ex","Exercise Library"],["lib2","Speed & 400 Library"],["hr","Hurdle & Relay Paths"],["model","400 Race Model"],["test","Testing"],["warm","Warm-up"],["drills","Drill Library"],["blocks","Block Starts"],["hurdles","Hurdles"],["jumps","Jumps"],["strength","Strength"],["groups","Groups"]];
 views.sprints = function(){
-  const body = SP.tab==="phil" ? philView() + (CUR_LV==="HS" && window.sp2PhilHTML ? sp2PhilHTML() : "") + (typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="lib2" ? sp2LibHTML() : SP.tab==="hr" ? sp2HurdleRelayHTML() : SP.tab==="model" ? sp2ModelHTML() : SP.tab==="test" ? sp2TestHTML() : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
+  const body = SP.tab==="phil" ? philView() + (CUR_LV==="HS" && window.sp2PhilHTML ? sp2PhilHTML() : "") + (typeof spaHTML==="function" ? spaHTML() : "") : SP.tab==="ex" ? exLibHTML() : SP.tab==="lib2" ? sp2LibHTML() : SP.tab==="hr" ? sp2HurdleRelayHTML() : SP.tab==="model" ? sp2ModelHTML() : SP.tab==="test" ? sp2TestHTML() : SP.tab==="warm" ? warmView() : SP.tab==="drills" ? drillsView() : SP.tab==="blocks" ? blocksView() : SP.tab==="hurdles" ? hurdleView() : SP.tab==="jumps" ? jumpsView() : SP.tab==="strength" ? strengthView() : SP.tab==="groups" ? groupsView() : calendarView();
   return `${back}<div class="stack"><div class="bar"><div><div class="eyebrow">Dec 1, 2026 – Feb 28, 2027 · ${CUR_LV==="JH" ? "Junior high (grades 6–8)" : "High school"} · every day of the week</div><h1>Sprints, Hurdles &amp; Jumps</h1>
       <p class="lede" style="margin:6px 0 0">${CUR_LV==="JH" ? "Learn to run fast and have fun doing it. Same fundamentals as high school, sized for junior high." : "Open this any day and know exactly what to do. Fast and fresh, full recovery, and home days that leave you fresher."}</p></div>
       <div class="seg" role="group" aria-label="Level">${[["JH","Junior High"],["HS","High School"]].map(([k,l])=>`<button type="button" aria-pressed="${CUR_LV===k}" onclick="SP.setLv('${k}')">${l}</button>`).join("")}</div></div>
