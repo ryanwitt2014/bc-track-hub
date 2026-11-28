@@ -944,7 +944,7 @@ if(n)document.getElementById("sp-hi").innerHTML="Welcome back,<b>"+n.replace(/[<
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
-const HUB_VERSION = "11-27f";
+const HUB_VERSION = "11-27h";
 function showErr(msg){
   try {
     let el = document.getElementById("hub-err");
@@ -2078,7 +2078,6 @@ const EX = {
   "Light medicine-ball throws":{cue:"Light ball, crisp throws, nothing hard."},
   "Low pogo hops":{cue:"Small, stiff-ankle bounces. Quiet landings. Stop when they get sloppy."},
   "Low box jumps":{cue:"Low box, jump up, land soft, step down. Prepared athletes only."},
-  "Clamshells":{cue:"On your side, knees bent, open the top knee without rolling back."},
   "Single-leg bridge":{cue:"One foot down, other knee up. Hips stay level."},
   "Straight-knee calf raise":{cue:"Knees straight, rise high, lower slowly. Works the gastrocnemius.", eq:"Step or wall", alt:"Two legs on flat ground"},
   "Isometric calf hold":{cue:"Rise halfway onto the balls of your feet and hold steady. Builds Achilles and calf tolerance.", eq:"Wall; dumbbell later", alt:"Two-leg hold"},
@@ -2107,7 +2106,7 @@ const LIFTS = {
   SB:{name:"Sprint Strength B · Explosive strength", when:"HIGH day, after sprinting", spr:1, gen:1, rest:"2–4 min between deadlift and box jumps", note:"Contrast pairs only for experienced HS lifters (JH and novices: light weight, low box). Jumps must stay high quality: rest longer if they drop off.",
     ex:[["Heavy deadlift to box jump","2–3 pairs: 2–3 lifts + 3 jumps",1],["Weighted step-up","2–3 × 5/leg",1],["Weighted reverse lunge","2 × 6/leg"],["Explosive single-leg RDL to knee drive","2 × 5/leg"],["Weighted plate tibialis raise","2 × 15"],["Standing single-leg calf raise","2 × 10/leg"]]},
   SL:{name:"Sprint Lower-Leg & Hip circuit", when:"LOW day, if recovered", spr:1, gen:1, rest:"30–45 sec", note:"Easy-day work: nothing explosive, nothing heavy.",
-    ex:[["Wall-supported tibialis raise","2 × 20"],["Bent-knee calf raise","2 × 12"],["Heel walks","2 × 15m"],["Single-leg glute bridge switches","2 × 8/side"],["Lateral banded clamshell","2 × 10/side"]]},
+    ex:[["Wall-supported tibialis raise","2 × 20"],["Bent-knee calf raise","2 × 12"],["Heel walks","2 × 15m"],["Single-leg glute bridge switches","2 × 8/side"],["Prone banded leg lift","2 × 10/leg"]]},
   MSA:{name:"JH Sprint Strength A", when:"Spring · after Session A", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight or very light. Leave about 3 reps in reserve. Never to failure.",
     ex:[["Bodyweight squat","2 × 6",1],["Hip hinge with dowel","2 × 6",1],["Incline push-up","2 × 6"],["Light resistance-band row","2 × 8"],["Calf raise","2 × 8"],["Dead bug","2 × 5/side"]]},
   MSB:{name:"JH Sprint Strength B", when:"Spring · recovery day, if recovered", jh:1, spr:1, gen:1, rest:"60–90 sec", note:"Bodyweight. Quality reps, never to failure.",
@@ -6441,8 +6440,8 @@ if (SB) {
 }
 </script>
 <script src="intelligence.js?v=11-10i"></script>
-<script src="sprints.js?v=11-27f"></script>
+<script src="sprints.js?v=11-27h"></script>
 <script src="sprint2.js?v=11-27e"></script>
-<script src="exlib.js?v=11-27f"></script>
+<script src="exlib.js?v=11-27h"></script>
 </body>
 </html>

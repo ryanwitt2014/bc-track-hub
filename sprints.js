@@ -622,7 +622,7 @@ DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", d
   [[6,"sA"],[7,"sB"],[8,"sA"],[9,"sB"],[10,"sA"],[11,"sB"]].forEach(([n,k]) => { const w = W(n); const r = w && w.thu && w.thu.out.find(x => x && x.str); if (r) r.str = k; });
   if (typeof SP_REV!=="undefined") Object.values(SP_REV.HS||{}).forEach(v => (((v.sess||{}).out)||[]).forEach(r => { if (r && r.str==="jan") r.str = "sA"; }));
   // Week 2 · Dec 8/10
-  ins(2,"tue",[T("Active hip mobility: hip circles + hip flexor raises","1×8 each")]);
+  ins(2,"tue",[T("Active hip mobility: adductor openers + hip flexor raises","1×8 each")]);
   ren(2,"tue","Standing accelerations",{x:"Accelerations from two-point and prone starts (rotate)", n:"Prone starts aren't a timed test."});
   ins(2,"thu",[T("Wicket marches + wicket dribbles","2×10m each")]);
   ren(2,"thu","Intro plyometrics: pogo hops",{x:"Bilateral pogos", d:null});
@@ -632,7 +632,7 @@ DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", d
   ren(3,"thu","Broad jumps",{d:null, x:"Three broad jumps into acceleration", p:"2×(3 jumps + 10m)", n:"Counts as acceleration work."});
   end(3,"thu",[T("Prone elevated banded flutter kicks","2×6 sec")]);
   // Week 6 · Jan 5/7 (testing week: no extra sprinting)
-  ins(6,"tue",[T("Hip mobility: hip circles + 90/90 leg raises","1×8 each")]);
+  ins(6,"tue",[T("Hip mobility: hip flexor raises + 90/90 leg raises","1×8 each")]);
   ren(6,"thu","Single-leg pogos + lateral bounds",{n:"January = single-leg elasticity. Qualified athletes: reactive drop jumps 2×3 off a 6–12 in box instead."});
   end(6,"thu",[T("Supine banded hamstring switches","2×6 sec")]);
   // Week 7 · Jan 12/14
@@ -652,7 +652,7 @@ DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", d
 
   // ---- Round 2 (Nov 27): the other 28 library exercises, placed by purpose ----
   // Low-level activation + mobility: 1–2 in warm-ups, rotating weekly (prepares, doesn't fatigue)
-  const WUROT = {2:["Seated banded clamshell","Down-dog walks"],3:["Prone banded leg lift","All-four hip openers"],6:["Banded straight-leg kickback","Down-dog walks"],7:["Banded seated leg raise","All-four hip openers"],8:["Open banded clamshell","Hip circles"],9:["Seated banded clamshell","All-four hip openers"],10:["Prone banded leg lift","Down-dog walks"],11:["Banded straight-leg kickback","All-four hip openers"]};
+  const WUROT = {2:["Banded seated leg raise","Down-dog walks"],3:["Prone banded leg lift","All-four hip openers"],6:["Banded straight-leg kickback","Down-dog walks"],7:["Banded seated leg raise","All-four hip openers"],8:["Prone banded leg lift","Adductor openers"],9:["Single-leg glute bridge switches","All-four hip openers"],10:["Prone banded leg lift","Down-dog walks"],11:["Banded straight-leg kickback","All-four hip openers"]};
   Object.entries(WUROT).forEach(([n, [a, b]]) => ins(+n, "thu", [T(`Activation + mobility: ${a} + ${b}`, "1×8–10 each")]));
   // Start variety early (more variety builds adaptable acceleration skill), more blocks later: these REPLACE reps
   ren(2,"tue","Falling starts",{d:null, x:"Falling starts + push-up starts (rotate)", n:"Variety early in winter. Push-up starts aren't timed."});
@@ -676,7 +676,7 @@ DRILLS.coord = {n:"Coordination games", cat:"Warm-up & mechanics", env:"both", d
   [2,3,6,7,9,10,11].forEach(n => end(n,"thu",[T("Cool-down mobility","5–8 min","Ankle sit, world's greatest stretch, crab extensions, squat to hamstring stretch, Cossack stretch, pigeon pose (pick 4–6).")]));
   // JH: simple versions of the same ideas
   SP_WEEKS_JH.forEach((w, i) => { if (w.tue && w.tue.out) w.tue.out.splice(2, 0, row(i%2 ? "Fun starts: seated or lateral (rotate)" : "Fun starts: push-up or turn-and-go (rotate)","2×10m",{i:"tech",n:"Replaces 2 of your starts. Not timed."}));
-    if (w.thu && w.thu.out) w.thu.out.splice(2, 0, row(i%2 ? "Activation: seated banded clamshell + bridge" : "Activation: prone leg lift + all-four hip openers","1×8 each",{i:"tech",n:"Light band or none."})); });
+    if (w.thu && w.thu.out) w.thu.out.splice(2, 0, row(i%2 ? "Activation: banded kickback + glute bridge" : "Activation: prone leg lift + all-four hip openers","1×8 each",{i:"tech",n:"Light band or none."})); });
   // Junior high: same vocabulary, simpler versions
   SP_WEEKS_JH.forEach(w => { if (w.tue && w.tue.out) w.tue.out.splice(1, 0, row("Wall leg switches","2×5 each leg",{i:"tech"}));
     if (w.thu && w.thu.out) { w.thu.out.splice(1, 0, row("Wicket marches","2×10m",{i:"tech"})); w.thu.out.push(row("Wall-supported tibialis raises + calf raises","2×15 / 2×12",{i:"tech",n:"Bodyweight."})); } });
